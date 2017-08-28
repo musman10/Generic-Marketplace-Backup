@@ -1,0 +1,20 @@
+<div>
+<h1>Login</h1>
+<label></label>
+
+<form name="myForm">
+<label>Username</label>
+<input type="text" ng-model="userName" name="userName" required /><span ng-show="myForm.userName.$touched && myForm.userName.$invalid">The user name is required.</span><br>
+<label>Password</label>
+<input type="password" ng-model="userPassword" name="userPassword" required /><span ng-show="myForm.userPassword.$touched && myForm.userPassword.$invalid">The password is required.</span><br>
+
+</form>
+    <button ng-click="login()" >Login</button><br><br>
+
+<span ng-show="loginError">Username password does not exist or match </span>
+
+    Sign Up
+<button ng-click="signup('jobSeeker')">jobseaker</button>
+<button ng-click="signup('company')">company</button>
+
+</div>
