@@ -1,0 +1,28 @@
+<div>
+
+    <label>{{property.name}}</label>
+    <div ng-if="property.list == 'true'">
+        <button ng-click="addPropertyInList(property)">Add</button>
+        <div ng-repeat="li in property.propertiesList track by $index">
+            <div ng-if="li.subProperties.length > 0">
+                <div ng-repeat="sp in li.subProperties">
+                    <property-input property="sp"></property-input>
+                </div>
+            </div>
+            <div ng-if="li.subProperties.length == 0">
+                <input ng-model="li.value" />{{li.value}}
+            </div>
+        </div>
+    </div>
+
+    <div ng-if="property.list != 'true'">
+        <div ng-if="property.subProperties.length > 0">
+            <div ng-repeat="sp in property.subProperties">
+                <property-input property="sp"></property-input>
+            </div>
+        </div>
+        <div ng-if="property.subProperties.length == 0">
+            <input ng-model="property.value" />{{property.value}}
+        </div>
+    </div>
+</div>

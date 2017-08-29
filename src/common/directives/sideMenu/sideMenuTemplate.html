@@ -1,0 +1,26 @@
+<div class="sidemenu" style="height:600px;width:20%;background-color:#0086B3;position:relative;float:left">
+    <div ng-if="appType == 'admin'">
+        <ul>
+            <li>Tenant Management</li>
+                <ul>
+                    <li>
+                        <a href="/tenant/register">Register Tenant</a>
+                    </li>
+                    <li>
+                        <a href="/tenant/list">List Tenants</a>
+                    </li>
+                </ul>
+        </ul>
+    </div>
+
+    <div ng-if="appType == 'tenant'">
+        <ul>
+            <li>Edit Profile</li>
+            <li>Requests</li>
+            <ul>
+                <li>Post Request</li>
+                <li>List Requests</li>
+            </ul>
+        </ul>
+    </div>
+</div>
