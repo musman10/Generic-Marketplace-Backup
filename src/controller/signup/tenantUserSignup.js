@@ -1,5 +1,9 @@
 angular.module('angularApp')
+<<<<<<< HEAD
 .controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,mainService,$state,app) {
+=======
+.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService',  function ($scope,$stateParams,tenantUserSignupService,mainService) {
+>>>>>>> saira
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
@@ -7,6 +11,7 @@ angular.module('angularApp')
     };
     
     $scope.userType = $stateParams.userType;
+<<<<<<< HEAD
     //$scope.user = mainService.getUserObjectByUserType($scope.userType);
     $scope.user;
     $scope.userConf = mainService.getUserConfByUserType($scope.userType);
@@ -34,6 +39,18 @@ angular.module('angularApp')
     $scope.formObject = function(){
         $scope.user = tenantUserSignupService.createFormObject($scope.userConf);
         //console.log($scope.user);
+=======
+    $scope.user = mainService.getUserObjectByUserType($scope.userType);
+    $scope.userConf = mainService.getUserConfByUserType($scope.userType);
+    str = JSON.stringify($scope.user);
+    console.log(str);
+    console.log("Testing");
+
+    $scope.signup = function(){
+        str = JSON.stringify($scope.user);
+        console.log(str);
+        console.log("Testing");
+>>>>>>> saira
     }
 
 }]);

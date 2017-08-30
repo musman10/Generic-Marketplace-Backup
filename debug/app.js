@@ -42599,10 +42599,15 @@ angular.module('angularApp', ['ui.router'])
  */
 angular.module('angularApp')
     .controller('mainController', [ '$scope','$state', 'mainFactory', 'mainService', 'mainProvider', '$location','app', function ($scope, $state, mainFactory, mainService, mainProvider,$location,app) {
+<<<<<<< HEAD
 
         $scope.location=$location;
         $scope.url = $scope.location.host();
         $scope.state = $state.current;
+=======
+        $scope.location=$location;
+        $scope.url = $scope.location.host();
+>>>>>>> saira
         var hostArr = $scope.url.split(".");
         console.log(hostArr);
         if(hostArr.length == 3){
@@ -42620,7 +42625,10 @@ angular.module('angularApp')
         else{
             var tenantName = hostArr[0];
             app.baseUrl = "http://" + $scope.url + ":8080/";
+<<<<<<< HEAD
             app.appType = 'admin';
+=======
+>>>>>>> saira
             $state.go('AdminLogin');
         }
 
@@ -42629,10 +42637,46 @@ angular.module('angularApp')
         $scope.getProvider = mainProvider.getPrivate();
 
     }]);
+<<<<<<< HEAD
 angular.module('angularApp')
     .controller('MasterLayoutController', [ '$scope','$state','app',function ($scope,$state,app) {
 
         $scope.appType = app.appType;
+=======
+/**
+ * Created by semianchuk on 08.10.16.
+ */
+angular.module('angularApp')
+    .factory('mainFactory', [ function () {
+
+        var thisIsPrivate = "mainFactory";
+        
+        function getPrivate() {
+            return thisIsPrivate;
+        }
+
+        return {
+            getPrivate: getPrivate
+        };
+    }]);
+/**
+ * Created by semianchuk on 11.10.16.
+ */
+angular.module('angularApp')
+    .provider('mainProvider',[ function () {
+        var privateVariable = 'mainProvider';
+
+        return {
+            $get: function() {
+                function getPrivate() {
+                    return privateVariable;
+                }
+                return {
+                    getPrivate: getPrivate
+                };
+            }
+        };
+>>>>>>> saira
     }]);
 /**
  * Created by Usman Irfan.
@@ -42727,6 +42771,7 @@ angular.module('angularApp')
  * Created by semianchuk on 08.10.16.
  */
 angular.module('angularApp')
+<<<<<<< HEAD
     .factory('mainFactory', [ function () {
 
         var thisIsPrivate = "mainFactory";
@@ -42761,10 +42806,13 @@ angular.module('angularApp')
  * Created by semianchuk on 08.10.16.
  */
 angular.module('angularApp')
+=======
+>>>>>>> saira
     .config(['$locationProvider','$stateProvider','$httpProvider',function($locationProvider,$stateProvider,$httpProvider) {
         $locationProvider.html5Mode(true);
 
         $stateProvider
+<<<<<<< HEAD
             .state('main', {
                 url         : '/',
                 controller  : 'mainController',
@@ -42778,6 +42826,17 @@ angular.module('angularApp')
                 url         : '/login',
                 templateUrl : 'public/templates/login/tenantLogin.html',
                 controller  : 'TenantLoginController',
+=======
+            .state('home', {
+                url         : '/',
+                templateUrl : 'public/templates/home.html',
+                controller  : 'mainController'
+            })            
+            .state('TenantLogin', {
+                url         : '/login',
+                templateUrl : 'public/templates/login/tenantLogin.html',
+                controller  : 'TenantLoginController'
+>>>>>>> saira
             })
             .state('TenantUserSignup', {
                 url         : '/signup',
@@ -42785,6 +42844,7 @@ angular.module('angularApp')
                 controller  : 'TenantUserSignupController',
                 params:{
                     userType:''
+<<<<<<< HEAD
                 },
             })
             .state('TenantUserHome', {
@@ -42792,23 +42852,38 @@ angular.module('angularApp')
                 templateUrl : 'public/templates/home/tenantUserHome.html',
                 controller  : 'TenantUserHomeController',
                 parent:'MasterLayout'
+=======
+                }
+>>>>>>> saira
             })
             .state('AdminLogin', {
                 url         : '/admin/login',
                 templateUrl : 'public/templates/login/adminLogin.html',
+<<<<<<< HEAD
                 controller  : 'AdminLoginController',
+=======
+                controller  : 'AdminLoginController'
+>>>>>>> saira
             })
             .state('AdminHome', {
                 url         : '/admin/home',
                 templateUrl : 'public/templates/admin/home.html',
+<<<<<<< HEAD
                 controller  : 'AdminController',
                 parent:'MasterLayout'
+=======
+                controller  : 'AdminController'
+>>>>>>> saira
             })
             .state('RegisterTenant', {
                 url         : '/tenant/register',
                 templateUrl : 'public/templates/tenant/register.html',
+<<<<<<< HEAD
                 controller  : 'TenantRegisterController',
                 parent:'MasterLayout'
+=======
+                controller  : 'TenantRegisterController'
+>>>>>>> saira
             })
 
     }]);
@@ -42818,7 +42893,11 @@ angular.module('angularApp')
         tenant:{},
         tenantUsers:[],
         tenantRequests:[],
+<<<<<<< HEAD
         appType:'admin'
+=======
+        appType:'appAdmin'
+>>>>>>> saira
     }
 
     angular.module('angularApp').value('app', app);
@@ -42841,6 +42920,10 @@ angular.module('angularApp')
 
     $scope.username;
     $scope.password;
+<<<<<<< HEAD
+=======
+
+>>>>>>> saira
     $scope.login = function(){
         var loginSuccess = adminLoginService.login($scope.username,$scope.password);
         if(loginSuccess == true)
@@ -42848,20 +42931,34 @@ angular.module('angularApp')
     }
 }]);
 angular.module('angularApp')
+<<<<<<< HEAD
 .controller('TenantLoginController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
+=======
+.controller('TenantLoginController', [ '$scope','$state', 'tenantLoginService', 'app',  function ($scope,$state,tenantLoginService,app) {
+>>>>>>> saira
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
         message3 : tenantLoginService.getPrivate()
     };
 
+<<<<<<< HEAD
     $scope.userConfList = app.tenant.users;
+=======
+   /* $scope.userType = $stateParams.userType;
+    $scope.user = mainService.getUserObjectByUserType($scope.userType);
+    $scope.userConf = mainService.getUserConfByUserType($scope.userType);
+    str = JSON.stringify($scope.user);
+    console.log(str);
+    console.log("Testing");*/
+>>>>>>> saira
 
     $scope.signup = function(userTypeName){
         $state.go("TenantUserSignup", {
             userType: userTypeName
         });
     }
+<<<<<<< HEAD
 }]);
 angular.module('angularApp')
     .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
@@ -42873,6 +42970,38 @@ angular.module('angularApp')
     }]);
 angular.module('angularApp')
 .controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,mainService,$state,app) {
+=======
+
+    $scope.login = function(userTypeName){
+        debugger;
+        tenant_id = app.tenant._id;
+        username = $scope.userName;
+        password = $scope.userPassword;
+        console.log(tenant_id + username + password);
+        var loginUser = {
+            tenant_id : tenant_id,
+            username : username,
+            password : password
+        }
+
+        tenantLoginService.getUserInformation(tenant_id, username , password).then(function(response){
+            console.log(response);
+            if(response.success == true){
+                app.loginUser = response.data;
+                console.log(JSON.stringify(app));
+                $state.go("AdminHome");
+            }
+            else{
+                $scope.loginError = true;
+            }
+
+        });
+
+    }
+}]);
+angular.module('angularApp')
+.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService',  function ($scope,$stateParams,tenantUserSignupService,mainService) {
+>>>>>>> saira
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
@@ -42880,6 +43009,7 @@ angular.module('angularApp')
     };
     
     $scope.userType = $stateParams.userType;
+<<<<<<< HEAD
     //$scope.user = mainService.getUserObjectByUserType($scope.userType);
     $scope.user;
     $scope.userConf = mainService.getUserConfByUserType($scope.userType);
@@ -42907,6 +43037,18 @@ angular.module('angularApp')
     $scope.formObject = function(){
         $scope.user = tenantUserSignupService.createFormObject($scope.userConf);
         //console.log($scope.user);
+=======
+    $scope.user = mainService.getUserObjectByUserType($scope.userType);
+    $scope.userConf = mainService.getUserConfByUserType($scope.userType);
+    str = JSON.stringify($scope.user);
+    console.log(str);
+    console.log("Testing");
+
+    $scope.signup = function(){
+        str = JSON.stringify($scope.user);
+        console.log(str);
+        console.log("Testing");
+>>>>>>> saira
     }
 
 }]);
@@ -42987,7 +43129,10 @@ angular.module('angularApp')
             list:false,
             parentId:0,
             subProperties:[],
+<<<<<<< HEAD
             propertiesList:[],
+=======
+>>>>>>> saira
             hierarchyLevel:1
         }
         user.properties.push(property);
@@ -43009,7 +43154,10 @@ angular.module('angularApp')
             list:false,
             parentId:parentProperty.id,
             subProperties:[],
+<<<<<<< HEAD
             propertiesList:[],
+=======
+>>>>>>> saira
             hierarchyLevel:2
         }
         parentProperty.subProperties.push(property);
@@ -43044,7 +43192,10 @@ angular.module('angularApp')
             list:false,
             parentId:0,
             subProperties:[],
+<<<<<<< HEAD
             propertiesList:[],
+=======
+>>>>>>> saira
             hierarchyLevel:1
         }
         request.properties.push(property);
@@ -43065,7 +43216,10 @@ angular.module('angularApp')
             list:false,
             parentId:parentProperty.id,
             subProperties:[],
+<<<<<<< HEAD
             propertiesList:[],
+=======
+>>>>>>> saira
             hierarchyLevel:2
         }
         parentProperty.subProperties.push(property);
@@ -43218,24 +43372,57 @@ angular.module('angularApp')
 .service('tenantLoginService', ['$http','$q', function ($http,$q) {
 
     var thisIsPrivate = "tenantLoginService";
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> saira
     this.getPrivate = function() {
         return thisIsPrivate;
     };
 
+<<<<<<< HEAD
+=======
+    this.getUserInformation = function(tenant_id, username , password){
+
+        var deferred = $q.defer();
+        var login_data = {
+            tenant_id : tenant_id,
+            username : username,
+            password : password
+        };
+        $http.post(app.baseUrl + "api/user/loginUser" , login_data )
+            .then(function(response) {
+                debugger;
+                str = JSON.stringify(response);
+                console.log(str);
+                return deferred.resolve(response.data);
+            });
+        return deferred.promise;
+
+    }
+
+>>>>>>> saira
 }]);
 /**
  * Created by Usman Irfan.
  */
 angular.module('angularApp')
+<<<<<<< HEAD
 .service('tenantRegisterService', ['$http','$q', function ($http,$q) {
 
     var thisIsPrivate = "tenantRegisterService";
+=======
+.service('tenantUserSignupService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "tenantUserSignupService";
+>>>>>>> saira
     
     this.getPrivate = function() {
         return thisIsPrivate;
     };
 
+<<<<<<< HEAD
     this.register = function(tenant,baseUrl){
         
         var deferred = $q.defer();
@@ -43248,19 +43435,28 @@ angular.module('angularApp')
         return deferred.promise;
     };
 
+=======
+>>>>>>> saira
 }]);
 /**
  * Created by Usman Irfan.
  */
 angular.module('angularApp')
+<<<<<<< HEAD
 .service('tenantUserSignupService', ['$http','$q', function ($http,$q) {
 
     var thisIsPrivate = "tenantUserSignupService";
+=======
+.service('tenantRegisterService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "tenantRegisterService";
+>>>>>>> saira
     
     this.getPrivate = function() {
         return thisIsPrivate;
     };
 
+<<<<<<< HEAD
     this.createFormObject = function(userConf){
         debugger;
         var formJSON = '{';
@@ -43403,3 +43599,18 @@ angular.module('angularApp')
             $scope.headTitle = app.tenant.name;
         }
     }]);
+=======
+    this.register = function(tenant,baseUrl){
+        
+        var deferred = $q.defer();
+        $http.post(app.baseUrl + "api/tenant/register",tenant)
+        .then(function(response) {
+            str = JSON.stringify(response);
+            console.log(str);
+            return deferred.resolve(response.data);
+        });
+        return deferred.promise;
+    };
+
+}]);
+>>>>>>> saira

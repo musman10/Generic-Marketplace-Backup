@@ -25,12 +25,21 @@ router.get('/tenant/:tenantName', function(req, res, next) {
   service(req.params.tenantName,res);
 });
 
+
 /* Userr signup service */
 router.post('/user/signup', function(req, res, next) {
   var service = require("./user/signup");
   service(req.body,res);
 });
 
+
+
+
+/* User Login service */
+router.post('/user/loginUser', function(req, res, next) {
+  var service = require("./user/userLogin");
+  service(req.body , res);
+});
 
 
 

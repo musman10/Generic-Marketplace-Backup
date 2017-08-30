@@ -6,6 +6,7 @@ angular.module('angularApp')
         $locationProvider.html5Mode(true);
 
         $stateProvider
+<<<<<<< HEAD
             .state('main', {
                 url         : '/',
                 controller  : 'mainController',
@@ -19,6 +20,17 @@ angular.module('angularApp')
                 url         : '/login',
                 templateUrl : 'public/templates/login/tenantLogin.html',
                 controller  : 'TenantLoginController',
+=======
+            .state('home', {
+                url         : '/',
+                templateUrl : 'public/templates/home.html',
+                controller  : 'mainController'
+            })            
+            .state('TenantLogin', {
+                url         : '/login',
+                templateUrl : 'public/templates/login/tenantLogin.html',
+                controller  : 'TenantLoginController'
+>>>>>>> saira
             })
             .state('TenantUserSignup', {
                 url         : '/signup',
@@ -26,6 +38,7 @@ angular.module('angularApp')
                 controller  : 'TenantUserSignupController',
                 params:{
                     userType:''
+<<<<<<< HEAD
                 },
             })
             .state('TenantUserHome', {
@@ -33,23 +46,38 @@ angular.module('angularApp')
                 templateUrl : 'public/templates/home/tenantUserHome.html',
                 controller  : 'TenantUserHomeController',
                 parent:'MasterLayout'
+=======
+                }
+>>>>>>> saira
             })
             .state('AdminLogin', {
                 url         : '/admin/login',
                 templateUrl : 'public/templates/login/adminLogin.html',
+<<<<<<< HEAD
                 controller  : 'AdminLoginController',
+=======
+                controller  : 'AdminLoginController'
+>>>>>>> saira
             })
             .state('AdminHome', {
                 url         : '/admin/home',
                 templateUrl : 'public/templates/admin/home.html',
+<<<<<<< HEAD
                 controller  : 'AdminController',
                 parent:'MasterLayout'
+=======
+                controller  : 'AdminController'
+>>>>>>> saira
             })
             .state('RegisterTenant', {
                 url         : '/tenant/register',
                 templateUrl : 'public/templates/tenant/register.html',
+<<<<<<< HEAD
                 controller  : 'TenantRegisterController',
                 parent:'MasterLayout'
+=======
+                controller  : 'TenantRegisterController'
+>>>>>>> saira
             })
 
     }]);
@@ -59,7 +87,11 @@ angular.module('angularApp')
         tenant:{},
         tenantUsers:[],
         tenantRequests:[],
+<<<<<<< HEAD
         appType:'admin'
+=======
+        appType:'appAdmin'
+>>>>>>> saira
     }
 
     angular.module('angularApp').value('app', app);

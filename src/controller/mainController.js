@@ -3,10 +3,15 @@
  */
 angular.module('angularApp')
     .controller('mainController', [ '$scope','$state', 'mainFactory', 'mainService', 'mainProvider', '$location','app', function ($scope, $state, mainFactory, mainService, mainProvider,$location,app) {
+<<<<<<< HEAD
 
         $scope.location=$location;
         $scope.url = $scope.location.host();
         $scope.state = $state.current;
+=======
+        $scope.location=$location;
+        $scope.url = $scope.location.host();
+>>>>>>> saira
         var hostArr = $scope.url.split(".");
         console.log(hostArr);
         if(hostArr.length == 3){
@@ -24,7 +29,10 @@ angular.module('angularApp')
         else{
             var tenantName = hostArr[0];
             app.baseUrl = "http://" + $scope.url + ":8080/";
+<<<<<<< HEAD
             app.appType = 'admin';
+=======
+>>>>>>> saira
             $state.go('AdminLogin');
         }
 

@@ -10,6 +10,7 @@ angular.module('angularApp')
         return thisIsPrivate;
     };
 
+<<<<<<< HEAD
     this.createFormObject = function(userConf){
         debugger;
         var formJSON = '{';
@@ -80,4 +81,6 @@ angular.module('angularApp')
             });
         return deferred.promise;
     }
+=======
+>>>>>>> saira
 }]);

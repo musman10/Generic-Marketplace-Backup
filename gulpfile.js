@@ -26,7 +26,7 @@ gulp.task('compress-dev', function() {
         'app.js',
         'src/**/*.js',
         'src/**/**/*.js',
-        'src/**/**/**/*.js',
+
     ])
         .pipe(concat('app.min.js'))
         .pipe(gulp.dest('build'));
@@ -40,7 +40,7 @@ gulp.task('compress-prod', function() {
         'app.js',
         'src/**/*.js',
         'src/**/**/*.js',
-        'src/**/**/**/*.js',
+
     ])
         .pipe(concat('app.min.js'))
         .pipe(uglify())
@@ -58,6 +58,7 @@ gulp.task('watch', function() {
 
 gulp.task('debug', function() {
     gulp.src([
+
         'node_modules/angular/angular.js',
         'node_modules/angular-ui-router/release/angular-ui-router.js',
         'node_modules/angular-animate/angular-animate.js',
@@ -72,4 +73,20 @@ gulp.task('debug', function() {
 });
 
 gulp.task('dev',  ['sass', 'compress-dev' , 'watch','debug']);
+
+            'node_modules/angular/angular.js',
+            'node_modules/angular-ui-router/release/angular-ui-router.js',
+            'node_modules/angular-animate/angular-animate.js',
+            'app.js',
+            'src/**/*.js',
+            'src/**/**/*.js',
+            'src/**/**/**/*.js',
+        ])
+        .pipe(concat('app.js'))
+        .pipe(debug({title: 'unicorn:'}))
+        .pipe(gulp.dest('debug'))
+});
+
+gulp.task('dev',  ['sass', 'compress-dev' , 'watch']);
+
 gulp.task('build', ['sass', 'compress-prod','debug']);

@@ -8,6 +8,10 @@ angular.module('angularApp')
 
     $scope.username;
     $scope.password;
+<<<<<<< HEAD
+=======
+
+>>>>>>> saira
     $scope.login = function(){
         var loginSuccess = adminLoginService.login($scope.username,$scope.password);
         if(loginSuccess == true)

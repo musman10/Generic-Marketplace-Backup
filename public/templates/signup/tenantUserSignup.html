@@ -2,9 +2,22 @@
     
     <h1>Sign Up As {{userType}}</h1>
     <div ng-repeat="p in userConf.properties">
+<<<<<<< HEAD
         <property-input property="p"></property-input>
     </div>
 
     <button ng-click="signup()">signup</button>
     <!--{{userConf.properties}}-->
+=======
+        <label>{{p.name}}</label>
+        <input ng-model="user.name" />{{user.name}}
+    </div>
+    <button ng-click="signup()">signup</button>
+
+    <!--
+    <p>{{description.message1}}</p>
+    <p>{{description.message1}}</p>
+    <p>{{description.message1}}</p>
+    -->
+>>>>>>> saira
 </div>

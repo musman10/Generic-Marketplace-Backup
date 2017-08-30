@@ -7,7 +7,11 @@ module.exports = function(res){
     
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
+<<<<<<< HEAD
         db.collection("User").find({}).toArray(function(err, result) {
+=======
+        db.collection("users").find({}).toArray(function(err, result) {
+>>>>>>> saira
           if (err) throw err;
           console.log(result);
           dto.users = result;
