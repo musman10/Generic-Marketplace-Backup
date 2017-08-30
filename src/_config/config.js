@@ -6,15 +6,19 @@ angular.module('angularApp')
         $locationProvider.html5Mode(true);
 
         $stateProvider
-            .state('home', {
+            .state('main', {
                 url         : '/',
-                templateUrl : 'public/templates/home.html',
-                controller  : 'mainController'
-            })            
+                controller  : 'mainController',
+            })
+            .state('MasterLayout', {
+                //abstract: true,
+                templateUrl: 'public/templates/shared/masterLayout.html',
+                controller:'MasterLayoutController'
+            })
             .state('TenantLogin', {
                 url         : '/login',
                 templateUrl : 'public/templates/login/tenantLogin.html',
-                controller  : 'TenantLoginController'
+                controller  : 'TenantLoginController',
             })
             .state('TenantUserSignup', {
                 url         : '/signup',
@@ -22,22 +26,30 @@ angular.module('angularApp')
                 controller  : 'TenantUserSignupController',
                 params:{
                     userType:''
-                }
+                },
+            })
+            .state('TenantUserHome', {
+                url         : '/user/home',
+                templateUrl : 'public/templates/home/tenantUserHome.html',
+                controller  : 'TenantUserHomeController',
+                parent:'MasterLayout'
             })
             .state('AdminLogin', {
                 url         : '/admin/login',
                 templateUrl : 'public/templates/login/adminLogin.html',
-                controller  : 'AdminLoginController'
+                controller  : 'AdminLoginController',
             })
             .state('AdminHome', {
                 url         : '/admin/home',
                 templateUrl : 'public/templates/admin/home.html',
-                controller  : 'AdminController'
+                controller  : 'AdminController',
+                parent:'MasterLayout'
             })
             .state('RegisterTenant', {
                 url         : '/tenant/register',
                 templateUrl : 'public/templates/tenant/register.html',
-                controller  : 'TenantRegisterController'
+                controller  : 'TenantRegisterController',
+                parent:'MasterLayout'
             })
 
     }]);
@@ -47,7 +59,7 @@ angular.module('angularApp')
         tenant:{},
         tenantUsers:[],
         tenantRequests:[],
-        appType:'appAdmin'
+        appType:'admin'
     }
 
     angular.module('angularApp').value('app', app);

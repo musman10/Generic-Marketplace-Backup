@@ -75,6 +75,7 @@ angular.module('angularApp')
             list:false,
             parentId:0,
             subProperties:[],
+            propertiesList:[],
             hierarchyLevel:1
         }
         user.properties.push(property);
@@ -96,6 +97,7 @@ angular.module('angularApp')
             list:false,
             parentId:parentProperty.id,
             subProperties:[],
+            propertiesList:[],
             hierarchyLevel:2
         }
         parentProperty.subProperties.push(property);
@@ -130,6 +132,7 @@ angular.module('angularApp')
             list:false,
             parentId:0,
             subProperties:[],
+            propertiesList:[],
             hierarchyLevel:1
         }
         request.properties.push(property);
@@ -150,6 +153,7 @@ angular.module('angularApp')
             list:false,
             parentId:parentProperty.id,
             subProperties:[],
+            propertiesList:[],
             hierarchyLevel:2
         }
         parentProperty.subProperties.push(property);

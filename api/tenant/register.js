@@ -21,7 +21,6 @@ module.exports = function(tenant,response){
             dto = {success:true,error:[],status:200};
             response.send(dto);
         });
-
     });
 
 }

@@ -42599,8 +42599,10 @@ angular.module('angularApp', ['ui.router'])
  */
 angular.module('angularApp')
     .controller('mainController', [ '$scope','$state', 'mainFactory', 'mainService', 'mainProvider', '$location','app', function ($scope, $state, mainFactory, mainService, mainProvider,$location,app) {
+
         $scope.location=$location;
         $scope.url = $scope.location.host();
+        $scope.state = $state.current;
         var hostArr = $scope.url.split(".");
         console.log(hostArr);
         if(hostArr.length == 3){
@@ -42618,6 +42620,7 @@ angular.module('angularApp')
         else{
             var tenantName = hostArr[0];
             app.baseUrl = "http://" + $scope.url + ":8080/";
+            app.appType = 'admin';
             $state.go('AdminLogin');
         }
 
@@ -42626,39 +42629,10 @@ angular.module('angularApp')
         $scope.getProvider = mainProvider.getPrivate();
 
     }]);
-/**
- * Created by semianchuk on 08.10.16.
- */
 angular.module('angularApp')
-    .factory('mainFactory', [ function () {
+    .controller('MasterLayoutController', [ '$scope','$state','app',function ($scope,$state,app) {
 
-        var thisIsPrivate = "mainFactory";
-        
-        function getPrivate() {
-            return thisIsPrivate;
-        }
-
-        return {
-            getPrivate: getPrivate
-        };
-    }]);
-/**
- * Created by semianchuk on 11.10.16.
- */
-angular.module('angularApp')
-    .provider('mainProvider',[ function () {
-        var privateVariable = 'mainProvider';
-
-        return {
-            $get: function() {
-                function getPrivate() {
-                    return privateVariable;
-                }
-                return {
-                    getPrivate: getPrivate
-                };
-            }
-        };
+        $scope.appType = app.appType;
     }]);
 /**
  * Created by Usman Irfan.
@@ -42753,19 +42727,57 @@ angular.module('angularApp')
  * Created by semianchuk on 08.10.16.
  */
 angular.module('angularApp')
+    .factory('mainFactory', [ function () {
+
+        var thisIsPrivate = "mainFactory";
+        
+        function getPrivate() {
+            return thisIsPrivate;
+        }
+
+        return {
+            getPrivate: getPrivate
+        };
+    }]);
+/**
+ * Created by semianchuk on 11.10.16.
+ */
+angular.module('angularApp')
+    .provider('mainProvider',[ function () {
+        var privateVariable = 'mainProvider';
+
+        return {
+            $get: function() {
+                function getPrivate() {
+                    return privateVariable;
+                }
+                return {
+                    getPrivate: getPrivate
+                };
+            }
+        };
+    }]);
+/**
+ * Created by semianchuk on 08.10.16.
+ */
+angular.module('angularApp')
     .config(['$locationProvider','$stateProvider','$httpProvider',function($locationProvider,$stateProvider,$httpProvider) {
         $locationProvider.html5Mode(true);
 
         $stateProvider
-            .state('home', {
+            .state('main', {
                 url         : '/',
-                templateUrl : 'public/templates/home.html',
-                controller  : 'mainController'
-            })            
+                controller  : 'mainController',
+            })
+            .state('MasterLayout', {
+                //abstract: true,
+                templateUrl: 'public/templates/shared/masterLayout.html',
+                controller:'MasterLayoutController'
+            })
             .state('TenantLogin', {
                 url         : '/login',
                 templateUrl : 'public/templates/login/tenantLogin.html',
-                controller  : 'TenantLoginController'
+                controller  : 'TenantLoginController',
             })
             .state('TenantUserSignup', {
                 url         : '/signup',
@@ -42773,22 +42785,30 @@ angular.module('angularApp')
                 controller  : 'TenantUserSignupController',
                 params:{
                     userType:''
-                }
+                },
+            })
+            .state('TenantUserHome', {
+                url         : '/user/home',
+                templateUrl : 'public/templates/home/tenantUserHome.html',
+                controller  : 'TenantUserHomeController',
+                parent:'MasterLayout'
             })
             .state('AdminLogin', {
                 url         : '/admin/login',
                 templateUrl : 'public/templates/login/adminLogin.html',
-                controller  : 'AdminLoginController'
+                controller  : 'AdminLoginController',
             })
             .state('AdminHome', {
                 url         : '/admin/home',
                 templateUrl : 'public/templates/admin/home.html',
-                controller  : 'AdminController'
+                controller  : 'AdminController',
+                parent:'MasterLayout'
             })
             .state('RegisterTenant', {
                 url         : '/tenant/register',
                 templateUrl : 'public/templates/tenant/register.html',
-                controller  : 'TenantRegisterController'
+                controller  : 'TenantRegisterController',
+                parent:'MasterLayout'
             })
 
     }]);
@@ -42798,7 +42818,7 @@ angular.module('angularApp')
         tenant:{},
         tenantUsers:[],
         tenantRequests:[],
-        appType:'appAdmin'
+        appType:'admin'
     }
 
     angular.module('angularApp').value('app', app);
@@ -42821,7 +42841,6 @@ angular.module('angularApp')
 
     $scope.username;
     $scope.password;
-
     $scope.login = function(){
         var loginSuccess = adminLoginService.login($scope.username,$scope.password);
         if(loginSuccess == true)
@@ -42829,55 +42848,31 @@ angular.module('angularApp')
     }
 }]);
 angular.module('angularApp')
-.controller('TenantLoginController', [ '$scope','$state', 'tenantLoginService', 'app',  function ($scope,$state,tenantLoginService,app) {
+.controller('TenantLoginController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
         message3 : tenantLoginService.getPrivate()
     };
 
-   /* $scope.userType = $stateParams.userType;
-    $scope.user = mainService.getUserObjectByUserType($scope.userType);
-    $scope.userConf = mainService.getUserConfByUserType($scope.userType);
-    str = JSON.stringify($scope.user);
-    console.log(str);
-    console.log("Testing");*/
+    $scope.userConfList = app.tenant.users;
 
     $scope.signup = function(userTypeName){
         $state.go("TenantUserSignup", {
             userType: userTypeName
         });
     }
-
-    $scope.login = function(userTypeName){
-        debugger;
-        tenant_id = app.tenant._id;
-        username = $scope.userName;
-        password = $scope.userPassword;
-        console.log(tenant_id + username + password);
-        var loginUser = {
-            tenant_id : tenant_id,
-            username : username,
-            password : password
-        }
-
-        tenantLoginService.getUserInformation(tenant_id, username , password).then(function(response){
-            console.log(response);
-            if(response.success == true){
-                app.loginUser = response.data;
-                console.log(JSON.stringify(app));
-                $state.go("AdminHome");
-            }
-            else{
-                $scope.loginError = true;
-            }
-
-        });
-
-    }
 }]);
 angular.module('angularApp')
-.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService',  function ($scope,$stateParams,tenantUserSignupService,mainService) {
+    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : tenantLoginService.getPrivate()
+        };
+    }]);
+angular.module('angularApp')
+.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,mainService,$state,app) {
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
@@ -42885,16 +42880,33 @@ angular.module('angularApp')
     };
     
     $scope.userType = $stateParams.userType;
-    $scope.user = mainService.getUserObjectByUserType($scope.userType);
+    //$scope.user = mainService.getUserObjectByUserType($scope.userType);
+    $scope.user;
     $scope.userConf = mainService.getUserConfByUserType($scope.userType);
     str = JSON.stringify($scope.user);
     console.log(str);
-    console.log("Testing");
 
     $scope.signup = function(){
+        debugger;
+        $scope.formObject();
         str = JSON.stringify($scope.user);
         console.log(str);
-        console.log("Testing");
+        tenantUserSignupService.signup($scope.user,app).then(function(response){
+            var str = JSON.stringify(response);
+            console.log(str);
+            if(response.success == true){
+                $state.go("TenantUserHome");
+            }
+            else{
+                alert(response.error[0]);
+            }
+        });
+
+    }
+
+    $scope.formObject = function(){
+        $scope.user = tenantUserSignupService.createFormObject($scope.userConf);
+        //console.log($scope.user);
     }
 
 }]);
@@ -42975,6 +42987,7 @@ angular.module('angularApp')
             list:false,
             parentId:0,
             subProperties:[],
+            propertiesList:[],
             hierarchyLevel:1
         }
         user.properties.push(property);
@@ -42996,6 +43009,7 @@ angular.module('angularApp')
             list:false,
             parentId:parentProperty.id,
             subProperties:[],
+            propertiesList:[],
             hierarchyLevel:2
         }
         parentProperty.subProperties.push(property);
@@ -43030,6 +43044,7 @@ angular.module('angularApp')
             list:false,
             parentId:0,
             subProperties:[],
+            propertiesList:[],
             hierarchyLevel:1
         }
         request.properties.push(property);
@@ -43050,6 +43065,7 @@ angular.module('angularApp')
             list:false,
             parentId:parentProperty.id,
             subProperties:[],
+            propertiesList:[],
             hierarchyLevel:2
         }
         parentProperty.subProperties.push(property);
@@ -43202,38 +43218,6 @@ angular.module('angularApp')
 .service('tenantLoginService', ['$http','$q', function ($http,$q) {
 
     var thisIsPrivate = "tenantLoginService";
-
-    this.getPrivate = function() {
-        return thisIsPrivate;
-    };
-
-    this.getUserInformation = function(tenant_id, username , password){
-
-        var deferred = $q.defer();
-        var login_data = {
-            tenant_id : tenant_id,
-            username : username,
-            password : password
-        };
-        $http.post(app.baseUrl + "api/user/loginUser" , login_data )
-            .then(function(response) {
-                debugger;
-                str = JSON.stringify(response);
-                console.log(str);
-                return deferred.resolve(response.data);
-            });
-        return deferred.promise;
-
-    }
-
-}]);
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-.service('tenantUserSignupService', ['$http','$q', function ($http,$q) {
-
-    var thisIsPrivate = "tenantUserSignupService";
     
     this.getPrivate = function() {
         return thisIsPrivate;
@@ -43265,3 +43249,157 @@ angular.module('angularApp')
     };
 
 }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+.service('tenantUserSignupService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "tenantUserSignupService";
+    
+    this.getPrivate = function() {
+        return thisIsPrivate;
+    };
+
+    this.createFormObject = function(userConf){
+        debugger;
+        var formJSON = '{';
+        var skipPropertyName = false;
+        formJSON = this.createFormJSON(userConf.properties,formJSON,skipPropertyName);
+        formJSON = formJSON.substring(0, formJSON.length - 1);
+        formJSON = formJSON + '}';
+        alert(formJSON);
+        var formObject = JSON.parse(formJSON);
+        return formObject;
+    };
+
+    this.createFormJSON = function(userProperties,formJSON,skipPropertyName){
+        var properties = userProperties;
+        var i = 0;
+        var p = JSON.stringify(properties);
+        for(i;i<properties.length;i++){
+            if(skipPropertyName == true)
+                properties[i].list = "";
+
+            if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
+                if(properties[i].list == "true") {
+
+                    if(properties[i].subProperties.length != 0) {
+                        formJSON = formJSON + '"' + properties[i].name + '":[';
+                        for(var j=0;j<properties[i].propertiesList.length;j++) {
+                            formJSON = formJSON + '{';
+                            formJSON = this.createFormJSON(properties[i].propertiesList[j].subProperties, formJSON,false);
+                            formJSON = formJSON.substring(0, formJSON.length - 1);
+                            formJSON = formJSON + '},';
+                        }
+                        formJSON = formJSON.substring(0, formJSON.length - 1);
+                        formJSON = formJSON + '],';
+                    }
+                    else{
+                        formJSON = formJSON + '"' + properties[i].name + '":[';
+                        formJSON = this.createFormJSON(properties[i].propertiesList, formJSON,true);
+                        formJSON = formJSON.substring(0, formJSON.length - 1);
+                        formJSON = formJSON + '],';
+                    }
+                }
+                else if(properties[i].subProperties.length != 0){
+                    formJSON = formJSON + '"' + properties[i].name + '"' +  ':{';
+                    formJSON = this.createFormJSON(properties[i].subProperties, formJSON,false);
+                    formJSON = formJSON.substring(0, formJSON.length - 1);
+                    formJSON = formJSON + '},';
+                }
+                else {
+                    if(skipPropertyName == true){
+                        formJSON = formJSON + '"'+ properties[i].value +'",';
+                    }
+                    else
+                        formJSON = formJSON + '"' + properties[i].name + '":"'+ properties[i].value +'",';
+                }
+            }
+        }
+        return formJSON;
+    }
+
+    this.signup = function(user,app){
+        var deferred = $q.defer();
+        user.tenantId = app.tenant._id;
+        $http.post(app.baseUrl + "api/user/signup",user)
+            .then(function(response) {
+                str = JSON.stringify(response);
+                console.log(str);
+                return deferred.resolve(response.data);
+            });
+        return deferred.promise;
+    }
+}]);
+angular.module('angularApp')
+    .directive('sideMenu', function () {
+        return {
+            restrict : "E",
+            templateUrl : "src/common/directives/sideMenu/sideMenuTemplate.html",
+            controller:"SideMenuController",
+            scope:{
+                appType:'@'
+            }
+        };
+    });
+angular.module('angularApp')
+    .controller('SideMenuController', [ '$scope', 'app', function ($scope,app) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+        $scope.appType = app.appType;
+    }]);
+angular.module('angularApp')
+.directive('propertyInput', function () {
+    return {
+        restrict : "E",
+        templateUrl : "src/common/directives/propertyInput/propertyInputTemplate.html",
+        scope: {
+            property: '='
+        },
+        controller:"PropertyInputController"
+    };
+});
+angular.module('angularApp')
+    .controller('PropertyInputController', [ '$scope', function ($scope) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+        $scope.addPropertyInList = function(mainProperty){
+            var property = JSON.stringify(mainProperty);
+            property = JSON.parse(property);
+            property.propertiesList = [];
+            property.id = property.id + "-" + mainProperty.propertiesList.length;
+            mainProperty.propertiesList.push(property);
+        };
+
+        //alert($scope.property.name);
+    }]);
+angular.module('angularApp')
+    .directive('topNav', function () {
+        return {
+            restrict : "E",
+            templateUrl : "src/common/directives/topNav/topNavTemplate.html",
+            controller:"TopNavController",
+            scope:{
+                appType:'@'
+            }
+        };
+    });
+angular.module('angularApp')
+    .controller('TopNavController', [ '$scope', 'app', function ($scope,app) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+        $scope.appType = app.appType;
+        if($scope.appType == "admin") {
+            $scope.headTitle = "Generic Marketplace";
+        }
+        else if($scope.appType == "tenant"){
+            $scope.headTitle = app.tenant.name;
+        }
+    }]);

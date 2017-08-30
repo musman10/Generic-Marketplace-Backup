@@ -32,6 +32,12 @@ router.post('/user/loginUser', function(req, res, next) {
 });
 
 
+/* Userr signup service */
+router.post('/user/signup', function(req, res, next) {
+  var service = require("./user/signup");
+  service(req.body,res);
+});
+
 /* DB Create service */
 router.get('/db/create', function(req, res, next) {
   var service = require("./db/create");
