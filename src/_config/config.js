@@ -51,6 +51,12 @@ angular.module('angularApp')
                 controller  : 'TenantRegisterController',
                 parent:'MasterLayout'
             })
+            .state('ViewMyProfile', {
+                url         : '/profile/viewmyprofile',
+                templateUrl : 'public/templates/profile/viewMyProfile.html',
+                controller  : 'viewMyProfileController',
+                parent:'MasterLayout'
+            })
 
     }]);
 

@@ -15,7 +15,7 @@ module.exports = function(loginUser,response){
         if (err) throw err;
         console.log("Mongo");
         var query = {
-            tenant_id : loginUser.tenant_id,
+            tenantId : loginUser.tenant_id,
             username : loginUser.username,
             password : loginUser.password
         };

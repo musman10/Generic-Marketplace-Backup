@@ -31,6 +31,12 @@ router.post('/user/loginUser', function(req, res, next) {
   service(req.body , res);
 });
 
+/* User update service */
+router.post('/user/updateUser', function(req, res, next) {
+  var service = require("./user/userProfileUpdate");
+  service(req.body , res);
+});
+
 
 /* Userr signup service */
 router.post('/user/signup', function(req, res, next) {
