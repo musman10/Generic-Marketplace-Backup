@@ -26,7 +26,7 @@ angular.module('angularApp')
                 controller  : 'TenantUserSignupController',
                 params:{
                     userType:''
-                },
+                }
             })
             .state('TenantUserHome', {
                 url         : '/user/home',
@@ -49,6 +49,42 @@ angular.module('angularApp')
                 url         : '/tenant/register',
                 templateUrl : 'public/templates/tenant/register.html',
                 controller  : 'TenantRegisterController',
+                parent:'MasterLayout'
+            })
+            .state('ListTenant', {
+                url         : '/tenant/list',
+                templateUrl : 'public/templates/tenant/list.html',
+                controller  : 'TenantListController',
+                parent:'MasterLayout'
+            })
+            .state('ViewTenant', {
+                url         : '/tenant/view/:tenantId',
+                templateUrl : 'public/templates/tenant/view.html',
+                controller  : 'TenantViewController',
+                parent:'MasterLayout'
+            })
+            .state('ListRequest', {
+                url         : '/request/list/:tenantId',
+                templateUrl : 'public/templates/request/list.html',
+                controller  : 'RequestListController',
+                parent:'MasterLayout'
+            })
+            .state('ViewRequest', {
+                url         : '/request/view/:requestId',
+                templateUrl : 'public/templates/request/view.html',
+                controller  : 'RequestViewController',
+                parent:'MasterLayout'
+            })
+            .state('ListUser', {
+                url         : '/user/list/:tenantId',
+                templateUrl : 'public/templates/user/list.html',
+                controller  : 'UserListController',
+                parent:'MasterLayout'
+            })
+            .state('ViewUser', {
+                url         : '/user/view/:userId',
+                templateUrl : 'public/templates/user/view.html',
+                controller  : 'UserViewController',
                 parent:'MasterLayout'
             })
 
