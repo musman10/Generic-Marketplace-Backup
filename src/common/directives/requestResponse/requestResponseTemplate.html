@@ -1,0 +1,4 @@
+<p>{{response.requestDetails.requestType}}<small style="margin-left:5px">{{response.requestDetails.postUserDetails.name}}</small></p>
+<div ng-repeat="response in response.requestDetails.userResponses">
+    <request-response response="response"></request-response>
+</div>
