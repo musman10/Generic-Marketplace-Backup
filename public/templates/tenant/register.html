@@ -84,6 +84,12 @@
                     <label>Specify the number of users allowed</label>
                     <input  ng-model="r.limit"/>
             </div>
+
+            <label>Has Parent Request</label>
+            <select ng-model="r.hasParent">
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+            </select>
                 
             <p>Add Request Properties</p>
             <button ng-click="addRequestProperty(r)">Add Property</button>
@@ -138,11 +144,14 @@
                 <select style="margin-top:10px" ng-model="user" ng-change="addRequestResponseUser(user,response)">
                     <option ng-repeat="user in tenant.users" value="{{user}}">{{user.name}}</option>
                 </select>
-                <select style="margin-top:10px" ng-model="response.action">
-                    <option value="ignore">ignore</option>
-                    <option value="apply">apply</option>
-                    <option value="accept">accept</option>
+                <select style="margin-top:10px" ng-model="responseRequest" multiple="multiple" ng-change="addRequestResponse(responseRequest,response)">
+                    <option ng-repeat="req in tenant.requests" value="{{req}}" ng-if="req.name != r.name">{{req.name}}</option>
                 </select>
+                <ul>
+                    <li ng-repeat="viewUser in response.responseRequests">
+                        {{viewUser.name}}
+                    </li>
+                </ul>
             </div>
             <!--
             <p>Add User View Conditions</p>

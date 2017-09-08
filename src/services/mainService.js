@@ -86,4 +86,11 @@ angular.module('angularApp')
             }
         }
 
+        this.getRequestConfByRequestType = function(requestType){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].name == requestType)
+                    return app.tenant.requests[i];
+            }
+        }
+
     }]);

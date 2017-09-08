@@ -38,6 +38,29 @@ router.post('/user/signup', function(req, res, next) {
   service(req.body,res);
 });
 
+/* Request post service */
+router.post('/request/post', function(req, res, next) {
+  var service = require("./request/post");
+  service(req.body,res);
+});
+
+router.post('/request/user/list/requestTypes/', function(req, res, next) {
+  var service = require("./request/listRequestsByRequestTypes");
+  service(req.body,res);
+});
+
+/* Request getByName service */
+router.get('/request/getByName/:requestName', function(req, res, next) {
+  var service = require("./request/getRequestByName");
+  service(req.params.requestName,res);
+});
+
+/* Request Update addResponse service */
+router.post('/request/update/addResponse', function(req, res, next) {
+  var service = require("./request/addResponse");
+  service(req.body,res);
+});
+
 /* DB Create service */
 router.get('/db/create', function(req, res, next) {
   var service = require("./db/create");
