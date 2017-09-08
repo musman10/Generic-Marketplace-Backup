@@ -1,185 +1,184 @@
-<h1>Register Tenant</h1>
-<div>
-    <h2>Tenant Properties</h2>
-    <label>Tenant Name</label>
-    <input name="name" ng-model="tenant.name"/>{{tenant.name}}
-    
-    <button ng-click="addProperty()">Add Property</button>
-    <div ng-repeat="p in tenant.properties">
-        <label>Name</label>
-        <input name="field" ng-model="p.name"/>{{p.name}}
-        <label>Value</label>
-        <input name="value" ng-model="p.value"/>{{p.value}}
-    </div>
-    
-    <!-- Tenant Users Section -->
-    <div style="background-color:bisque;">
-        <h2>Tenant Users</h2>
-        <button ng-click="addUser()">Add User</button>
-        
-        <div ng-repeat="u in tenant.users" style="background-color:#EEEEEE;margin-bottom:20px">
-            <label>Name</label>
-            <input name="name" ng-model="u.name"/>{{u.name}}
-            <p>Number of Users Allowed</p>
-            <select ng-model="u.limited">
-                <option value="1">Limited</option>
-                <option value="0">Unlimited</option>    
-            </select>{{u.limit}}
-            <div ng-if="u.limited == 1">
-                    <label>Specify the number of users allowed</label>
-                    <input  ng-model="u.limit"/>
-            </div>
-            
-            <p>Add user Properties</p>
-            <button ng-click="addUserProperty(u)">Add Property</button>
-            <div ng-repeat="p in u.properties" style="margin-top:10px">
-                <label>Name</label>
-                <input name="name" ng-model="p.name"/>{{p.name}}
-                <button ng-click="addUserSubProperty(p,u)">Add Sub Property</button><br>
-                <label>Type</label>
-                <input name="type" ng-model="p.type"/>{{p.type}}
-                <label>Min</label>
-                <input name="min" ng-model="p.min"/>{{p.min}}<br>
-                <label>Max</label>
-                <input name="max" ng-model="p.max"/>{{p.max}}
-                <label>Required</label>
-                <select ng-model="p.required">
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                </select>{{p.required}}
-                <label>List</label>
-                <select ng-model="p.list">
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                </select>{{p.list}}
-                
-                <label>Pattern</label>
-                <input name="pattern" ng-model="p.pattern"/>{{p.pattern}}<br>
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px">
+    <h3 class="md-display-1">Register Tenant</h3>
+</md-toolbar>
 
-                <!--
-                <label>Property Group</label>
-                <select ng-model="p.propertyGroup">
-                    <option ng-repeat="pg in u.propertyGroups" value="{{pg.name}}">{{pg.name}}</option>
-                </select>
-                -->
-            </div>
-            
-        </div>
-    </div>
+<div ng-cloak>
+    <md-content>
+        <md-tabs md-dynamic-height md-border-bottom>
+            <md-tab label="Properties">
+                <md-content class="md-padding">
+                    <h1 class="md-display-1">Tenant Properties
+                        <md-button class="md-fab" ng-click="addProperty()">+</md-button>
+                    </h1>
 
-    <!-- Tenant Requests Section -->
-    <div style="background-color:blanchedalmond">
-        <h2>Tenant Requests</h2>
-        <button ng-click="addRequest()">Add Request</button>
-            
-        <div ng-repeat="r in tenant.requests" style="background-color:aquamarine;margin-bottom:20px">
-            <label>Name</label>
-            <input name="name" ng-model="r.name"/>{{r.name}}
-            <p>Number of Requests Allowed</p>
-            <select ng-model="r.limited">
-                <option value="1">Limited</option>
-                <option value="0">Unlimited</option>    
-            </select>{{u.limit}}
-            <div ng-if="r.limited == 1">
-                    <label>Specify the number of users allowed</label>
-                    <input  ng-model="r.limit"/>
-            </div>
-
-            <label>Has Parent Request</label>
-            <select ng-model="r.hasParent">
-                <option value="1">Yes</option>
-                <option value="0">No</option>
-            </select>
-                
-            <p>Add Request Properties</p>
-            <button ng-click="addRequestProperty(r)">Add Property</button>
-            <div ng-repeat="p in r.properties" style="margin-top:10px">
-                <label>Name</label>
-                <input name="name" ng-model="p.name"/>{{p.name}}
-                <button ng-click="addRequestSubProperty(p,r)">Add Sub Property</button><br>
-                <label>Type</label>
-                <input name="type" ng-model="p.type"/>{{p.type}}
-                <label>Min</label>
-                <input name="min" ng-model="p.min"/>{{p.min}}<br>
-                <label>Max</label>
-                <input name="max" ng-model="p.max"/>{{p.max}}
-                <label>Required</label>
-                <select ng-model="p.required">
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                </select>{{p.required}}
-                <label>List</label>
-                <select ng-model="p.list">
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                </select>{{p.list}}
-                    
-                <label>Pattern</label>
-                <input name="pattern" ng-model="p.pattern"/>{{p.pattern}}<br>
-            </div>
-            
-            <p>Request Post Users</p>
-            <select id="postUserSelect" style="margin-top:10px" ng-model="user" multiple="multiple" ng-change="addRequestPostUser(user,r)">
-                <option ng-repeat="user in tenant.users" value="{{user}}">{{user.name}}</option>
-            </select>
-            <ul>
-                <li ng-repeat="postUser in r.postUsers">
-                    {{postUser.name}}
-                </li>
-            </ul>
-
-            <p>Request View Users</p>
-            <select style="margin-top:10px" ng-model="user" multiple="multiple" ng-change="addRequestViewUser(user,r)">
-                <option ng-repeat="user in tenant.users" value="{{user}}">{{user.name}}</option>
-            </select>
-            <ul>
-                <li ng-repeat="viewUser in r.viewUsers">
-                    {{viewUser.name}}
-                </li>
-            </ul>
-
-            <p>Add Users Response</p>
-            <button ng-click="addRequestUserResponse(r)">Add Response</button>
-            <div ng-repeat="response in r.userResponses">
-                <select style="margin-top:10px" ng-model="user" ng-change="addRequestResponseUser(user,response)">
-                    <option ng-repeat="user in tenant.users" value="{{user}}">{{user.name}}</option>
-                </select>
-                <select style="margin-top:10px" ng-model="responseRequest" multiple="multiple" ng-change="addRequestResponse(responseRequest,response)">
-                    <option ng-repeat="req in tenant.requests" value="{{req}}" ng-if="req.name != r.name">{{req.name}}</option>
-                </select>
-                <ul>
-                    <li ng-repeat="viewUser in response.responseRequests">
-                        {{viewUser.name}}
-                    </li>
-                </ul>
-            </div>
-            <!--
-            <p>Add User View Conditions</p>
-            <button ng-click="addRequestUserViewCondition(r)">Add View Condition</button>
-            <div ng-repeat="condition in r.viewUserConditions">
-                <select style="margin-top:10px" ng-model="user" ng-change="addRequestViewConditionUser(user,condition)">
-                    <option ng-repeat="user in r.viewUsers" value="{{user}}">{{user.name}}</option>
-                </select>
-                <div ng-repeat="p in condition.properties">
-                    <label>Property</label>
-                    <input ng-model="p.name" disable=true/>
-                    
-                    <label>Enter default value</label>
-                    <input ng-model="p.default" />
-                    
-                    <label>Allow Runtime change</label>
-                    <select style="margin-top:10px" ng-model="p.allowRunTimeChange" ng-change="">
-                        <option value="1">Allow Runtime Change</option>
-                        <option value="2">Disable Runtime Change</option>
-                    </select>
-                </div>
-            </div>
-            -->
-        </div>
-    </div>
+                    <md-input-container>
+                        <label>Tenant Name</label>
+                        <input name="name" ng-model="tenant.name"/>{{tenant.name}}
+                    </md-input-container>
 
 
-    <button ng-click="registerTenant()">Register Tenant</button>
-    {{tenant}}
-    
+                    <div ng-repeat="p in tenant.properties">
+                        <md-input-container>
+                            <label>Property Name</label>
+                            <input name="field" ng-model="p.name"/>{{p.name}}
+                        </md-input-container>
+                        <md-input-container>
+                            <label>Property Value</label>
+                            <input name="value" ng-model="p.value"/>{{p.value}}
+                        </md-input-container>
+                    </div>
+
+                </md-content>
+            </md-tab>
+            <md-tab label="Users">
+                <md-content class="md-padding">
+                    <h1 class="md-display-1">Users
+                        <md-button class="md-fab" ng-click="addUser()">+</md-button>
+                    </h1>
+
+                    <md-card ng-repeat="u in tenant.users" md-theme="{{ showDarkTheme ? 'dark-grey' : 'default' }}" md-theme-watch>
+                        <md-card-title>
+                            <md-card-title-text>
+                                <span class="md-headline">User</span>
+                            </md-card-title-text>
+                        </md-card-title>
+                        <md-card-content>
+                            <md-input-container>
+                                <label>Name</label>
+                                <input name="name" ng-model="u.name"/>{{u.name}}
+                            </md-input-container>
+
+                            <p>Number of Users Allowed</p>
+                            <md-select ng-model="u.limited">
+                                <md-option value="1">Limited</md-option>
+                                <md-option value="0">Unlimited</md-option>
+                            </md-select>{{u.limit}}
+
+                            <div ng-if="u.limited == 1">
+                                <md-input-container>
+                                    <label>Specify the number of users allowed</label>
+                                    <input  ng-model="u.limit"/>
+                                </md-input-container>
+                            </div>
+
+                            <p>Add user Properties <md-button  class="md-fab" ng-click="addUserProperty(u)">+</md-button> </p>
+
+                                <div ng-repeat="p in u.properties" style="margin-top:10px;">
+                                   <property-configuration property="p"></property-configuration>
+
+                                </div>
+                        </md-card-content>
+                        <md-card-actions layout="row" layout-align="end center">
+                            <md-button>Action 1</md-button>
+                            <md-button>Action 2</md-button>
+                        </md-card-actions>
+                    </md-card>
+
+                </md-content>
+            </md-tab>
+            <md-tab label="Requests">
+                <md-content class="md-padding">
+                    <h1 class="md-display-1">Requests
+                        <md-button class="md-fab" ng-click="addRequest()">+</md-button>
+                    </h1>
+
+                    <md-card ng-repeat="r in tenant.requests" md-theme="{{ showDarkTheme ? 'dark-grey' : 'default' }}" md-theme-watch>
+                        <md-card-title>
+                            <md-card-title-text>
+                                <span class="md-headline">Request</span>
+                            </md-card-title-text>
+                        </md-card-title>
+                        <md-card-content>
+                            <md-input-container>
+                                <label>Name</label>
+                                <input name="name" ng-model="r.name"/>{{u.name}}
+                            </md-input-container>
+
+                            <p>Number of Users Allowed</p>
+                            <md-select ng-model="r.limited">
+                                <md-option value="1">Limited</md-option>
+                                <md-option value="0">Unlimited</md-option>
+                            </md-select>{{r.limit}}
+
+                            <div ng-if="r.limited == 1">
+                                <md-input-container>
+                                    <label>Specify the number of users allowed</label>
+                                    <input  ng-model="r.limit"/>
+                                </md-input-container>
+                            </div>
+
+                            <md-input-container>
+                                <label>Has Parent Request</label>
+                                <md-select ng-model="r.hasParent">
+                                    <md-option value="1">Yes</md-option>
+                                    <md-option value="0">No</md-option>
+                                </md-select>
+                            </md-input-container>
+
+                            <p>Add Request Properties <md-button  class="md-fab" ng-click="addRequestProperty(r)">+</md-button> </p>
+
+                            <div ng-repeat="p in r.properties" style="margin-top:10px;">
+                                <property-configuration property="p"></property-configuration>
+
+                            </div>
+
+                            <p>Request Post Users</p>
+                            <select id="postUserSelect" style="margin-top:10px" ng-model="user" multiple="multiple" ng-change="addRequestPostUser(user,r)">
+                                <option ng-repeat="user in tenant.users" value="{{user}}">{{user.name}}</option>
+                            </select>
+                            <ul>
+                                <li ng-repeat="postUser in r.postUsers">
+                                    {{postUser.name}}
+                                </li>
+                            </ul>
+
+                            <p>Request View Users</p>
+                            <select style="margin-top:10px" ng-model="user" multiple="multiple" ng-change="addRequestViewUser(user,r)">
+                                <option ng-repeat="user in tenant.users" value="{{user}}">{{user.name}}</option>
+                            </select>
+                            <ul>
+                                <li ng-repeat="viewUser in r.viewUsers">
+                                    {{viewUser.name}}
+                                </li>
+                            </ul>
+
+                            <p>Add Users Response</p>
+                            <md-button class="md-raised" ng-click="addRequestUserResponse(r)">Add Response</md-button>
+                            <div ng-repeat="response in r.userResponses">
+                                <select style="margin-top:10px" ng-model="user" ng-change="addRequestResponseUser(user,response)">
+                                    <option ng-repeat="user in tenant.users" value="{{user}}">{{user.name}}</option>
+                                </select>
+                                <select style="margin-top:10px" ng-model="responseRequest" multiple="multiple" ng-change="addRequestResponse(responseRequest,response)">
+                                    <option ng-repeat="req in tenant.requests" value="{{req}}" ng-if="req.name != r.name">{{req.name}}</option>
+                                </select>
+                                <ul>
+                                    <li ng-repeat="viewUser in response.responseRequests">
+                                        {{viewUser.name}}
+                                    </li>
+                                </ul>
+                            </div>
+
+                        </md-card-content>
+                        <md-card-actions layout="row" layout-align="end center">
+                            <md-button>Action 1</md-button>
+                            <md-button>Action 2</md-button>
+                        </md-card-actions>
+                    </md-card>
+
+                </md-content>
+            </md-tab>
+            <md-tab label="Register">
+                <md-content class="md-padding">
+                    <h1 class="md-display-1">Register Tenant
+                    </h1>
+                    <p>Are you sure you want to register tenant with provided settings</p>
+                    <md-button ng-click="registerTenant()">Register</md-button><br><br>
+                    {{tenant}}
+                </md-content>
+            </md-tab>
+        </md-tabs>
+    </md-content>
 </div>
+
+
+

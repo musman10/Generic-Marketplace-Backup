@@ -1,0 +1,41 @@
+<div style="border-style: solid; border-width: 1px;padding:10px">
+    <md-input-container>
+        <label>Name</label>
+        <input name="name" ng-model="property.name"/>
+
+    </md-input-container><br>
+    <md-input-container>
+        <label>Type</label>
+        <input name="type" ng-model="property.type"/>
+    </md-input-container>
+    <md-input-container>
+        <label>Min</label>
+        <input name="min" ng-model="property.min"/><br>
+    </md-input-container>
+    <md-input-container>
+        <label>Max</label>
+        <input name="max" ng-model="property.max"/>
+    </md-input-container><br>
+    <md-input-container>
+        <label>Required</label>
+        <md-select ng-model="property.required">
+            <md-option value="true">true</md-option>
+            <md-option value="false">false</md-option>
+        </md-select>
+    </md-input-container>
+    <md-input-container>
+        <label>List</label>
+        <md-select ng-model="property.list">
+            <md-option value="true">true</md-option>
+            <md-option value="false">false</md-option>
+        </md-select>
+    </md-input-container><br>
+    <md-input-container>
+        <label>Pattern</label>
+        <input name="pattern" ng-model="property.pattern"/><br>
+    </md-input-container>
+    <md-button ng-click="addSubProperty(property)">Add Sub Property</md-button>
+    <div ng-repeat="p in property.subProperties" style="margin-top:10px;">
+        <property-configuration property="p"></property-configuration>
+    </div>
+</div>
