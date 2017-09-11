@@ -42815,6 +42815,13 @@ angular.module('angularApp')
             }
         }
 
+        this.getRequestConfByRequestType = function(requestType){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].name == requestType)
+                    return app.tenant.requests[i];
+            }
+        }
+
     }]);
 /**
  * Created by semianchuk on 08.10.16.
@@ -42867,6 +42874,18 @@ angular.module('angularApp')
                 url         : '/tenant/register',
                 templateUrl : 'public/templates/tenant/register.html',
                 controller  : 'TenantRegisterController',
+                parent:'MasterLayout'
+            })
+            .state('ViewMyProfile', {
+                url         : '/profile/viewmyprofile',
+                templateUrl : 'public/templates/profile/viewMyProfile.html',
+                controller  : 'viewMyProfileController',
+                parent:'MasterLayout'
+            })
+            .state('ViewRequest', {
+                url         : '/request/view',
+                templateUrl : 'public/templates/request/viewRequest.html',
+                controller  : 'viewRequestController',
                 parent:'MasterLayout'
             })
 
@@ -42933,11 +42952,6 @@ angular.module('angularApp')
 
     $scope.userConfList = app.tenant.users;
 
-    $scope.signup = function(userTypeName){
-        $state.go("TenantUserSignup", {
-            userType: userTypeName
-        });
-    }
 
     $scope.login = function(userTypeName){
         debugger;
@@ -42967,6 +42981,137 @@ angular.module('angularApp')
     }
 }]);
 
+/**
+ * Created by asd on 8/30/2017.
+ */
+
+angular.module('angularApp')
+    .controller('viewMyProfileController', [ '$scope','$stateParams','mainService','$state','app','createObjectService','viewMyProfileService',  function ($scope,$stateParams,mainService,$state,app,createObjectService,viewMyProfileService) {
+        //$scope.description = {
+        //    message1  : 'My first Angular app',
+        //    message2 : 'developing for testing',
+        //    message3 : viewMyProfileService.getPrivate()
+        //};
+
+        $scope.insertPropertyValue = function(property,name,loginUserProperty){
+
+            if(property.list == 'true') {
+                if (property.subProperties.length == 0) {
+                    for (j = 0; j < loginUserProperty[name].length; j++) {
+                        var tempConf = JSON.stringify(property);
+                        tempConf = JSON.parse(tempConf);
+                        tempConf.value = loginUserProperty[name][j];
+                        property.propertiesList.push(tempConf);
+                    }
+                }
+                else if(property.subProperties.length != 0){
+                    for (j = 0; j < loginUserProperty[name].length; j++) {
+                        var tempConf = JSON.stringify(property);
+                        tempConf = JSON.parse(tempConf);
+                        tempConf.subProperties = [];
+
+                        for(k=0;k<property.subProperties.length;k++){
+                            childName = property.subProperties[k].name;
+                            var subProperty = $scope.insertPropertyValue(property.subProperties[k],childName,loginUserProperty[name][j]);
+                            tempConf.subProperties.push(subProperty);
+                        }
+                        property.propertiesList.push(tempConf);
+                    }
+                }
+            }
+            else if(property.list != 'true'){
+
+                if (property.subProperties.length != 0){
+                    for(k=0;k<property.subProperties.length;k++){
+                        childName = property.subProperties[k].name;
+                        var subProperty = $scope.insertPropertyValue(property.subProperties[k],childName,loginUserProperty[name]);
+                    }
+                }
+                else {
+                    if(loginUserProperty.hasOwnProperty(name)){
+                        // if(loginUserProperty[name] == "saira"){
+                        property.value = loginUserProperty[name];
+                        console.log( loginUserProperty[name]);
+                        console.log( property);
+                        return property;
+                    }
+                }
+
+            }
+
+        };
+
+        $scope.userConf1 = mainService.getUserConfByUserType("jobseeker");
+        $scope.userConf = JSON.stringify($scope.userConf1);
+        $scope.userConf = JSON.parse($scope.userConf);
+        userProperties =$scope.userConf.properties;
+        console.log("app ===" );
+        console.log(JSON.stringify(app.loginUser));
+        console.log(JSON.stringify($scope.userConf));
+        debugger;
+        for(i=0;i<userProperties.length;i++) {
+            console.log(userProperties[i].name);
+            name = userProperties[i].name;
+            var prop = $scope.insertPropertyValue(userProperties[i],name,app.loginUser);
+
+        }
+
+        $scope.viewMyProfile = function(){
+            debugger;
+            console.log("View my profile");
+        }
+
+        $scope.update = function(){
+            debugger;
+            var updatedUser = createObjectService.createFormObject($scope.userConf);
+            updatedUser.tenantId = app.tenant._id;
+            updatedUser._id = app.loginUser._id;
+
+            viewMyProfileService.updateUserProfile(updatedUser).then(function(response){
+                console.log(response);
+                if(response.success == true){
+                    updatedUser._id = updatedUser._id.toString();
+                    app.loginUser = updatedUser;
+                    alert("You have successfully updated your profile !");
+                    $state.go("AdminHome");
+
+                }
+                else{
+                    alert("There is some problem updating your profile");
+                }
+            });
+        }
+
+
+    }]);
+
+/**
+ * Created by asd on 9/6/2017.
+ */
+
+angular.module('angularApp')
+    .controller('viewRequestController', [ '$scope','$state', 'app', '$stateParams', 'viewRequestService', 'mainService',  function ($scope,$state,app,$stateParams,viewRequestService,mainService) {
+       /* $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : viewRequestController.getPrivate()
+        };*/
+
+        $scope.requestId = "59afc74a363277195c87fc6e";
+
+        $scope.view = function(requestId){
+            debugger;
+            viewRequestService.view(requestId).then(function(response){
+                console.log(response);
+                $scope.result = response.data;
+                //$scope.viewReq = requestId;
+              //  $scope.requestConf = mainService.getRequestConfByRequestType($scope.result.requestType);
+               //console.log(requestConf);
+            });
+        }
+
+
+    }]);
 angular.module('angularApp')
 .controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,mainService,$state,app) {
     $scope.description = {
@@ -43296,6 +43441,78 @@ angular.module('angularApp')
  * Created by Usman Irfan.
  */
 angular.module('angularApp')
+    .service('createObjectService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "createObjectService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.createFormObject = function(conf){
+            debugger;
+            var formJSON = '{';
+            var skipPropertyName = false;
+            formJSON = this.createFormJSON(conf.properties,formJSON,skipPropertyName);
+            formJSON = formJSON.substring(0, formJSON.length - 1);
+            formJSON = formJSON + '}';
+            alert(formJSON);
+            var formObject = JSON.parse(formJSON);
+            return formObject;
+        };
+
+        this.createFormJSON = function(confProperties,formJSON,skipPropertyName){
+            var properties = confProperties;
+            var i = 0;
+            var p = JSON.stringify(properties);
+            for(i;i<properties.length;i++){
+                if(skipPropertyName == true)
+                    properties[i].list = "";
+
+                if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
+                    if(properties[i].list == "true") {
+
+                        if(properties[i].subProperties.length != 0) {
+                            formJSON = formJSON + '"' + properties[i].name + '":[';
+                            for(var j=0;j<properties[i].propertiesList.length;j++) {
+                                formJSON = formJSON + '{';
+                                formJSON = this.createFormJSON(properties[i].propertiesList[j].subProperties, formJSON,false);
+                                formJSON = formJSON.substring(0, formJSON.length - 1);
+                                formJSON = formJSON + '},';
+                            }
+                            formJSON = formJSON.substring(0, formJSON.length - 1);
+                            formJSON = formJSON + '],';
+                        }
+                        else{
+                            formJSON = formJSON + '"' + properties[i].name + '":[';
+                            formJSON = this.createFormJSON(properties[i].propertiesList, formJSON,true);
+                            formJSON = formJSON.substring(0, formJSON.length - 1);
+                            formJSON = formJSON + '],';
+                        }
+                    }
+                    else if(properties[i].subProperties.length != 0){
+                        formJSON = formJSON + '"' + properties[i].name + '"' +  ':{';
+                        formJSON = this.createFormJSON(properties[i].subProperties, formJSON,false);
+                        formJSON = formJSON.substring(0, formJSON.length - 1);
+                        formJSON = formJSON + '},';
+                    }
+                    else {
+                        if(skipPropertyName == true){
+                            formJSON = formJSON + '"'+ properties[i].value +'",';
+                        }
+                        else
+                            formJSON = formJSON + '"' + properties[i].name + '":"'+ properties[i].value +'",';
+                    }
+                }
+            }
+            return formJSON;
+        }
+
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
 .service('adminLoginService', ['$http','$q', function ($http,$q) {
 
     var thisIsPrivate = "adminLoginService";
@@ -43342,6 +43559,65 @@ angular.module('angularApp')
 
 }]);
 
+/**
+ * Created by asd on 8/30/2017.
+ */
+
+angular.module('angularApp')
+    .service('viewMyProfileService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "viewMyProfileService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.updateUserProfile = function(updatedUser){
+
+            var deferred = $q.defer();
+            $http.post(app.baseUrl + "api/user/updateUser" , updatedUser )
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+    }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+
+angular.module('angularApp')
+    .service('viewRequestService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "viewRequestService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.view = function(requestId){
+
+            var deferred = $q.defer();
+            var reqData = {
+                requestId: requestId
+            };
+            $http.post(app.baseUrl + "api/request/view" , reqData)
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+    }]);
 /**
  * Created by Usman Irfan.
  */
@@ -43451,6 +43727,52 @@ angular.module('angularApp')
     };
 
 }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+angular.module('angularApp')
+    .directive('propertyDisplay', function () {
+        return {
+            restrict : "E",
+            templateUrl : "src/common/directives/propertyDisplay/propertyDisplayTemplate.html",
+            scope: {
+                property: '=',
+                data: '='
+            },
+            controller:"PropertyDisplayController"
+        };
+    });
+/**
+ * Created by asd on 9/6/2017.
+ */
+angular.module('angularApp')
+    .controller('PropertyDisplayController', [ '$scope', function ($scope) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+
+        $scope.isArray=function(type){
+            debugger;
+           /* var obj = $scope.articles.find(function(x){ return x.type == type ; });
+            return obj !== null;*/
+           if( angular.isArray(type))
+               return true;
+            else
+               return false;
+        }
+
+        $scope.isObject=function(type){
+            debugger;
+            /* var obj = $scope.articles.find(function(x){ return x.type == type ; });
+             return obj !== null;*/
+            if( angular.isObject(type))
+                return true;
+            else
+                return false;
+        }
+
+    }]);
 angular.module('angularApp')
 .directive('propertyInput', function () {
     return {
