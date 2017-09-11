@@ -51,7 +51,7 @@ angular.module('angularApp')
                 controller  : 'TenantRegisterController',
                 parent:'MasterLayout'
             })
-            .state('ListTenant', {
+	    .state('ListTenant', {
                 url         : '/tenant/list',
                 templateUrl : 'public/templates/tenant/list.html',
                 controller  : 'TenantListController',
@@ -87,8 +87,19 @@ angular.module('angularApp')
                 controller  : 'UserViewController',
                 parent:'MasterLayout'
             })
-
-    }]);
+    	    .state('PostRequest', {
+                url         : '/post/request',
+                templateUrl : 'public/templates/request/post.html',
+                controller  : 'RequestPostController',
+                parent:'MasterLayout'
+            })
+            .state('TennatUserListRequests', {
+                url         : '/user/list/request',
+                templateUrl : 'public/templates/request/userListRequests.html',
+                controller  : 'UserListRequestsController',
+                parent:'MasterLayout'
+            })
+}]);
 
     var app = {
         baseUrl:'',

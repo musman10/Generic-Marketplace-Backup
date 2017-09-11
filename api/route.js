@@ -12,7 +12,6 @@ router.get('/users', function(req, res, next) {
   service(res);
 });
 
-
 /* Tenant register service */
 router.post('/tenant/register', function(req, res, next) {
   var service = require("./tenant/register");
@@ -31,6 +30,12 @@ router.get('/tenant/get/list', function(req, res, next) {
   service(res);
 });
 
+/* User Login service */
+router.post('/user/loginUser', function(req, res, next) {
+  var service = require("./user/userLogin");
+  service(req.body , res);
+});
+
 
 /* Userr signup service */
 router.post('/user/signup', function(req, res, next) {
@@ -38,7 +43,7 @@ router.post('/user/signup', function(req, res, next) {
   service(req.body,res);
 });
 
-/* post request service */
+/* Request post service */
 router.post('/request/post', function(req, res, next) {
   var service = require("./request/post");
   service(req.body,res);
@@ -50,18 +55,28 @@ router.get('/request/list/:tenantId', function(req, res, next) {
   service(req.params.tenantId,res);
 });
 
+router.post('/request/user/list/requestTypes/', function(req, res, next) {
+  var service = require("./request/listRequestsByRequestTypes");
+  service(req.body,res);
+});
+
 /* get user list service */
 router.get('/user/list/:tenantId', function(req, res, next) {
   var service = require("./user/list");
   service(req.params.tenantId,res);
 });
 
-/* Tenant service */
-router.get('/tenant/:tenantName', function(req, res, next) {
-  var service = require("./tenant/tenant");
-  service(req.params.tenantName,res);
+/* Request getByName service */
+router.get('/request/getByName/:requestName', function(req, res, next) {
+  var service = require("./request/getRequestByName");
+  service(req.params.requestName,res);
 });
 
+/* Request Update addResponse service */
+router.post('/request/update/addResponse', function(req, res, next) {
+  var service = require("./request/addResponse");
+  service(req.body,res);
+});
 
 /* DB Create service */
 router.get('/db/create', function(req, res, next) {

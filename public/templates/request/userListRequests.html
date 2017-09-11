@@ -1,0 +1,22 @@
+<h1>Requests</h1>
+
+<ul>
+    <li ng-repeat="r in requests">{{r.name}} <br>
+        <div ng-repeat="reqResponse in requestResponses">
+
+            <div ng-if="reqResponse.request.name == r.requestType && r.userResponded == false">
+                <br>
+                <select ng-model="response" ng-change="respondRequest(r,response)">
+                    <option ng-repeat="response in reqResponse.responses" value="{{response}}">{{response.name}}</option>
+                </select>
+            </div>
+
+            <div ng-if="r.userResponded == true">
+                <div ng-repeat="response in r.userResponses">
+                    <request-response response="response"></request-response>
+                </div>
+            </div>
+        </div>
+        <hr>
+    </li>
+</ul>

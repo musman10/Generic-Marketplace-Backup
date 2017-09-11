@@ -173,14 +173,21 @@ angular.module('angularApp')
     $scope.addRequestUserResponse = function(request){
         var response = {
             user:{},
-            action:''
+            responseRequests:[]
         }
         request.userResponses.push(response);
     }
 
     $scope.addRequestResponseUser = function(user,response){
+        debugger;
         var responseUser = JSON.parse(user);
         response.user = responseUser;
+    }
+
+    $scope.addRequestResponse = function(responseRequestJson,response){
+        debugger;
+        var responseRequest = JSON.parse(responseRequestJson);
+        response.responseRequests.push(responseRequest);
     }
 
     $scope.addRequestUserViewCondition = function(request){
