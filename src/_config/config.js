@@ -76,7 +76,7 @@ angular.module('angularApp')
                 parent:'MasterLayout'
             })
             .state('ListUser', {
-                url         : '/user/list/:tenantId',
+                url         : '/user/list/byTenantId/:tenantId',
                 templateUrl : 'public/templates/user/list.html',
                 controller  : 'UserListController',
                 parent:'MasterLayout'

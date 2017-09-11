@@ -12,9 +12,9 @@ module.exports = function(tenantId,response){
         db.collection('Request', function (err, Request) {
             if (err) throw err;
             var query = { tenantId: tenantId };
-            Request.find({query}, function (err, cursor) {
+            Request.find(query, function (err, cursor) {
                 var join = new Join(db).on({
-                    field: 'postuserId', // <- field in request doc
+                    field: 'postUserId', // <- field in request doc
                     to: '_id',         // <- field in user doc. treated as ObjectID automatically.
                     from: 'User',  // <- collection name for user doc
                     as: 'requestdetails'
