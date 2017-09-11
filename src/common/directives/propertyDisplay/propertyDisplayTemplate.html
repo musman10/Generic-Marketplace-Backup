@@ -1,0 +1,18 @@
+<div>
+    <label>{{data}}</label> :
+    <div ng-if="isArray(property)">
+        <div ng-if="isObject(property)">
+            <div ng-repeat="p in property">
+                <div ng-repeat="(keyIn, valueIn) in p">
+                    <property-display property="valueIn" data="keyIn"></property-display>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div ng-if="!(isArray(property))">
+        <span style="color:#ff0000;">{{property}}</span>
+    </div>
+
+   <!-- <label>{{data[property.name]}}</label>-->
+
+</div>
