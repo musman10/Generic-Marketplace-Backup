@@ -6,11 +6,25 @@ angular.module('angularApp')
         message3 : adminLoginService.getPrivate()
     };
 
-    $scope.username;
-    $scope.password;
     $scope.login = function(){
-        var loginSuccess = adminLoginService.login($scope.username,$scope.password);
-        if(loginSuccess == true)
-            $state.go("AdminHome");
+        debugger;
+        username = $scope.userNameAdmin;
+        password = $scope.userPasswordAdmin;
+        console.log(username + password);
+
+        adminLoginService.getUserInformation(username , password).then(function(response){
+            console.log(response);
+            if(response.success == true){
+                app.loginUser = response.data;
+                console.log(JSON.stringify(app));
+                $state.go("AdminHome");
+            }
+            else{
+                $scope.loginErrorMessage = response.error[0];
+                $scope.loginError = true;
+            }
+
+        });
+
     }
 }]);

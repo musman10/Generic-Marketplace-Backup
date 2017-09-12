@@ -1,10 +1,15 @@
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1">{{tenantName}}</h3>
+</md-toolbar>
 <div>
-    
+    <md-card style="margin: auto; text-align: center; width: 50%;">
+    <ng-form name="form" novalidate>
     <h1>Sign Up As {{userType}}</h1>
     <div ng-repeat="p in userConf.properties">
-        <property-input property="p"></property-input>
+        <property-input property="p" form="signUpForm"></property-input>
     </div>
-
-    <button ng-click="signup()">signup</button>
+    <md-button class="md-raised md-primary" aria-label="FAB" ng-click="signup()" ng-disabled="form.$invalid" >Sign Up</md-button>
+    </ng-form>
     <!--{{userConf.properties}}-->
+    </md-card>
 </div>

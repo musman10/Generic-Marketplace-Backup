@@ -5,7 +5,8 @@ angular.module('angularApp')
         message2 : 'developing for testing',
         message3 : tenantUserSignupService.getPrivate()
     };
-    
+
+    $scope.tenantName = app.tenant.name;
     $scope.userType = $stateParams.userType;
     //$scope.user = mainService.getUserObjectByUserType($scope.userType);
     $scope.user;
@@ -18,6 +19,7 @@ angular.module('angularApp')
         $scope.formObject();
         str = JSON.stringify($scope.user);
         console.log(str);
+        $scope.user.userType = $scope.userType ;
         tenantUserSignupService.signup($scope.user,app).then(function(response){
             var str = JSON.stringify(response);
             console.log(str);

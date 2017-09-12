@@ -10,8 +10,26 @@ angular.module('angularApp')
         return thisIsPrivate;
     };
 
-    this.login = function(){
+   /* this.login = function(){
         return true;
+    }*/
+    this.getUserInformation = function(username , password){
+
+        var deferred = $q.defer();
+        var login_data = {
+            isAdmin : true,
+            username : username,
+            password : password
+        };
+        $http.post(app.baseUrl + "api/user/loginUser" , login_data )
+            .then(function(response) {
+                debugger;
+                str = JSON.stringify(response);
+                console.log(str);
+                return deferred.resolve(response.data);
+            });
+        return deferred.promise;
+
     }
 
 }]);

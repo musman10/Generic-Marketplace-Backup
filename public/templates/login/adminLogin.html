@@ -1,8 +1,37 @@
-<div>
-<h1>Admin Login</h1>
-<label></label>
-<label>Username</label>
-<input type="text" ng-model="username"/><br>
-<label>Password</label>
-<input type="password" ng-model="password"/><br>
-<button ng-click="login()">Login</button><br><br>
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1"></h3>
+</md-toolbar>
+
+<div style="padding-top: 20px;">
+    <md-card style="margin: auto; text-align: center; width: 50%;">
+        <h1>Admin Login</h1>
+        <label></label>
+        <form name="myForm">
+            <md-input-container>
+                <label>Username</label>
+                <input type="text" ng-model="userNameAdmin" name="userNameAdmin" required/>
+                <div ng-messages="myForm.userNameAdmin.$error" ng-show="myForm.userNameAdmin.$touched && myForm.userNameAdmin.$invalid">
+                    <div ng-message="required">This is required!</div>
+                </div>
+            </md-input-container><br>
+            <md-input-container>
+                <label>Password</label>
+                <input type="password" ng-model="userPasswordAdmin" name="userPasswordAdmin" required/>
+                <div ng-messages="myForm.userPasswordAdmin.$error" ng-show="myForm.userPasswordAdmin.$touched && myForm.userPasswordAdmin.$invalid">
+                    <div ng-message="required">This is required!</div>
+                </div>
+            </md-input-container><br>
+            <md-button class="md-raised md-primary" aria-label="FAB" ng-click="login()" ng-disabled="myForm.$invalid">Admin Login</md-button>
+        </form>
+
+
+        <span ng-show="loginError">{{loginErrorMessage}} </span>
+        <!--<div ng-messages="loginError" ng-show="loginError">
+            <div ng-message="loginError">Username password does not exist or match</div>
+        </div>-->
+
+    </md-card>
+</div>
+
+
+<!--{{userConfList}}-->

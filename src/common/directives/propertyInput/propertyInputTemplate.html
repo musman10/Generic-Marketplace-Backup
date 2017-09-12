@@ -1,8 +1,10 @@
 <div>
 
-    <label>{{property.name}}</label>
+
     <div ng-if="property.list == 'true'">
-        <button ng-click="addPropertyInList(property)">Add</button>
+        <label>{{property.name}}</label>
+        <md-button aria-label="FAB" ng-click="addPropertyInList(property)">Add</md-button>
+        <!--  <button ng-click="addPropertyInList(property)">Add</button>-->
         <div ng-repeat="li in property.propertiesList track by $index">
             <div ng-if="li.subProperties.length > 0">
                 <div ng-repeat="sp in li.subProperties">
@@ -10,7 +12,15 @@
                 </div>
             </div>
             <div ng-if="li.subProperties.length == 0">
-                <input ng-model="li.value" />{{li.value}}
+                <md-input-container>
+                    <label>{{property.name}}</label>
+                    <input name = "{{li.name}}" ng-model="li.value" ng-minlength="li.min" ng-maxlength="li.max" ng-required="{{li.required}}" ng-pattern="li.pattern" />{{li.value}}
+                    <div ng-messages="form[li.name].$error">
+                        <div ng-message="required">This is required!</div>
+                        <div ng-message="minlength">Minlength is {{property.min}} !</div>
+                        <div ng-message="maxlength">Maxlength is {{property.max}} !</div>
+                    </div>
+                </md-input-container>
             </div>
         </div>
     </div>
@@ -22,7 +32,15 @@
             </div>
         </div>
         <div ng-if="property.subProperties.length == 0">
-            <input ng-model="property.value" />{{property.value}}
+            <md-input-container>
+                <label>{{property.name}}</label>
+                <input name = "{{property.name}}" ng-model="property.value" ng-minlength="property.min" ng-maxlength="property.max" ng-required="{{property.required}}" ng-pattern="property.pattern" />{{property.value}}
+                  <div ng-messages="form[property.name].$error">
+                    <div ng-message="required">This is required!</div>
+                    <div ng-message="minlength">Minlength is {{property.min}} !</div>
+                    <div ng-message="maxlength">Maxlength is {{property.max}} !</div>
+                </div>
+            </md-input-container>
         </div>
     </div>
 </div>

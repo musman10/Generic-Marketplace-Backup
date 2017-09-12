@@ -4,6 +4,7 @@
 
 <div ng-cloak>
     <md-content>
+        <form name="tenantRegistrationForm">
         <md-tabs md-dynamic-height md-border-bottom>
             <md-tab label="Properties">
                 <md-content class="md-padding">
@@ -13,7 +14,11 @@
 
                     <md-input-container>
                         <label>Tenant Name</label>
-                        <input name="name" ng-model="tenant.name"/>{{tenant.name}}
+                        <input name="name" ng-model="tenant.name" required unique/>{{tenant.name}}
+                        <div ng-messages="tenantRegistrationForm.name.$error">
+                            <div ng-message="required">This is required !</div>
+                            <div ng-message="unique">Tenant name already exists !</div>
+                        </div>
                     </md-input-container>
 
 
@@ -177,6 +182,7 @@
                 </md-content>
             </md-tab>
         </md-tabs>
+        </form>
     </md-content>
 </div>
 
