@@ -25,7 +25,7 @@
                     <div ng-repeat="p in tenant.properties">
                         <md-input-container>
                             <label>Property Name</label>
-                            <input name="tenantField{{p.name}}" ng-model="p.name" required ng-change="checkPropertyNameUnique('tenantField',p.name)"/>
+                            <input name="tenantField{{p.name}}" ng-model="p.name" required ng-change="checkPropertyNameUnique('tenantField',p.name,tenant.properties)"/>
                             <div ng-messages="tenantRegistrationForm['tenantField' + p.name].$error">
                                 <div ng-message="required">Property name is required.</div>
                                 <div ng-message="unique">Property name already exists</div>
@@ -57,13 +57,20 @@
                         <md-card-content>
                             <md-input-container>
                                 <label>Name</label>
-                                <input name="name" ng-model="u.name"/>{{u.name}}
+                                <input name="userTypeName{{u.name}}" ng-model="u.name" required ng-change="checkPropertyNameUnique('userTypeName',u.name,tenant.users)"/>{{u.name}}
+                                <div ng-messages="tenantRegistrationForm['userTypeName'+u.name].$error">
+                                    <div ng-message="required">Name is required!</div>
+                                    <div ng-message="unique">User name already exist</div>
+                                </div>
                             </md-input-container>
 
                             <p>Number of Users Allowed</p>
-                            <md-select ng-model="u.limited">
+                            <md-select name="userTypeLimited{{u.name}}" ng-model="u.limited" required>
                                 <md-option value="1">Limited</md-option>
                                 <md-option value="0">Unlimited</md-option>
+                                <div ng-messages="tenantRegistrationForm['userTypeLimited'+u.name].$error">
+                                    <div ng-message="required">Number of user allowed is required!</div>
+                                </div>
                             </md-select>{{u.limit}}
 
                             <div ng-if="u.limited == 1">
@@ -76,7 +83,7 @@
                             <p>Add user Properties <md-button  class="md-fab" ng-click="addUserProperty(u)">+</md-button> </p>
 
                                 <div ng-repeat="p in u.properties" style="margin-top:10px;">
-                                   <property-configuration property="p"></property-configuration>
+                                   <property-configuration property="p" properties="u.properties"></property-configuration>
 
                                 </div>
                         </md-card-content>

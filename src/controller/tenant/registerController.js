@@ -298,7 +298,7 @@ angular.module('angularApp')
         });
     }
 
-    $scope.checkPropertyNameUnique = function(formField,propertyName){
+    $scope.checkPropertyNameUnique = function(formField,propertyName,list){
         debugger;
         var fieldName = formField;
         if($scope.tenantRegistrationForm.hasOwnProperty(formField)){
@@ -312,8 +312,8 @@ angular.module('angularApp')
         $scope.tenantRegistrationForm[fieldName].$viewValue;
         var matchCounter=0
 
-            for(i=0;i<$scope.tenant.properties.length;i++){
-                if($scope.tenantRegistrationForm[fieldName].$viewValue == $scope.tenant.properties[i].name) {
+            for(i=0;i<list.length;i++){
+                if($scope.tenantRegistrationForm[fieldName].$viewValue == list[i].name) {
                     matchCounter++;
                     if(matchCounter == 2) {
                         $scope.tenantRegistrationForm[fieldName].$setValidity('unique', false);

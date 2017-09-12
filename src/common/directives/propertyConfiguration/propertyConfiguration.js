@@ -5,7 +5,8 @@ angular.module('angularApp')
             templateUrl : "src/common/directives/propertyConfiguration/propertyConfigurationTemplate.html",
             require: ['^form'],
             scope: {
-                property: '='
+                property: '=',
+                properties:'='
             },
             controller:"PropertyConfigurationController",
             link: function(scope, element, attrs, ctrls) {

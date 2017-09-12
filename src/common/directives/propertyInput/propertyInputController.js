@@ -13,5 +13,6 @@ angular.module('angularApp')
         };
 
         $scope.errorMessage = "form.username.$error";
+
         //alert($scope.property.name);
     }]);
