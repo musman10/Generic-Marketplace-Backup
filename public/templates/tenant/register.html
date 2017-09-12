@@ -1,4 +1,4 @@
-<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px">
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:20px">
     <h3 class="md-display-1">Register Tenant</h3>
 </md-toolbar>
 
@@ -25,11 +25,18 @@
                     <div ng-repeat="p in tenant.properties">
                         <md-input-container>
                             <label>Property Name</label>
-                            <input name="field" ng-model="p.name"/>{{p.name}}
+                            <input name="tenantField{{p.name}}" ng-model="p.name" required ng-change="checkPropertyNameUnique('tenantField',p.name)"/>
+                            <div ng-messages="tenantRegistrationForm['tenantField' + p.name].$error">
+                                <div ng-message="required">Property name is required.</div>
+                                <div ng-message="unique">Property name already exists</div>
+                            </div>
                         </md-input-container>
                         <md-input-container>
                             <label>Property Value</label>
-                            <input name="value" ng-model="p.value"/>{{p.value}}
+                            <input name="tenantField{{p.name}}Value" ng-model="p.value" required/>
+                            <div ng-messages="tenantRegistrationForm['tenantField' + p.name + 'Value'].$error">
+                                <div ng-message="required">Property value is required.</div>
+                            </div>
                         </md-input-container>
                     </div>
 

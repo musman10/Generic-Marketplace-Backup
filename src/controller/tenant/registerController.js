@@ -2,7 +2,7 @@
  * Created by Usman Irfan on 15.09.17.
  */
 angular.module('angularApp')
-.controller('TenantRegisterController', [ '$scope','tenantRegisterService','app',  function ($scope,tenantRegisterService,app) {
+.controller('TenantRegisterController', [ '$scope','tenantRegisterService','app','$q',  function ($scope,tenantRegisterService,app,$q) {
    
     $scope.userPropertyIds = 0;
     $scope.tenantuserIds = 0;
@@ -47,6 +47,19 @@ angular.module('angularApp')
                 name: 'password',
                 value:'',
                 type:'password',
+                min:'',
+                max:'',
+                required:'true',
+                pattern:'',
+                list:false,
+                parentId:0,
+                subProperties:[],
+                hierarchyLevel:1
+            },{
+                id: $scope.userPropertyIds,
+                name: 'name',
+                value:'',
+                type:'text',
                 min:'',
                 max:'',
                 required:'true',
@@ -108,7 +121,22 @@ angular.module('angularApp')
         $scope.tenantRequestIds++;
         request = {
             id:$scope.tenantRequestIds,
-            properties:[],
+            properties:[
+                {
+                    id: '',
+                    name: 'name',
+                    value:'',
+                    type:'text',
+                    min:'',
+                    max:'',
+                    required:'true',
+                    pattern:'',
+                    list:false,
+                    parentId:0,
+                    subProperties:[],
+                    hierarchyLevel:1
+                }
+            ],
             postUsers:[],
             viewUsers:[],
             viewUserConditions:[],
@@ -270,5 +298,41 @@ angular.module('angularApp')
         });
     }
 
+    $scope.checkPropertyNameUnique = function(formField,propertyName){
+        debugger;
+        var fieldName = formField;
+        if($scope.tenantRegistrationForm.hasOwnProperty(formField)){
+            fieldName = formField;
+        }
+        else{
+            propertyName = propertyName.substring(0, propertyName.length - 1);
+            fieldName = formField + propertyName;
+        }
+
+        $scope.tenantRegistrationForm[fieldName].$viewValue;
+        var matchCounter=0
+
+            for(i=0;i<$scope.tenant.properties.length;i++){
+                if($scope.tenantRegistrationForm[fieldName].$viewValue == $scope.tenant.properties[i].name) {
+                    matchCounter++;
+                    if(matchCounter == 2) {
+                        $scope.tenantRegistrationForm[fieldName].$setValidity('unique', false);
+                        break;
+                    }
+                }
+                else{
+                    $scope.tenantRegistrationForm[fieldName].$setValidity('unique', true);
+                }
+            }
+
+
+
+
+
+    };
+
+    $scope.test = function(){
+        return "xyz";
+    }
  
 }]);
