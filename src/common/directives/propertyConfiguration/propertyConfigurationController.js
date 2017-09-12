@@ -4,6 +4,13 @@ angular.module('angularApp')
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
+
+        debugger;
+        $scope.isDisabled = false;
+        if($scope.property.name == "username" || $scope.property.name == "password" || $scope.property.name == "name"){
+            $scope.isDisabled = true;
+        }
+
         $scope.addSubProperty = function(mainProperty){
             var subProperty = {
                 id:'',

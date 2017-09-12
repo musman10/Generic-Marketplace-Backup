@@ -4,6 +4,7 @@
 
 <div ng-cloak>
     <md-content>
+        <form name="tenantRegistrationForm">
         <md-tabs md-dynamic-height md-border-bottom>
             <md-tab label="Properties">
                 <md-content class="md-padding">
@@ -13,18 +14,29 @@
 
                     <md-input-container>
                         <label>Tenant Name</label>
-                        <input name="name" ng-model="tenant.name"/>{{tenant.name}}
+                        <input name="tenantName" ng-model="tenant.name" required pattern="^[a-zA-Z0-9]*$" />
+                        <div ng-messages="tenantRegistrationForm.tenantName.$error">
+                            <div ng-message="required">Tenant name is required.</div>
+                            <div ng-message="pattern">Tenant name contains only alphabets.</div>
+                        </div>
                     </md-input-container>
 
 
                     <div ng-repeat="p in tenant.properties">
                         <md-input-container>
                             <label>Property Name</label>
-                            <input name="field" ng-model="p.name"/>{{p.name}}
+                            <input name="tenantField{{p.name}}" ng-model="p.name" required ng-change="checkPropertyNameUnique('tenantField',p.name)"/>
+                            <div ng-messages="tenantRegistrationForm['tenantField' + p.name].$error">
+                                <div ng-message="required">Property name is required.</div>
+                                <div ng-message="unique">Property name already exists</div>
+                            </div>
                         </md-input-container>
                         <md-input-container>
                             <label>Property Value</label>
-                            <input name="value" ng-model="p.value"/>{{p.value}}
+                            <input name="tenantField{{p.name}}Value" ng-model="p.value" required/>
+                            <div ng-messages="tenantRegistrationForm['tenantField' + p.name + 'Value'].$error">
+                                <div ng-message="required">Property value is required.</div>
+                            </div>
                         </md-input-container>
                     </div>
 
@@ -177,6 +189,7 @@
                 </md-content>
             </md-tab>
         </md-tabs>
+        </form>
     </md-content>
 </div>
 
