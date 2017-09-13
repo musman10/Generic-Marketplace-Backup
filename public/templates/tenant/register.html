@@ -1,17 +1,21 @@
-<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:20px">
+<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px">
     <h3 class="md-display-1">Register Tenant</h3>
 </md-toolbar>
 
 <div ng-cloak>
     <md-content>
         <form name="tenantRegistrationForm">
-        <md-tabs md-dynamic-height md-border-bottom>
+        <div class="col-md-12">
+        <md-tabs md-dynamic-height md-border-bottom style="width:100%">
             <md-tab label="Properties">
                 <md-content class="md-padding">
+                    <div class="row">
                     <h1 class="md-display-1">Tenant Properties
-                        <md-button class="md-fab" ng-click="addProperty()">+</md-button>
+                        <md-button class="md-fab" ng-click="addProperty()" style="background-color:blue">+</md-button>
                     </h1>
+                    </div>
 
+                    <div class="row">
                     <md-input-container>
                         <label>Tenant Name</label>
                         <input name="name" ng-model="tenant.name" required unique/>{{tenant.name}}
@@ -20,8 +24,9 @@
                             <div ng-message="unique">Tenant name already exists !</div>
                         </div>
                     </md-input-container>
+                    </div>
 
-
+                    <div class="row">
                     <div ng-repeat="p in tenant.properties">
                         <md-input-container>
                             <label>Property Name</label>
@@ -39,16 +44,20 @@
                             </div>
                         </md-input-container>
                     </div>
-
+                    </div>
                 </md-content>
             </md-tab>
             <md-tab label="Users">
                 <md-content class="md-padding">
+                    <div class="row">
                     <h1 class="md-display-1">Users
                         <md-button class="md-fab" ng-click="addUser()">+</md-button>
                     </h1>
+                    </div>
 
-                    <md-card ng-repeat="u in tenant.users" md-theme="{{ showDarkTheme ? 'dark-grey' : 'default' }}" md-theme-watch>
+                    <div class="row">
+
+                    <md-card ng-repeat="u in tenant.users" md-theme="{{ showDarkTheme ? 'dark-grey' : 'default' }}" md-theme-watch style="padding-left:0px;width:900px">
                         <md-card-title>
                             <md-card-title-text>
                                 <span class="md-headline">User</span>
@@ -93,6 +102,7 @@
                         </md-card-actions>
                     </md-card>
 
+                    </div>
                 </md-content>
             </md-tab>
             <md-tab label="Requests">
@@ -196,6 +206,7 @@
                 </md-content>
             </md-tab>
         </md-tabs>
+            </div>
         </form>
     </md-content>
 </div>

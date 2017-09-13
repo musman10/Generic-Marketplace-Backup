@@ -1,11 +1,19 @@
+
 <div>
-
+<div class="row" style="position:fixed;width:101%;left:10px;z-index:10000">
     <top-nav></top-nav>
+</div>
 
-    <side-menu></side-menu>
-
-    <div class="mainContent" style="width:75%;height:500px;position:relative;float:left;padding:10px">
-        <ui-view></ui-view>
+<div class="row" style="position:relative;top:55px;width:100%;">
+    <div class="col-md-3" style="z-index:1000;position:fixed;left:-20px;height:100vh">
+        <side-menu></side-menu>
     </div>
+    <div class="col-md-9" style="background-color: #f5f5f5;padding: 0px;position:absolute;left:330px;height:100vh">
+
+            <ui-view></ui-view>
+
+    </div>
+</div>
 
 </div>
+

@@ -1,3 +1,4 @@
+<!--
 <div class="sidemenu" style=" height: 600vh;width:20%;background-color:#0086B3;position:relative;float:left;padding:0px;display: block;">
     <div ng-if="appType == 'admin'">
         <ul>
@@ -13,6 +14,7 @@
                         <!--<a href="/tenant/list">List Tenants</a>-->
                     <!--</li>-->
                 <!--</ul>-->
+<!--
         </ul>
     </div>
 
@@ -29,6 +31,107 @@
             <li><a  href="/post/request">Post Request</a></li>
         </ul>
         -->
+<!--
+
     </div>
 </div>
+-->
 
+<!-- Overlay for fixed sidebar -->
+<div class="sidebar-overlay"></div>
+
+<!-- Material sidebar -->
+<aside id="sidebar" class="sidebar sidebar-default open" role="navigation" style="width:320px">
+    <!-- Sidebar header -->
+    <div class="sidebar-header header-cover" style="background-image: url(https://2.bp.blogspot.com/-2RewSLZUzRg/U-9o6SD4M6I/AAAAAAAADIE/voax99AbRx0/s1600/14%2B-%2B1%2B%281%29.jpg);">
+        <!-- Top bar -->
+        <div class="top-bar"></div>
+        <!-- Sidebar toggle button -->
+        <button type="button" class="sidebar-toggle">
+            <i class="icon-material-sidebar-arrow"></i>
+        </button>
+        <!-- Sidebar brand image -->
+        <div class="sidebar-image">
+            <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/53474/atom_profile_01.jpg">
+        </div>
+        <!-- Sidebar brand name -->
+        <a data-toggle="dropdown" class="sidebar-brand" href="#settings-dropdown">
+            john.doe@gmail.com
+            <b class="caret"></b>
+        </a>
+    </div>
+
+    <!-- Sidebar navigation -->
+    <ul class="nav sidebar-nav">
+        <li class="dropdown">
+            <ul id="settings-dropdown" class="dropdown-menu">
+                <li>
+                    <a href="#" tabindex="-1">
+                        Profile
+                    </a>
+                </li>
+                <li>
+                    <a href="#" tabindex="-1">
+                        Settings
+                    </a>
+                </li>
+                <li>
+                    <a href="#" tabindex="-1">
+                        Help
+                    </a>
+                </li>
+                <li>
+                    <a href="#" tabindex="-1">
+                        Exit
+                    </a>
+                </li>
+            </ul>
+        </li>
+        <div ng-if="appType == 'admin'">
+        <li>
+            <a href="/tenant/register">
+                <i class="sidebar-icon md-inbox"></i>
+                Tenant Registration
+            </a>
+        </li>
+        <li>
+            <a href="/tenant/list">
+                <i class="sidebar-icon md-star"></i>
+                List Tenants
+            </a>
+        </li>
+        </div>
+        <div ng-if="appType == 'tenant'">
+        <li>
+            <a href="#">
+                <i class="sidebar-icon md-send"></i>
+                Edit Profile
+            </a>
+        </li>
+        <li>
+            <a href="/user/list/request">
+                <i class="sidebar-icon md-drafts"></i>
+                Requests
+            </a>
+        </li>
+            <li>
+                <a href="#">
+                    <i class="sidebar-icon md-drafts"></i>
+                    My Requests
+                </a>
+            </li>
+            <li>
+                <a href="/post/request">
+                    <i class="sidebar-icon md-drafts"></i>
+                    Post Request
+                </a>
+            </li>
+        </div>
+
+    </ul>
+    <!-- Sidebar divider -->
+    <!-- <div class="sidebar-divider"></div> -->
+
+    <!-- Sidebar text -->
+    <!--  <div class="sidebar-text">Text</div> -->
+</aside>
