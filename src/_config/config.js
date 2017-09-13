@@ -57,6 +57,12 @@ angular.module('angularApp')
                 controller  : 'viewMyProfileController',
                 parent:'MasterLayout'
             })
+            .state('ViewRequest', {
+                url         : '/request/view',
+                templateUrl : 'public/templates/request/viewRequest.html',
+                controller  : 'viewRequestController',
+                parent:'MasterLayout'
+            })
 
 	    .state('ListTenant', {
                 url         : '/tenant/list',

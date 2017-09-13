@@ -1,0 +1,7 @@
+View Request {{requestId}}
+
+<button ng-click="view(requestId)">View Request</button>
+
+<div ng-repeat="(key, value) in result">
+    <property-display property="value" data="key"></property-display>
+</div>
