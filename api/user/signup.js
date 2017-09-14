@@ -17,7 +17,7 @@ module.exports = function(user,res){
         db.collection("User").findOne(query, function(err, result) {
             if (err) throw err;
             if(result == null){
-                db.collection("User").insertOne(user, function(err, res) {
+                db.collection("User").insert(user, function(err, res) {
                     if (err) throw err;
                     console.log(user.username + " inserted");
                     db.close();

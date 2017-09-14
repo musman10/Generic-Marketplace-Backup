@@ -1,0 +1,28 @@
+<div>
+
+    <!--<table ng-table="usersTable" show-filter="true">-->
+    <table ng-table="usersTable" class="table table-striped" show-filter="true">
+        <tr ng-repeat="user in data">
+            <td data-title="'Id'" filter="{ id: 'number'}" sortable="'id'" >
+                {{user.id}}
+            </td>
+            <td data-title="'First Name'" filter="{ first_name: 'text'}" sortable="'first_name'">
+                {{user.first_name}}
+            </td>
+            <td data-title="'Last Name'" filter="{ last_name: 'text'}" sortable="'last_name'" >
+                {{user.last_name}}
+            </td>
+            <td data-title="'e-mail'" filter="{ email: 'text'}" sortable="'email'" >
+                {{user.email}}
+            </td>
+            <td data-title="'Country'" filter="{ country: 'text'}" sortable="'country'">
+                {{user.country}}
+            </td>
+            <td data-title="'IP'" filter="{ ip_address: 'text'}" sortable="'ip_address'">
+                {{user.ip_address}}
+            </td>
+        </tr>
+    </table>
+
+</div>
+
