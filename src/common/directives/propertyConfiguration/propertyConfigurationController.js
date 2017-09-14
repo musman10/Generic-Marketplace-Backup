@@ -69,4 +69,11 @@ angular.module('angularApp')
         //};
 
         //alert($scope.property.name);
+        $scope.removeProperty = function(property){
+            debugger;
+            for(i=0;i<$scope.properties.length;i++){
+                if($scope.properties[i] == property)
+                    $scope.properties.splice(i,1);
+            }
+        };
     }]);

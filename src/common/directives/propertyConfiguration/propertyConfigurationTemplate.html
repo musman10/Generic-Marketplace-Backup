@@ -12,11 +12,11 @@
         <label>Name</label>
         <input name="{{property.name}}name" ng-model="property.name" required ng-change="checkPropertyNameUnique('name',property.name)"/>
         <div ng-messages="tenantRegistrationForm[property.name + 'name'].$error">
-            <div ng-message="required">Name is required!</div>
-            <div ng-message="unique">Property name already exist</div>
-        </div>
+        <div ng-message="required">Name is required!</div>
+        <div ng-message="unique">Property name already exist</div>
+    </div>
     </md-input-container>
-    <md-button style="position:relative;float:right" class="md-raised md-warn">Remove</md-button>
+    <md-button style="position:relative;float:right" class="md-raised md-warn" ng-click="removeProperty(property)" ng-disabled="property.name == 'name' || property.name == 'username' || property.name == 'password'">Remove</md-button>
         <br>
     {{tenantRegistrationForm.description.$error}}
     <md-input-container>
@@ -67,7 +67,7 @@
         <label>Pattern</label>
         <input name="pattern" ng-model="property.pattern"/>
     </md-input-container>
-    <md-button ng-click="addSubProperty(property)">Add Sub Property</md-button>
+    <md-button class="md-raised md-primary" ng-click="addSubProperty(property)" ng-disabled="property.name == 'name' || property.name == 'username' || property.name == 'password'">Add Sub Property</md-button>
     <div ng-repeat="p in property.subProperties" style="margin-top:10px;">
         <property-configuration property="p" properties="property.subProperties"></property-configuration>
     </div>

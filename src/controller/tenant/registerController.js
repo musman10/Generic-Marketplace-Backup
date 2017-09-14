@@ -2,7 +2,7 @@
  * Created by Usman Irfan on 15.09.17.
  */
 angular.module('angularApp')
-.controller('TenantRegisterController', [ '$scope','tenantRegisterService','app','$q',  function ($scope,tenantRegisterService,app,$q) {
+.controller('TenantRegisterController', [ '$scope','tenantRegisterService','app','$q','$state','$mdDialog','$mdToast',  function ($scope,tenantRegisterService,app,$q,$state,$mdDialog,$mdToast) {
    
     $scope.userPropertyIds = 0;
     $scope.tenantuserIds = 0;
@@ -266,73 +266,132 @@ angular.module('angularApp')
         }
     }
 
-    $scope.registerTenant = function(){
+    $scope.registerTenant = function(ev){
         //console.log($scope.tenant.users.length);
-        
-        for(j=0;j<$scope.tenant.users.length;j++){
-            var userPropertiesLength = $scope.tenant.users[j].properties.length;
-            for(i=0;i<userPropertiesLength;i++){
-                if($scope.tenant.users[j].properties[i].parentId != 0){
-                    $scope.tenant.users[j].properties.splice(i,1);
-                    userPropertiesLength--;
-                    i--;
-                }
-            }
-        }
+        var confirm = $mdDialog.confirm()
+            .title('Please confirm')
+            .textContent('Are you sure you want to create new tenant with specified configuration.')
+            .targetEvent(ev)
+            .ok('Yes')
+            .cancel('Cancel');
 
-        for(j=0;j<$scope.tenant.requests.length;j++){
-            var requestPropertiesLength = $scope.tenant.requests[j].properties.length;
-            for(i=0;i<requestPropertiesLength;i++){
-                if($scope.tenant.requests[j].properties[i].parentId != 0){
-                    $scope.tenant.requests[j].properties.splice(i,1);
-                    requestPropertiesLength--;
-                    i--;
-                }
-            }
-        }
-        str = JSON.stringify($scope.tenant);
-        console.log(str);
+            $mdDialog.show(confirm).then(function() {
+                //alert("yes");
+                $mdDialog.show({
+                    //targetEvent: $event,
+                    template:
+                    '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+                    '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+                    '       <h3>Creating Tenant ...</h3>' +
+                    '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+                    '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+                    '       </div>'+
+                    '  </md-dialog-content>' +
+                    '</md-dialog>'
+                });
 
-        tenantRegisterService.register($scope.tenant,app.baseUrl).then(function(response){
-
-        });
-    }
-
-    $scope.checkPropertyNameUnique = function(formField,propertyName,list){
-        debugger;
-        var fieldName = formField;
-        if($scope.tenantRegistrationForm.hasOwnProperty(formField)){
-            fieldName = formField;
-        }
-        else{
-            propertyName = propertyName.substring(0, propertyName.length - 1);
-            fieldName = formField + propertyName;
-        }
-
-        $scope.tenantRegistrationForm[fieldName].$viewValue;
-        var matchCounter=0
-
-            for(i=0;i<list.length;i++){
-                if($scope.tenantRegistrationForm[fieldName].$viewValue == list[i].name) {
-                    matchCounter++;
-                    if(matchCounter == 2) {
-                        $scope.tenantRegistrationForm[fieldName].$setValidity('unique', false);
-                        break;
+                for(j=0;j<$scope.tenant.users.length;j++){
+                    var userPropertiesLength = $scope.tenant.users[j].properties.length;
+                    for(i=0;i<userPropertiesLength;i++){
+                        if($scope.tenant.users[j].properties[i].parentId != 0){
+                            $scope.tenant.users[j].properties.splice(i,1);
+                            userPropertiesLength--;
+                            i--;
+                        }
                     }
                 }
-                else{
-                    $scope.tenantRegistrationForm[fieldName].$setValidity('unique', true);
+
+                for(j=0;j<$scope.tenant.requests.length;j++){
+                    var requestPropertiesLength = $scope.tenant.requests[j].properties.length;
+                    for(i=0;i<requestPropertiesLength;i++){
+                        if($scope.tenant.requests[j].properties[i].parentId != 0){
+                            $scope.tenant.requests[j].properties.splice(i,1);
+                            requestPropertiesLength--;
+                            i--;
+                        }
+                    }
+                }
+                str = JSON.stringify($scope.tenant);
+                console.log(str);
+
+                tenantRegisterService.register($scope.tenant,app.baseUrl).then(function(response){
+                    $mdDialog.hide();
+                    var pinTo = $scope.getToastPosition();
+
+                    $mdToast.show(
+                        $mdToast.simple()
+                            .textContent('Tenant Created Successfully!')
+                            .position(pinTo )
+                            .hideDelay(3000)
+                    );
+                    $state.go("ListTenant");
+                });
+
+            }, function() {
+                //alert("no");
+            });
+
+
+    }
+
+    $scope.checkPropertyNameUnique = function(formField,list,r,fieldIndex){
+        debugger;
+
+        var fieldName = formField;
+
+        fieldName = formField + fieldIndex;
+        var matchCounter=0;
+
+        for(i=0;i<list.length;i++){
+            if(r.name == list[i].name){
+                matchCounter++;
+                if(matchCounter == 2) {
+                    //r.name  = r.name .substring(0, r.name.length - 1);
+                    $scope.tenantRegistrationForm[fieldName].$setValidity('unique', false);
+                    break;
                 }
             }
-
-
-
+            else{
+                $scope.tenantRegistrationForm[fieldName].$setValidity('unique', true);
+            }
+        }
 
 
     };
 
-    $scope.test = function(){
-        return "xyz";
+    $scope.removeFromList = function(item,list){
+        for(i=0;i<list.length;i++){
+            if(item == list[i])
+                list.splice(i,1);
+        }
+    };
+
+    var last = {
+        bottom: false,
+        top: true,
+        left: false,
+        right: true
+    };
+
+    $scope.toastPosition = angular.extend({},last);
+
+    $scope.getToastPosition = function() {
+        //sanitizePosition();
+
+        return Object.keys($scope.toastPosition)
+            .filter(function(pos) { return $scope.toastPosition[pos]; })
+            .join(' ');
+    };
+
+    function sanitizePosition() {
+        var current = $scope.toastPosition;
+
+        if ( current.bottom && last.top ) current.top = false;
+        if ( current.top && last.bottom ) current.bottom = false;
+        if ( current.right && last.left ) current.left = false;
+        if ( current.left && last.right ) current.right = false;
+
+        last = angular.extend({},current);
     }
- 
+
 }]);
