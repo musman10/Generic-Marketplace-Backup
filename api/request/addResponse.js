@@ -8,6 +8,8 @@ module.exports = function(responsePayLoad,response){
     var dto = {success:true,error:[],status:200};
 
     //var MongoClient = require('mongodb').MongoClient;
+    responsePayLoad.response.userId = new ObjectID(responsePayLoad.response.userId);
+    responsePayLoad.response.requestId = new ObjectID(responsePayLoad.response.requestId);
 
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
