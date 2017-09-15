@@ -28,4 +28,18 @@ angular.module('angularApp')
 
         }
 
+        this.viewResponse = function(requestId){
+            var deferred = $q.defer();
+            var listRequestPayload = {
+                requestId:requestId
+            };
+            $http.post(app.baseUrl + "api/request/response/",listRequestPayload)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
     }]);

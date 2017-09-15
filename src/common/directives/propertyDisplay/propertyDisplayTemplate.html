@@ -1,5 +1,16 @@
-<div>
-    <label>{{data}}</label> :
+<div >
+
+
+    <div ng-if="data == 'name'">
+       <md-header class="md-display-2">{{property.slice(0).toUpperCase()}}</md-header>
+    </div>
+   <!-- <div ng-if="data == '_id' ||">
+        <md-header class="md-display-2">{{data}}</md-header>
+    </div>-->
+    <div ng-if="!(data == 'name')">
+        <label>{{data[0].toUpperCase() + data.slice(1).toLowerCase()}}</label>
+    </div>
+    <!--<md-header>{{data}}</md-header>-->
     <div ng-if="isArray(property)">
         <div ng-if="isObject(property)">
             <div ng-repeat="p in property">
@@ -10,9 +21,14 @@
         </div>
     </div>
     <div ng-if="!(isArray(property))">
-        <span style="color:#ff0000;">{{property}}</span>
+        <div ng-if="!(data == 'name')">
+            <md-subheader>{{property}}</md-subheader>
+        </div>
+        <!--<span class="md-display">{{property}}</span>-->
+        <br>
     </div>
-
+    <br>
    <!-- <label>{{data[property.name]}}</label>-->
-
 </div>
+
+

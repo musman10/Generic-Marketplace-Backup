@@ -1,13 +1,24 @@
-<h1>My Profile</h1>
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1">My Profile</h3>
+</md-toolbar>
 
-<div>
 
-<form name="form">
-    <div ng-repeat="p in userConf.properties">
-        <property-input property="p"></property-input>
-    </div>
+<div class="col-md-8">
+    <md-card style="margin-top: 20px; text-align: center; width: 50%;">
+        <!--
+                <h1>My Profile</h1>
+        -->
+        <form name="form">
+            <div class="row">
+                <div ng-repeat="p in userConf.properties">
+                    <property-input property="p"></property-input>
+                </div>
+            </div>
+            <md-button class="md-raised md-primary" aria-label="FAB" ng-click="update()" ng-disabled="form.$invalid">
+                Update
+            </md-button>
 
-    <button ng-click="update()">update</button>
-    <!--{{userConf.properties}}-->
-</form>
+            <!--{{userConf.properties}}-->
+        </form>
+    </md-card>
 </div>

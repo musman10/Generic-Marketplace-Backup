@@ -71,6 +71,12 @@ router.post('/request/user/list/requestTypes/', function(req, res, next) {
   service(req.body,res);
 });
 
+/* Get user responses*/
+router.post('/request/response', function(req, res, next) {
+  var service = require("./request/viewResponse");
+  service(req.body,res);
+});
+
 /* get user list service */
 router.get('/user/list/:tenantId', function(req, res, next) {
   var service = require("./user/list");

@@ -58,7 +58,7 @@ angular.module('angularApp')
                 parent:'MasterLayout'
             })
             .state('ViewRequest', {
-                url         : '/request/view',
+                url         : '/request/view/:requestId',
                 templateUrl : 'public/templates/request/viewRequest.html',
                 controller  : 'viewRequestController',
                 parent:'MasterLayout'
@@ -82,12 +82,12 @@ angular.module('angularApp')
                 controller  : 'RequestListController',
                 parent:'MasterLayout'
             })
-            .state('ViewRequest', {
+           /* .state('ViewRequest', {
                 url         : '/request/view/:requestId',
                 templateUrl : 'public/templates/request/view.html',
                 controller  : 'RequestViewController',
                 parent:'MasterLayout'
-            })
+            })*/
             .state('ListUser', {
                 url         : '/user/list/byTenantId/:tenantId',
                 templateUrl : 'public/templates/user/list.html',

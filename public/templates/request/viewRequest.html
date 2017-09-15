@@ -1,7 +1,34 @@
-View Request {{requestId}}
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1">View Request</h3>
 
-<button ng-click="view(requestId)">View Request</button>
+</md-toolbar>
 
-<div ng-repeat="(key, value) in result">
-    <property-display property="value" data="key"></property-display>
+<div ng-cloak>
+    <md-content>
+
+
+        <md-tabs md-dynamic-height md-border-bottom>
+            <md-tab label="REQUEST DETAILS">
+                <md-content class="md-padding">
+                <form name="form">
+                    <div ng-repeat="(key, value) in result">
+                        <property-display property="value" data="key"></property-display>
+                    </div>
+                </form>
+                </md-content>
+            </md-tab>
+            <md-tab label="RESPONSES DETAILS">
+                <md-content class="md-padding">
+                    <form name="form">
+                       <!-- <div ng-repeat="(key, value) in response">
+                            <property-display property="value" data="key"></property-display>
+                        </div>-->
+                        <md-button ng-click="viewResponse('Recruitment')">View Responses</md-button>
+                        <label>{{responses}}</label>
+                    </form>
+                </md-content>
+            </md-tab>
+        </md-tabs>
+
+    </md-content>
 </div>
