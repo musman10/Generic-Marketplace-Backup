@@ -2,6 +2,7 @@
  * Created by asd on 8/28/2017.
  */
 var mongo = require('mongodb');
+var ObjectID = require('mongodb').ObjectID;
 
 module.exports = function(loginUser,response){
     var MongoClient = require('mongodb').MongoClient;
@@ -26,13 +27,14 @@ module.exports = function(loginUser,response){
             };
         }
         else{
+            id = new ObjectID(loginUser.tenant_id)
             var query = {
-                tenantId : loginUser.tenant_id,
+                tenantId : id,
                 username : loginUser.username,
                 password : loginUser.password
             };
             var queryExist = {
-                tenantId : loginUser.tenant_id,
+                tenantId : id,
                 username : loginUser.username,
             };
         }
