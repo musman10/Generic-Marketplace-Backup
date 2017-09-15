@@ -10,12 +10,12 @@
 
     <h1>{{pageTitle}}</h1>
     <table ng-table="tenantsTable" class="table table-striped table-bordered table-hover" show-filter="true">
-        <tr ng-repeat="tenant in data">
+        <tr ng-repeat="tenant in $data">
             <td data-title="'No. '" >
                 {{ $index + 1 }}
             </td>
-            <td data-title="'Name'" filter="{ tenantname: 'text'}" sortable="'tenantname'">
-                <a href=tenant/view/{{tenant._id}}>{{tenant.tenantname}}</a>
+            <td data-title="'Name'" filter="{ name: 'text'}" sortable="'name'">
+                <a href=tenant/view/{{tenant._id}}>{{tenant.name}}</a>
             </td>
             <td data-title="'Publish Date'" filter="{ publishdate: 'text'}" sortable="'publishdate'">
                 01/01/2017
