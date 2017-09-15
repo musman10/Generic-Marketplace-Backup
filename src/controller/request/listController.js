@@ -20,12 +20,14 @@ angular.module('angularApp')
                 $scope.result=[];
                 for (var i = 0; i < result.length; i++) {
                     var reqname = result[i].name;
+                    var req_id = result[i]._id;
                     var username = "";
                     if(result[i].hasOwnProperty("requestdetails")){
                         var username = result[i].requestdetails.name;
                     }
                     var temp =
                     {
+                        _id : req_id,
                         reqname : reqname,
                         username : username
                     };
