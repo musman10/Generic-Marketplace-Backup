@@ -1,14 +1,9 @@
-<!--<div>
-<h1>{{pageTitle}}</h1>
-
-&lt;!&ndash;<li ng-repeat="r in result">{{r.name}} and {{r._id}}</li>&ndash;&gt;
-&lt;!&ndash;<li ng-repeat="r in result"> <a href=tenant/view/{{r._id}}>{{r.tenantname}}</a></li>&ndash;&gt;
-<li ng-repeat="r in result"> <a href=table/table>{{r.tenantname}}</a></li>
-</div>-->
+<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
+    <h3 class="md-display-1">Tenants</h3>
+</md-toolbar>
 
 <div>
 
-    <h1>{{pageTitle}}</h1>
     <table ng-table="tenantsTable" class="table table-striped table-bordered table-hover" show-filter="true">
         <tr ng-repeat="tenant in $data">
             <td data-title="'No. '" >

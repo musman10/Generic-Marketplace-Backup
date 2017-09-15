@@ -3,16 +3,17 @@
 
     <li ng-repeat="r in result">Request Name: <a href=/request/view/{{r._id}}>{{r.name}}</a><br>  User Name: {{r.requestdetails.username}}<br></li>
 </div>-->
-
+<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
+    <h3 class="md-display-1">Requests</h3>
+</md-toolbar>
 <div>
 
-    <h1>{{pageTitle}}</h1>
     <table ng-table="requestTable" class="table table-striped table-bordered table-hover" show-filter="true">
         <tr ng-repeat="request in $data">
             <td data-title="'No. '" >
                 {{ $index + 1 }}
             </td>
-            <td data-title="'Name'" filter="{ name: 'text'}" sortable="'name'">
+            <td data-title="'Name'" filter="{ reqname: 'text'}" sortable="'reqname'">
                 <a href=/request/view/{{request._id}}>{{request.reqname}}</a>
             </td>
             <td data-title="'Posted By'" filter="{username:'text'}" sortable="'username'">
