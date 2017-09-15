@@ -14,7 +14,7 @@ module.exports = function(tenant,response){
         //console.log("helllooo worlddd");
         //res.send("hello world");
         
-        db.collection("Tenant").insertOne(tenant, function(err, res) {
+        db.collection("Tenant").insert(tenant, function(err, res) {
             if (err) throw err;
             console.log("1 document inserted");
             db.close();

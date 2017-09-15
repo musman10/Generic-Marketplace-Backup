@@ -1,17 +1,17 @@
 angular.module('angularApp')
-    .controller('TenantListController', [ '$scope','tenantListService','app',  function ($scope,tenantListService,app) {
+    .controller('TenantListController', [ '$scope','$filter','tenantListService','app','NgTableParams','$q', function ($scope,$filter,tenantListService,app,NgTableParams,$q) {
         $scope.description = {
             message: tenantListService.getPrivate()
         };
-        $scope.result;
-        $scope.pageTitle = " List Of Tenants ";
+        //$scope.result = [{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'}];
+        $scope.pageTitle = "Tenants List ";
+        $scope.tenantsTable;
 
-        tenantListService.getTenantList().then(
-                function(response){
-                    $scope.result= response.data;
-                }
+        debugger;
+
+        $scope.tenantList = tenantListService.getTenantList().then(
+            function(response){
+                $scope.tenantsTable = new NgTableParams({count: 20}, { dataset: response.data});
+            }
         );
-
-       // alert("my list tenant controller");
-
     }]);

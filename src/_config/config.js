@@ -8,7 +8,7 @@ angular.module('angularApp')
         $stateProvider
             .state('main', {
                 url         : '/',
-                controller  : 'mainController',
+                controller  : 'mainController'
             })
             .state('MasterLayout', {
                 //abstract: true,
@@ -18,7 +18,7 @@ angular.module('angularApp')
             .state('TenantLogin', {
                 url         : '/login',
                 templateUrl : 'public/templates/login/tenantLogin.html',
-                controller  : 'TenantLoginController',
+                controller  : 'TenantLoginController'
             })
             .state('TenantUserSignup', {
                 url         : '/signup',
@@ -110,6 +110,12 @@ angular.module('angularApp')
                 url         : '/user/list/request',
                 templateUrl : 'public/templates/request/userListRequests.html',
                 controller  : 'UserListRequestsController',
+                parent:'MasterLayout'
+            })
+            .state('Table', {
+                url         : '/table/table',
+                templateUrl : 'public/templates/table/table.html',
+                controller  : 'TableController',
                 parent:'MasterLayout'
             })
 }]);
