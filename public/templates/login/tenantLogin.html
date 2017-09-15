@@ -1,20 +1,47 @@
-<div>
-<h1>Login</h1>
-<label></label>
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1">{{tenantName}}</h3>
+</md-toolbar>
+
+<div style="padding-top: 20px;">
+    <md-card style="margin: auto; text-align: center; width: 50%;">
+    <h1>Login</h1>
+    <label></label>
     <form name="myForm">
-        <label>Username</label>
-        <input type="text" ng-model="userName" name="userName" required /><span ng-show="myForm.userName.$touched && myForm.userName.$invalid">The user name is required.</span><br>
-        <label>Password</label>
-        <input type="password" ng-model="userPassword" name="userPassword" required /><span ng-show="myForm.userPassword.$touched && myForm.userPassword.$invalid">The password is required.</span><br>
-
+        <md-input-container>
+            <label>Username</label>
+            <input type="text" ng-model="userName" name="userName" required/>
+            <div ng-messages="myForm.userName.$error" ng-show="myForm.userName.$touched && myForm.userName.$invalid">
+                <div ng-message="required">This is required!</div>
+            </div>
+        </md-input-container><br>
+        <md-input-container>
+            <label>Password</label>
+            <input type="password" ng-model="userPassword" name="userPassword" required/>
+            <div ng-messages="myForm.userPassword.$error" ng-show="myForm.userPassword.$touched && myForm.userPassword.$invalid">
+                <div ng-message="required">This is required!</div>
+            </div>
+        </md-input-container><br>
+        <md-button class="md-raised md-primary" aria-label="FAB" ng-click="login()" ng-disabled="myForm.$invalid">Login</md-button>
     </form>
-    <button ng-click="login()" >Login</button><br><br>
 
-    <span ng-show="loginError">Username password does not exist or match </span>
-Sign Up
-    <div ng-repeat="userConf in userConfList">
-        <button ng-click="signup(userConf.name)">{{userConf.name}}</button>
-        <!--<button ng-click="signup('company')">company</button>-->
-    </div>
+     <span ng-show="loginError"> {{loginErrorMessage}} </span>
+   <!-- <div ng-messages="myForm.userPassword.$error" ng-show="loginError">
+        <div ng-message="loginError">Username password does not exist or match</div>
+    </div>-->
+  <!--  <span ng-show="loginError">Username password does not exist or match </span>-->
+
+<div>
+        <md-input-container>
+          <md-select ng-model="userConf" placeholder="Select a User Type">
+              <md-option ng-value="userConf.name" ng-repeat="userConf in userConfList">{{userConf.name}}</md-option>
+          </md-select>
+        </md-input-container><br>
+            <!--<button ng-click="signup('company')">company</button>-->
+        <md-button aria-label="FAB" ng-click="signup(userConf)">SignUp</md-button>
+
 </div>
+    </md-card>
+</div>
+
+
 <!--{{userConfList}}-->

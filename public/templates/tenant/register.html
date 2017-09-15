@@ -1,42 +1,64 @@
-<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px">
+<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
     <h3 class="md-display-1">Register Tenant</h3>
 </md-toolbar>
 
 <div ng-cloak>
     <md-content>
-        <md-tabs md-dynamic-height md-border-bottom>
+        <form name="tenantRegistrationForm">
+        <div class="col-md-12">
+        <md-tabs md-dynamic-height md-border-bottom style="width:100%">
             <md-tab label="Properties">
                 <md-content class="md-padding">
+                    <div class="row">
                     <h1 class="md-display-1">Tenant Properties
-                        <md-button class="md-fab" ng-click="addProperty()">+</md-button>
+                        <md-button class="md-fab" ng-click="addProperty()" style="background-color:#0086B3">+</md-button>
                     </h1>
+                    </div>
 
+                    <div class="row">
                     <md-input-container>
                         <label>Tenant Name</label>
-                        <input name="name" ng-model="tenant.name"/>{{tenant.name}}
+                        <input name="name" ng-model="tenant.name" required unique/>{{tenant.name}}
+                        <div ng-messages="tenantRegistrationForm.name.$error">
+                            <div ng-message="required">This is required !</div>
+                            <div ng-message="unique">Tenant name already exists !</div>
+                        </div>
                     </md-input-container>
+                    </div>
 
-
-                    <div ng-repeat="p in tenant.properties">
+                    <div class="row">
+                    <div ng-repeat="p in tenant.properties track by $index">
                         <md-input-container>
                             <label>Property Name</label>
-                            <input name="field" ng-model="p.name"/>{{p.name}}
+                            <input name="tenantField{{$index}}" ng-model="p.name" required ng-change="checkPropertyNameUnique('tenantField',tenant.properties,p,$index)"/>
+                            <div ng-messages="tenantRegistrationForm['tenantField' + $index].$error">
+                                <div ng-message="required">Property name is required.</div>
+                                <div ng-message="unique">Property name already exists</div>
+                            </div>
                         </md-input-container>
                         <md-input-container>
                             <label>Property Value</label>
-                            <input name="value" ng-model="p.value"/>{{p.value}}
+                            <input name="tenantField{{p.name}}Value" ng-model="p.value" required/>
+                            <div ng-messages="tenantRegistrationForm['tenantField' + p.name + 'Value'].$error">
+                                <div ng-message="required">Property value is required.</div>
+                            </div>
                         </md-input-container>
+                        <md-button class="md-fab md-warn" style="height:5px;width:30px;position:relative;bottom:20px;margin-left:50px;background-color:red" ng-click="removeFromList(p,tenant.properties)"><span style="position:relative;top:-10px">-</span></md-button>
                     </div>
-
+                    </div>
                 </md-content>
             </md-tab>
             <md-tab label="Users">
                 <md-content class="md-padding">
+                    <div class="row">
                     <h1 class="md-display-1">Users
                         <md-button class="md-fab" ng-click="addUser()">+</md-button>
                     </h1>
+                    </div>
 
-                    <md-card ng-repeat="u in tenant.users" md-theme="{{ showDarkTheme ? 'dark-grey' : 'default' }}" md-theme-watch>
+                    <div class="row">
+
+                    <md-card ng-repeat="u in tenant.users track by $index" md-theme="{{ showDarkTheme ? 'dark-grey' : 'default' }}" md-theme-watch style="padding-left:0px;width:900px">
                         <md-card-title>
                             <md-card-title-text>
                                 <span class="md-headline">User</span>
@@ -45,13 +67,20 @@
                         <md-card-content>
                             <md-input-container>
                                 <label>Name</label>
-                                <input name="name" ng-model="u.name"/>{{u.name}}
+                                <input name="userTypeName{{$index}}" ng-model="u.name" required ng-change="checkPropertyNameUnique('userTypeName',tenant.users,u,$index)"/>{{u.name}}
+                                <div ng-messages="tenantRegistrationForm['userTypeName'+$index].$error">
+                                    <div ng-message="required">Name is required!</div>
+                                    <div ng-message="unique">User name already exist</div>
+                                </div>
                             </md-input-container>
 
                             <p>Number of Users Allowed</p>
-                            <md-select ng-model="u.limited">
+                            <md-select name="userTypeLimited{{u.name}}" ng-model="u.limited" required>
                                 <md-option value="1">Limited</md-option>
                                 <md-option value="0">Unlimited</md-option>
+                                <div ng-messages="tenantRegistrationForm['userTypeLimited'+u.name].$error">
+                                    <div ng-message="required">Number of user allowed is required!</div>
+                                </div>
                             </md-select>{{u.limit}}
 
                             <div ng-if="u.limited == 1">
@@ -63,17 +92,17 @@
 
                             <p>Add user Properties <md-button  class="md-fab" ng-click="addUserProperty(u)">+</md-button> </p>
 
-                                <div ng-repeat="p in u.properties" style="margin-top:10px;">
-                                   <property-configuration property="p"></property-configuration>
+                                <div ng-repeat="p in u.properties track by $index" style="margin-top:10px;">
+                                   <property-configuration property="p" properties="u.properties"></property-configuration>
 
                                 </div>
                         </md-card-content>
                         <md-card-actions layout="row" layout-align="end center">
-                            <md-button>Action 1</md-button>
-                            <md-button>Action 2</md-button>
+                            <md-button class="md-raised md-warn" ng-click="removeFromList(u,tenant.users)">Remove user</md-button>
                         </md-card-actions>
                     </md-card>
 
+                    </div>
                 </md-content>
             </md-tab>
             <md-tab label="Requests">
@@ -82,7 +111,7 @@
                         <md-button class="md-fab" ng-click="addRequest()">+</md-button>
                     </h1>
 
-                    <md-card ng-repeat="r in tenant.requests" md-theme="{{ showDarkTheme ? 'dark-grey' : 'default' }}" md-theme-watch>
+                    <md-card ng-repeat="r in tenant.requests track by $index" md-theme="{{ showDarkTheme ? 'dark-grey' : 'default' }}" md-theme-watch>
                         <md-card-title>
                             <md-card-title-text>
                                 <span class="md-headline">Request</span>
@@ -91,7 +120,11 @@
                         <md-card-content>
                             <md-input-container>
                                 <label>Name</label>
-                                <input name="name" ng-model="r.name"/>{{u.name}}
+                                <input name="requestTypeName{{$index}}" ng-model="r.name" required ng-change="checkPropertyNameUnique('requestTypeName',tenant.requests,r,$index)"/>{{u.name}}
+                                <div ng-messages="tenantRegistrationForm['requestTypeName'+$index].$error">
+                                    <div ng-message="required">Name is required!</div>
+                                    <div ng-message="unique">Request name already exist</div>
+                                </div>
                             </md-input-container>
 
                             <p>Number of Users Allowed</p>
@@ -118,7 +151,7 @@
                             <p>Add Request Properties <md-button  class="md-fab" ng-click="addRequestProperty(r)">+</md-button> </p>
 
                             <div ng-repeat="p in r.properties" style="margin-top:10px;">
-                                <property-configuration property="p"></property-configuration>
+                                <property-configuration property="p" properties="r.properties"></property-configuration>
 
                             </div>
 
@@ -160,8 +193,7 @@
 
                         </md-card-content>
                         <md-card-actions layout="row" layout-align="end center">
-                            <md-button>Action 1</md-button>
-                            <md-button>Action 2</md-button>
+                            <md-button class="md-raised md-warn" ng-click="removeFromList(r,tenant.requests)">Remove request</md-button>
                         </md-card-actions>
                     </md-card>
 
@@ -172,11 +204,13 @@
                     <h1 class="md-display-1">Register Tenant
                     </h1>
                     <p>Are you sure you want to register tenant with provided settings</p>
-                    <md-button ng-click="registerTenant()">Register</md-button><br><br>
-                    {{tenant}}
+                    <md-button class="md-raised md-primary" ng-click="registerTenant($event)" ng-disabled="tenantRegistrationForm.$invalid">Register</md-button><br><br>
+                    <!--{{tenant}}-->
                 </md-content>
             </md-tab>
         </md-tabs>
+            </div>
+        </form>
     </md-content>
 </div>
 

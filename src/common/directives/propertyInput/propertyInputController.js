@@ -12,5 +12,7 @@ angular.module('angularApp')
             mainProperty.propertiesList.push(property);
         };
 
+        $scope.errorMessage = "form.username.$error";
+
         //alert($scope.property.name);
     }]);

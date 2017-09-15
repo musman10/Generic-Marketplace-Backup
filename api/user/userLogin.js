@@ -14,23 +14,63 @@ module.exports = function(loginUser,response){
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
         console.log("Mongo");
-        var query = {
-            tenantId : loginUser.tenant_id,
-            username : loginUser.username,
-            password : loginUser.password
-        };
-        db.collection("User").findOne(query, function(err, result) {
+        if(loginUser.isAdmin == true){
+            var query = {
+                isAdmin : loginUser.isAdmin,
+                username : loginUser.username,
+                password : loginUser.password
+            };
+            var queryExist = {
+                isAdmin : loginUser.isAdmin,
+                username : loginUser.username,
+            };
+        }
+        else{
+            var query = {
+                tenantId : loginUser.tenant_id,
+                username : loginUser.username,
+                password : loginUser.password
+            };
+            var queryExist = {
+                tenantId : loginUser.tenant_id,
+                username : loginUser.username,
+            };
+        }
+
+        //check exists
+        db.collection("User").findOne(queryExist, function(err, result) {
 
             if (err) throw err;
             console.log(result);
             if(result == null){
                 dto.success = false;
-                dto.error.push("User name password does not match");
+                dto.error.push("User name password does not exist");
                 response.send(dto);
             }
             else{
-                dto.data = result;
-                response.send(dto);
+                //
+                db.collection("User").findOne(query, function (err, result) {
+
+                    if (err) throw err;
+                    console.log(result);
+                    if (result == null) {
+                        dto.success = false;
+                        dto.error.push("User name password does not match");
+                        response.send(dto);
+                    }
+                    else {
+                        dto.data = result;
+                        response.send(dto);
+                    }
+                    user = result;
+                    // dto.users = result;
+                    db.close();
+                    //return dto;
+                    // res.send(dto);
+                });
+                //
+                //dto.data = result;
+                //response.send(dto);
             }
             user = result;
             // dto.users = result;
@@ -38,6 +78,7 @@ module.exports = function(loginUser,response){
             //return dto;
             // res.send(dto);
         });
+
     });
 
 

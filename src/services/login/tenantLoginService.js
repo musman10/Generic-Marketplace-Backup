@@ -14,6 +14,7 @@ angular.module('angularApp')
 
         var deferred = $q.defer();
         var login_data = {
+            isAdmin : false,
             tenant_id : tenant_id,
             username : username,
             password : password

@@ -46,9 +46,13 @@ angular.module('angularApp')
                     }
                     else{
                         formJSON = formJSON + '"' + properties[i].name + '":[';
-                        formJSON = this.createFormJSON(properties[i].propertiesList, formJSON,true);
-                        formJSON = formJSON.substring(0, formJSON.length - 1);
-                        formJSON = formJSON + '],';
+                        if(properties[i].propertiesList != 0) {
+                            formJSON = this.createFormJSON(properties[i].propertiesList, formJSON, true);
+                            formJSON = formJSON.substring(0, formJSON.length - 1);
+                            formJSON = formJSON + '],';
+                        }
+                        else
+                            formJSON = formJSON + '],';
                     }
                 }
                 else if(properties[i].subProperties.length != 0){

@@ -1,41 +1,75 @@
-<div style="border-style: solid; border-width: 1px;padding:10px">
-    <md-input-container>
+<div style="border-style: dotted; border-width: 1px;padding:10px">
+    <!--<form name="tenantRegistrationForm">-->
+    <md-input-container ng-if="isDisabled">
         <label>Name</label>
-        <input name="name" ng-model="property.name"/>
+        <input name="{{property.name}}name" ng-model="property.name" disabled required/>
+        <div ng-messages="tenantRegistrationForm[property.name + 'name'].$error">
+            <div ng-message="required">Name is required!</div>
+        </div>
+    </md-input-container>
 
-    </md-input-container><br>
+    <md-input-container ng-if="!isDisabled">
+        <label>Name</label>
+        <input name="{{property.name}}name" ng-model="property.name" required ng-change="checkPropertyNameUnique('name',property.name)"/>
+        <div ng-messages="tenantRegistrationForm[property.name + 'name'].$error">
+        <div ng-message="required">Name is required!</div>
+        <div ng-message="unique">Property name already exist</div>
+    </div>
+    </md-input-container>
+    <md-button style="position:relative;float:right" class="md-raised md-warn" ng-click="removeProperty(property)" ng-disabled="property.name == 'name' || property.name == 'username' || property.name == 'password'">Remove</md-button>
+        <br>
+    {{tenantRegistrationForm.description.$error}}
     <md-input-container>
         <label>Type</label>
-        <input name="type" ng-model="property.type"/>
+        <input name="{{property.name}}type" ng-model="property.type" ng-required="true" ng-minlength="3"/>
+        <div ng-messages="tenantRegistrationForm[property.name + 'type'].$error">
+            <div ng-message="required">Type is required.</div>
+        </div>
+
+        <!--<span class="error" ng-show="tenantRegistrationForm.{{property.name}}.$error.required && tenantRegistrationForm.{{property.name}}.$touched">Required!</span>-->
+        <!--<span class="error" ng-show="tenantRegistrationForm.{{property.name}}.$error.minlength">Minlength!</span>-->
     </md-input-container>
     <md-input-container>
         <label>Min</label>
-        <input name="min" ng-model="property.min"/><br>
+        <input name="min" ng-model="property.min" required/>
+        <div ng-messages="tenantRegistrationForm.min.$error">
+            <div ng-message="required">Min is required.</div>
+        </div>
     </md-input-container>
     <md-input-container>
         <label>Max</label>
-        <input name="max" ng-model="property.max"/>
+        <input name="max" ng-model="property.max" required/>
+        <div ng-messages="tenantRegistrationForm.max.$error">
+            <div ng-message="required">Max is required.</div>
+        </div>
     </md-input-container><br>
     <md-input-container>
         <label>Required</label>
-        <md-select ng-model="property.required">
+        <md-select name="required" ng-model="property.required" required>
             <md-option value="true">true</md-option>
             <md-option value="false">false</md-option>
         </md-select>
+        <div ng-messages="tenantRegistrationForm.required.$error">
+            <div ng-message="required">Please select any one option.</div>
+        </div>
     </md-input-container>
     <md-input-container>
         <label>List</label>
-        <md-select ng-model="property.list">
+        <md-select name="list" ng-model="property.list" required>
             <md-option value="true">true</md-option>
             <md-option value="false">false</md-option>
         </md-select>
+        <div ng-messages="tenantRegistrationForm.list.$error">
+            <div ng-message="required">Please select any one option.</div>
+        </div>
     </md-input-container><br>
     <md-input-container>
         <label>Pattern</label>
-        <input name="pattern" ng-model="property.pattern"/><br>
+        <input name="pattern" ng-model="property.pattern"/>
     </md-input-container>
-    <md-button ng-click="addSubProperty(property)">Add Sub Property</md-button>
+    <md-button class="md-raised md-primary" ng-click="addSubProperty(property)" ng-disabled="property.name == 'name' || property.name == 'username' || property.name == 'password'">Add Sub Property</md-button>
     <div ng-repeat="p in property.subProperties" style="margin-top:10px;">
-        <property-configuration property="p"></property-configuration>
+        <property-configuration property="p" properties="property.subProperties"></property-configuration>
     </div>
+        <!--</form>-->
 </div>

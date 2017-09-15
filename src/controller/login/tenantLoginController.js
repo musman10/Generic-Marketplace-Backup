@@ -13,6 +13,7 @@ angular.module('angularApp')
     console.log(str);
     console.log("Testing");*/
 
+    $scope.tenantName = app.tenant.name;
     $scope.userConfList = app.tenant.users;
 
     $scope.signup = function(userTypeName){
@@ -38,9 +39,10 @@ angular.module('angularApp')
             if(response.success == true){
                 app.loginUser = response.data;
                 console.log(JSON.stringify(app));
-                $state.go("AdminHome");
+                $state.go("TenantUserHome");
             }
             else{
+                $scope.loginErrorMessage = response.error[0];
                 $scope.loginError = true;
             }
 
