@@ -7,7 +7,11 @@ var mongo = require('mongodb');
 
 module.exports = function(updatedUser,response){
     var MongoClient = require('mongodb').MongoClient;
-    var url = "mongodb://localhost:27017/apptest";
+    var path = require('path');
+    var root_dir = __dirname + '/../../';
+    var config = require(root_dir + 'config');
+    var url = config.dbConnection.url;    
+//var url = "mongodb://localhost:27017/apptest";
     var dto = {success : true,
         error : [],
         status : 200};
