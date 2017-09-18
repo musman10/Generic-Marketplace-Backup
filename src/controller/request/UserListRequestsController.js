@@ -14,7 +14,7 @@ angular.module('angularApp')
 
         for(i=0;i<$scope.requestConfigurations.length;i++){
             for(j=0;j<$scope.requestConfigurations[i].viewUsers.length;j++){
-                if($scope.requestConfigurations[i].viewUsers[j].name == 'Jobseeker' && $scope.requestConfigurations[i].hasParent != "1"){
+                if($scope.requestConfigurations[i].viewUsers[j].name == app.loginUser.userType && $scope.requestConfigurations[i].hasParent != "1"){
                     $scope.requestTypes.push($scope.requestConfigurations[i].name);
                     break;
                 }
@@ -23,7 +23,7 @@ angular.module('angularApp')
 
         for(i=0;i<$scope.requestConfigurations.length;i++){
             for(j=0;j<$scope.requestConfigurations[i].userResponses.length;j++){
-                if($scope.requestConfigurations[i].userResponses[j].user.name == 'Jobseeker'){
+                if($scope.requestConfigurations[i].userResponses[j].user.name == app.loginUser.userType){
                     response = {
                         request:$scope.requestConfigurations[i],
                         responses:$scope.requestConfigurations[i].userResponses[j].responseRequests
