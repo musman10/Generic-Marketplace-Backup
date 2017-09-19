@@ -5,9 +5,13 @@ module.exports = function(tenantId,response){
     var config = require(root_dir + 'config');
     var url = config.dbConnection.url;
     var dto = {success:true,error:[],status:200};
+    var ObjectID = require('mongodb').ObjectID;
+
 
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
+
+        tenantId = new ObjectID(tenantId)
 
         var query = { tenantId: tenantId };
         db.collection("User").find(query).toArray(function(err, result) {

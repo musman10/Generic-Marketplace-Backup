@@ -6,11 +6,12 @@ module.exports = function(tenantId,response){
     var url = config.dbConnection.url;
     var dto = {success:true,error:[],status:200};
     var Join = require('mongo-join').Join;
-
+    var ObjectID = require('mongodb').ObjectID;
 
     MongoClient.connect(url, function(err, db) {
         db.collection('Request', function (err, Request) {
             if (err) throw err;
+            tenantId = new ObjectID(tenantId)
             var query = { tenantId: tenantId };
             Request.find(query, function (err, cursor) {
                 var join = new Join(db).on({
