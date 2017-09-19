@@ -9,7 +9,10 @@ angular.module('angularApp')
     $scope.requestType = "";
     $scope.requestConf;
 
-    $scope.loadPostRequestForm = function(){
+    $scope.postRequestTypes = mainService.getRequestConfsByUserType(app.loginUser.userType);
+
+    $scope.loadPostRequestForm = function(postRequestType){
+        $scope.requestType = postRequestType;
         debugger;
         $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
     };
@@ -21,7 +24,8 @@ angular.module('angularApp')
         formJSON = formJSON + ",";
         formJSON = formJSON + '"postUserId":' + '"' + app.loginUser._id + '",';
         formJSON = formJSON + '"userResponses":[],';
-        formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '"';
+        formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '",';
+        formJSON = formJSON + '"hasParent":' + '"' + $scope.requestConf.hasParent + '"';
         formJSON = formJSON + '}';
         $scope.request = JSON.parse(formJSON);
         requestPostService.postRequest($scope.request).then(function(response){

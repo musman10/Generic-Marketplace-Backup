@@ -4,7 +4,9 @@ angular.module('angularApp')
             restrict : "E",
             templateUrl : "src/common/directives/requestResponse/requestResponseTemplate.html",
             scope: {
-                response: '='
+                response: '=',
+                requestResponses: '=',
+                userid: '='
             },
             controller:"RequestResponseController"
         };

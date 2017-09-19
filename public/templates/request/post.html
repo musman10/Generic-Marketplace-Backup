@@ -1,7 +1,7 @@
 <h1>Post Request</h1>
 
-<select ng-model="requestType" ng-change="loadPostRequestForm()">
-    <option>Recruitment</option>
+<select ng-model="postRequestType" ng-change="loadPostRequestForm(postRequestType)">
+    <option ng-repeat="postRequestType in postRequestTypes" value="{{postRequestType}}">{{postRequestType}}</option>
 </select>
 
 <h2>{{requestConf.name}}</h2>
