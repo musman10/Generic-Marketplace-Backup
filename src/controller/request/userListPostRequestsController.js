@@ -32,6 +32,10 @@ angular.module('angularApp')
             debugger;
             userListPostRequestsService.listPostRequestsByUserId(userId).then(function(response){
                 $scope.requests = response.data;
+                for(i=0;i<$scope.requests.length;i++){
+                    $scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+                    $scope.requests[i].datePosted = $scope.requests[i].datePosted.toLocaleString();
+                }
             });
         };
 

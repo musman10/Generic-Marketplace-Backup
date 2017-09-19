@@ -5,6 +5,11 @@ angular.module('angularApp')
             message2 : 'developing for testing'
         };
         debugger;
+        if($scope.response.requestDetails.hasOwnProperty('datePosted')){
+            $scope.response.requestDetails.datePosted = new Date($scope.response.requestDetails.datePosted);
+            $scope.response.requestDetails.datePosted = $scope.response.requestDetails.datePosted.toLocaleString();
+        }
+
         if($scope.response.hasOwnProperty('requestDetails')){
             $scope.response.requestDetails.userResponded = false;
             for(i=0;i<$scope.response.requestDetails.userResponses.length;i++){
