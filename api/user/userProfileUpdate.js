@@ -23,6 +23,7 @@ module.exports = function(updatedUser,response){
         var myquery = {
             _id: id
         };
+        updatedUser.dateLastModified = new Date();
         var newvalues = updatedUser;
         db.collection("User").updateOne(myquery, newvalues, function(err, res) {
             if (err) throw err;

@@ -13,7 +13,9 @@ module.exports = function(tenant,response){
         //console.log(str);
         //console.log("helllooo worlddd");
         //res.send("hello world");
-        
+        tenant.dateCreated = new Date();
+        tenant.dateLastModified = new Date();
+
         db.collection("Tenant").insert(tenant, function(err, res) {
             if (err) throw err;
             console.log("1 document inserted");

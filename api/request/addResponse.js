@@ -17,7 +17,8 @@ module.exports = function(responsePayLoad,response){
         var ObjectID = require('mongodb').ObjectID;
         var queryRequestId = new ObjectID(responsePayLoad.requestId);
         var queryWhereClause = { _id: queryRequestId };
-        var queryUpdatedValues = {$push: { userResponses: responsePayLoad.response }};
+        var queryUpdatedValues = {$push: { userResponses: responsePayLoad.response, dateLastModified : new Date()}} ;
+
         db.collection("Request").updateOne(queryWhereClause,queryUpdatedValues, function(err, res) {
             if (err) throw err;
             console.log("1 document updated");
