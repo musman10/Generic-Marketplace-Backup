@@ -1,0 +1,24 @@
+<details>
+    <summary>
+        <ul>
+            <li class="titleName">{{response.requestDetails.requestType}}</li>
+            <li class="titleValue"> {{response.requestDetails.postUserDetails.name}}</li>
+            <li class="titleValue"> {{response.requestDetails.postUserDetails.userType}}</li>
+            <li></li>
+        </ul>
+    </summary>
+    <div ng-if="response.requestDetails.userResponses.length > 0">
+    <div class="content">
+        <div ng-repeat="response in response.requestDetails.userResponses">
+            <request-response-expansion response="response"></request-response-expansion>
+        </div>
+    </div>
+    </div>
+    <div ng-if="!(response.requestDetails.userResponses.length > 0)">
+        <div class="content">
+            <p>No more responses yet.</p>
+        </div>
+    </div>
+</details>
+
+
