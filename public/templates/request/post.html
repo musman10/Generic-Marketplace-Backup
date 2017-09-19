@@ -1,4 +1,10 @@
-<h1>Post Request</h1>
+<!--<h1>Post Request</h1>-->
+
+<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
+    <h3 class="md-display-1">Post New Request</h3>
+</md-toolbar>
+
+<div style="padding:20px">
 
 <select ng-model="postRequestType" ng-change="loadPostRequestForm(postRequestType)">
     <option ng-repeat="postRequestType in postRequestTypes" value="{{postRequestType}}">{{postRequestType}}</option>
@@ -6,14 +12,17 @@
 
 <h2>{{requestConf.name}}</h2>
 
-<div>
+<md-card style="margin:0px;padding:10px">
 
+    <form name="form">
     <div ng-repeat="p in requestConf.properties">
         <property-input property="p"></property-input>
     </div>
 
-    <hr>
+    </form>
 
-    <button ng-click="post()">Post</button>
     <!--{{userConf.properties}}-->
+</md-card>
+
+    <md-button class="md-primary md-raised" ng-click="post()" ng-disabled="form.$invalid || requestType == ''" style="margin-left:0px">Post</md-button>
 </div>

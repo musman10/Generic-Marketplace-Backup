@@ -1,5 +1,5 @@
 angular.module('angularApp')
-    .controller('UserListRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListRequestsService',  function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListRequestsService) {
+    .controller('UserListRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListRequestsService','$mdDialog','$mdToast',  function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListRequestsService,$mdDialog,$mdToast) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing',
@@ -58,6 +58,19 @@ angular.module('angularApp')
         $scope.listRequestsByRequestTypes($scope.requestTypes);
 
         $scope.respondRequest = function(request,responseRequestConf){
+            $mdDialog.show({
+                //targetEvent: $event,
+                template:
+                '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+                '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+                '       <h3>Posting Request ...</h3>' +
+                '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+                '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+                '       </div>'+
+                '  </md-dialog-content>' +
+                '</md-dialog>'
+            });
+
             responseRequestConf = JSON.parse(responseRequestConf);
             debugger;
             responseRequest = createObjectService.createFormObject(responseRequestConf);
@@ -86,23 +99,50 @@ angular.module('angularApp')
                                 requestId: response.data._id
                             }
                             requestUpdateService.addResponse(request._id, requestResponse).then(function(response){
+                                $mdDialog.hide();
                                 var str = JSON.stringify(response);
                                 console.log(str);
                                 if(response.success == true){
                                     //$state.go("TenantUserHome");
-                                    alert("your request is sent successfully");
+                                    var last = {
+                                        bottom: false,
+                                        top: true,
+                                        left: false,
+                                        right: true
+                                    };
+                                    $scope.getToastPosition = function() {
+                                        //sanitizePosition();
+
+                                        return Object.keys($scope.toastPosition)
+                                            .filter(function(pos) { return $scope.toastPosition[pos]; })
+                                            .join(' ');
+                                    };
+
+                                    $scope.toastPosition = angular.extend({},last);
+
+                                    var pinTo = $scope.getToastPosition();
+                                    $mdToast.show(
+                                        $mdToast.simple()
+                                            .textContent('Request Posted Successfully!')
+                                            .position(pinTo )
+                                            .hideDelay(3000)
+                                    );
+                                    //alert("your request is sent successfully");
                                 }
                                 else{
+                                    $mdDialog.hide();
                                     alert(response.error[0]);
                                 }
                             });
                         }
                         else{
+                            $mdDialog.hide();
                             alert(response.error[0]);
                         }
                     });
                 }
                 else{
+                    $mdDialog.hide();
                     alert(response.error[0]);
                 }
             });

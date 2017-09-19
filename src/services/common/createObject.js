@@ -17,7 +17,7 @@ angular.module('angularApp')
             formJSON = this.createFormJSON(conf.properties,formJSON,skipPropertyName);
             formJSON = formJSON.substring(0, formJSON.length - 1);
             formJSON = formJSON + '}';
-            alert(formJSON);
+            //alert(formJSON);
             var formObject = JSON.parse(formJSON);
             return formObject;
         };
