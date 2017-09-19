@@ -117,4 +117,22 @@ angular.module('angularApp')
             return false;
         }
 
+        this.getRequestConfsByUserType = function(userType){
+            postRequestTypes = [];
+            for(i=0;i<app.tenant.users.length;i++){
+                if(app.tenant.users[i].name == userType){
+                    for(k=0;k<app.tenant.requests.length;k++){
+                        if(app.tenant.requests[k].hasParent == 0){
+                            for(j=0;j<app.tenant.requests[k].postUsers.length;j++){
+                                if(app.tenant.requests[k].postUsers[j].name == userType)
+                                    postRequestTypes.push(app.tenant.requests[k].name);
+                            }
+                        }
+                    }
+                    return postRequestTypes;
+                }
+            }
+            return postRequestTypes;
+        }
+
     }]);

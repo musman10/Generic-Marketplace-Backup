@@ -16,7 +16,7 @@ module.exports = function(userid,response){
         if (err) throw err;
 
         userid = new ObjectID(userid);
-        var query = { postUserId: userid };
+        var query = { postUserId: userid, hasParent: '0' };
 
         db.collection("Request").find(query).toArray(function(err, res) {
             if (err) throw err;

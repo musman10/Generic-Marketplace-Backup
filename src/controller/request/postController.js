@@ -9,7 +9,10 @@ angular.module('angularApp')
     $scope.requestType = "";
     $scope.requestConf;
 
-    $scope.loadPostRequestForm = function(){
+    $scope.postRequestTypes = mainService.getRequestConfsByUserType(app.loginUser.userType);
+
+    $scope.loadPostRequestForm = function(postRequestType){
+        $scope.requestType = postRequestType;
         debugger;
         $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
     };
