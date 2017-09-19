@@ -12,22 +12,29 @@
     </div>
     <!--<md-header>{{data}}</md-header>-->
     <div ng-if="isArray(property)">
-        <div ng-if="isObject(property)">
+        <!--<div ng-if="isObject(property)">-->
             <div ng-repeat="p in property">
-                <div ng-repeat="(keyIn, valueIn) in p">
+                <!--<div ng-repeat="(keyIn, valueIn) in p">-->
                     <property-display property="valueIn" data="keyIn"></property-display>
-                </div>
+                <!--</div>-->
             </div>
-        </div>
+        <!--</div>-->
     </div>
-    <div ng-if="!(isArray(property))">
+    <div ng-if="isObject(property)">
+        <!--<div ng-repeat="p in property">-->
+            <div ng-repeat="(keyIn, valueIn) in property">
+                <property-display property="valueIn" data="keyIn"></property-display>
+            </div>
+        <!--</div>-->
+    </div>
+    <div ng-if="!(isArray(property)) && !(isObject(property))">
         <div ng-if="!(data == 'name')">
             <md-subheader>{{property}}</md-subheader>
         </div>
         <!--<span class="md-display">{{property}}</span>-->
-        <br>
+        <!--<br>-->
     </div>
-    <br>
+    <!--<br>-->
    <!-- <label>{{data[property.name]}}</label>-->
 </div>
 
