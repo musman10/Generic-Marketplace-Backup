@@ -23,6 +23,9 @@ module.exports = function(updatedUser,response){
         var myquery = {
             _id: id
         };
+        updatedUser.dateLastModified = new Date();
+        updatedUser.tenantId = new ObjectID(updatedUser.tenantId);
+        updatedUser.dateCreated = new Date(updatedUser.dateCreated);
         var newvalues = updatedUser;
         db.collection("User").updateOne(myquery, newvalues, function(err, res) {
             if (err) throw err;

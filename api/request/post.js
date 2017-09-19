@@ -9,6 +9,17 @@ module.exports = function(request,response){
     request.tenantId = new ObjectID(request.tenantId);
     request.postUserId = new ObjectID(request.postUserId);
 
+    var date = new Date();
+   /* console.log(date.getDate());
+    console.log(date.getMonth());
+    console.log(date.getFullYear());
+    console.log(date.getUTCHours());
+    console.log(date.toUTCString());
+    console.log(date.toLocaleString());*/
+
+    request.datePosted = date;
+    request.dateLastModified = date;
+
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
 

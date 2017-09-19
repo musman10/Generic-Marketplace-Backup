@@ -9,6 +9,8 @@ module.exports = function(user,res){
     var response = res;
 
     user.tenantId = new ObjectID(user.tenantId);
+    user.dateCreated = new Date();
+    user.dateLastModified = new Date();
 
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
