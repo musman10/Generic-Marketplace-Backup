@@ -51,6 +51,8 @@ angular.module('angularApp')
                             }
 
                     }
+                    $scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+                    $scope.requests[i].datePosted = $scope.requests[i].datePosted.toLocaleString();
                 }
             });
         };
