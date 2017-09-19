@@ -1,4 +1,82 @@
-<p>{{response.requestDetails.requestType}}<small style="margin-left:5px">{{response.requestDetails.postUserDetails.name}}</small></p>
+<!--{{response.requestDetails.requestType}}<small style="margin-left:5px">{{response.requestDetails.postUserDetails.name}}</small>-->
+<!--<div ng-repeat="reqResponse in requestResponses">-->
+
+    <!--<div ng-if="reqResponse.request.name == response.requestDetails.requestType && response.requestDetails.userResponded == false">-->
+        <!--&lt;!&ndash;<br>&ndash;&gt;-->
+        <!--<select ng-model="res" ng-change="respondRequest(response,res)">-->
+            <!--<option ng-repeat="res in reqResponse.responses" value="{{res}}">{{res.name}}</option>-->
+        <!--</select>-->
+    <!--</div>-->
+
+    <!--<div ng-if="response.requestDetails.userResponded == true">-->
+        <!--<div ng-repeat="response in response.requestDetails.userResponses">-->
+            <!--<request-response response="response" request-responses="requestResponses" userid="userid"></request-response>-->
+        <!--</div>-->
+    <!--</div>-->
+
+    <!--<div ng-if="response.requestDetails.userResponded == false && reqResponse.request.name != response.requestDetails.requestType">-->
+        <!--<div ng-repeat="response in response.requestDetails.userResponses">-->
+            <!--<request-response response="response" request-responses="requestResponses" userid="userid"></request-response>-->
+        <!--</div>-->
+    <!--</div>-->
+<!--</div>-->
+<!--
 <div ng-repeat="response in response.requestDetails.userResponses">
     <request-response response="response"></request-response>
 </div>
+-->
+<details>
+    <summary>
+        <ul>
+            <li class="titleName">{{response.requestDetails.requestType}}</li>
+            <li class="titleValue"> {{response.requestDetails.postUserDetails.name}}</li>
+            <li class="titleValue"> {{response.requestDetails.postUserDetails.userType}}</li>
+            <li class="titleValue">
+                <div ng-repeat="reqResponse in requestResponses">
+
+                    <div ng-if="reqResponse.request.name == response.requestDetails.requestType && response.requestDetails.userResponded == false">
+                        <!--<br>-->
+                        <select ng-model="res" ng-change="respondRequest(response,res)">
+                            <option ng-repeat="res in reqResponse.responses" value="{{res}}">{{res.name}}</option>
+                        </select>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </summary>
+    <!--<div ng-if="response.requestDetails.userResponses.length > 0">-->
+        <!--<div class="content">-->
+            <!--<div ng-repeat="response in response.requestDetails.userResponses">-->
+                <!--<request-response-expansion response="response"></request-response-expansion>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
+    <!--<div ng-if="!(response.requestDetails.userResponses.length > 0)">-->
+        <!--<div class="content">-->
+            <!--<p>No more responses yet.</p>-->
+        <!--</div>-->
+    <!--</div>-->
+    <div class="content">
+    <div ng-repeat="reqResponse in requestResponses">
+
+        <!--<div ng-if="reqResponse.request.name == response.requestDetails.requestType && response.requestDetails.userResponded == false">-->
+            <!--&lt;!&ndash;<br>&ndash;&gt;-->
+            <!--<select ng-model="res" ng-change="respondRequest(response,res)">-->
+                <!--<option ng-repeat="res in reqResponse.responses" value="{{res}}">{{res.name}}</option>-->
+            <!--</select>-->
+        <!--</div>-->
+
+        <div ng-if="response.requestDetails.userResponded == true">
+            <div ng-repeat="response in response.requestDetails.userResponses">
+                <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
+            </div>
+        </div>
+
+        <div ng-if="response.requestDetails.userResponded == false && reqResponse.request.name != response.requestDetails.requestType">
+            <div ng-repeat="response in response.requestDetails.userResponses">
+                <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
+            </div>
+        </div>
+    </div>
+        </div>
+</details>

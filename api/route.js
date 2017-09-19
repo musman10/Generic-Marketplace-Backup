@@ -71,6 +71,11 @@ router.post('/request/user/list/requestTypes/', function(req, res, next) {
   service(req.body,res);
 });
 
+router.get('/user/post/request/list/userid/:userId', function(req, res, next) {
+  var service = require("./request/listPostRequestsByUserId");
+  service(req.params.userId,res);
+});
+
 /* Get user responses*/
 router.post('/request/response', function(req, res, next) {
   var service = require("./request/viewResponse");

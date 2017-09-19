@@ -93,4 +93,28 @@ angular.module('angularApp')
             }
         }
 
+        this.checkPostRequestPermission = function(){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].hasParent == 0){
+                    for(j=0;j<app.tenant.requests[i].postUsers.length;j++){
+                        if(app.tenant.requests[i].postUsers[j].name == app.loginUser.userType)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        this.checkViewRequestPermission = function(){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].hasParent == 0){
+                    for(j=0;j<app.tenant.requests[i].viewUsers.length;j++){
+                        if(app.tenant.requests[i].viewUsers[j].name == app.loginUser.userType)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
     }]);

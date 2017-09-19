@@ -111,19 +111,19 @@
                 Edit Profile
             </a>
         </li>
-        <li>
+        <li ng-if="viewRequestPermission">
             <a href="/user/list/request">
                 <i class="sidebar-icon md-drafts"></i>
                 Requests
             </a>
         </li>
-            <li>
-                <a href="#">
+            <li ng-if="postRequestPermission">
+                <a href="/user/list/post/request">
                     <i class="sidebar-icon md-drafts"></i>
                     My Requests
                 </a>
             </li>
-            <li>
+            <li ng-if="postRequestPermission">
                 <a href="/post/request">
                     <i class="sidebar-icon md-drafts"></i>
                     Post Request

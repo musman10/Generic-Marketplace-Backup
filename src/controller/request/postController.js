@@ -21,7 +21,8 @@ angular.module('angularApp')
         formJSON = formJSON + ",";
         formJSON = formJSON + '"postUserId":' + '"' + app.loginUser._id + '",';
         formJSON = formJSON + '"userResponses":[],';
-        formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '"';
+        formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '",';
+        formJSON = formJSON + '"hasParent":' + '"' + $scope.requestConf.hasParent + '"';
         formJSON = formJSON + '}';
         $scope.request = JSON.parse(formJSON);
         requestPostService.postRequest($scope.request).then(function(response){
