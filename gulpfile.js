@@ -45,6 +45,7 @@ gulp.task('compress-prod', function() {
         'src/**/*.js',
         'src/**/**/*.js',
         'src/**/**/**/*.js',
+        'public/js/*.js'
     ])
         .pipe(concat('app.min.js'))
         .pipe(uglify())
@@ -71,6 +72,7 @@ gulp.task('debug', function() {
         'src/**/*.js',
         'src/**/**/*.js',
         'src/**/**/**/*.js',
+        'public/js/*.js'
     ])
     .pipe(concat('app.js'))
     .pipe(debug({title: 'unicorn:'}))
