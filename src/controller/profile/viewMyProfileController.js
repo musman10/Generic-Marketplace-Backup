@@ -58,7 +58,7 @@ angular.module('angularApp')
 
         };
 
-        $scope.userConf1 = mainService.getUserConfByUserType("jobseeker");
+        $scope.userConf1 = mainService.getUserConfByUserType(app.loginUser.userType);
         $scope.userConf = JSON.stringify($scope.userConf1);
         $scope.userConf = JSON.parse($scope.userConf);
         userProperties =$scope.userConf.properties;
