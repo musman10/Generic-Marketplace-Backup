@@ -19,6 +19,12 @@
             <td data-title="'Posted By'" filter="{username:'text'}" sortable="'username'">
                 {{request.username}}
             </td>
+            <td data-title="'Post Date'" filter="{ dateposted: 'text'}" sortable="'dateposted'">
+                {{request.dateposted}}
+            </td>
+            <td data-title="'Modification Date'" filter="{ datelastmodified: 'text'}" sortable="'datelastmodified'">
+                {{request.datelastmodified}}
+            </td>
         </tr>
     </table>
 

@@ -12,7 +12,8 @@ module.exports = function(tenantId,response){
         db.collection('Request', function (err, Request) {
             if (err) throw err;
             tenantId = new ObjectID(tenantId)
-            var query = { tenantId: tenantId };
+            //var query = { tenantId: tenantId };
+            var query = { $and : [ { tenantId : tenantId }, { hasParent : "0" } ]};
             Request.find(query, function (err, cursor) {
                 var join = new Join(db).on({
                     field: 'postUserId', // <- field in request doc

@@ -24,6 +24,12 @@ router.get('/tenant/:tenantName', function(req, res, next) {
   service(req.params.tenantName,res);
 });
 
+/* Tenant service */
+router.get('/tenant/tenantId/:tenantId', function(req, res, next) {
+  var service = require("./tenant/get");
+  service(req.params.tenantId,res);
+});
+
 /* Tenant list service */
 router.get('/tenant/get/list', function(req, res, next) {
   var service = require("./tenant/list");
@@ -80,6 +86,12 @@ router.get('/user/post/request/list/userid/:userId', function(req, res, next) {
 router.post('/request/response', function(req, res, next) {
   var service = require("./request/viewResponse");
   service(req.body,res);
+});
+
+/* create user service */
+router.get('/user/create/:tenantId', function(req, res, next) {
+  var service = require("./user/createUser");
+  service(req.params.tenantId,res);
 });
 
 /* get user list service */
