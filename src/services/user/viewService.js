@@ -7,4 +7,21 @@ angular.module('angularApp')
             return thisIsPrivate;
         };
 
+        this.view = function(userId){
+
+            var deferred = $q.defer();
+            var userData = {
+                userId: userId
+            };
+            $http.post(app.baseUrl + "api/user/view" , userData)
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
     }]);
