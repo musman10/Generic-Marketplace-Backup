@@ -63,10 +63,23 @@ angular.module('angularApp')
                 }
                 else {
                     if(skipPropertyName == true){
-                        formJSON = formJSON + '"'+ properties[i].value +'",';
+                        if(properties[i].type == "dateTime") {
+                            properties[i].value = new Date(properties[i].value);
+                            properties[i].value = JSON.stringify(properties[i].value);
+                            formJSON = formJSON + properties[i].value + ',';
+                        }
+                        else
+                            formJSON = formJSON + '"'+ properties[i].value +'",';
                     }
-                    else
-                        formJSON = formJSON + '"' + properties[i].name + '":"'+ properties[i].value +'",';
+                    else {
+                        if(properties[i].type == "dateTime") {
+                            properties[i].value = new Date(properties[i].value);
+                            properties[i].value = JSON.stringify(properties[i].value);
+                            formJSON = formJSON + '"' + properties[i].name + '":' + properties[i].value + ',';
+                        }
+                        else
+                        formJSON = formJSON + '"' + properties[i].name + '":"' + properties[i].value + '",';
+                    }
                 }
             }
         }

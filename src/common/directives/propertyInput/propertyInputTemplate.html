@@ -32,7 +32,7 @@
             </div>
         </div>
         <div ng-if="property.subProperties.length == 0">
-            <md-input-container>
+            <md-input-container ng-if="property.type != 'dateTime'">
                 <label>{{property.name}}</label>
                 <input name = "{{property.name}}" ng-model="property.value" ng-minlength="property.min" ng-maxlength="property.max" ng-required="{{property.required}}" ng-pattern="property.pattern" />{{property.value}}
                   <div ng-messages="form[property.name].$error">
@@ -41,6 +41,10 @@
                     <div ng-message="maxlength">Maxlength is {{property.max}} !</div>
                 </div>
             </md-input-container>
+            <div ng-if="property.type == 'dateTime'" style="">
+                <!--<input type="date" ng-model="property.value"/>-->
+                <adm-dtp ng-model="property.value" flex="50"></adm-dtp>
+            </div>
         </div>
     </div>
 </div>

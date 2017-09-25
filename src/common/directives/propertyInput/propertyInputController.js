@@ -4,6 +4,11 @@ angular.module('angularApp')
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
+        debugger;
+        if($scope.property.type == 'dateTime'){
+            $scope.property.value = new Date($scope.property.value);
+        }
+
         $scope.addPropertyInList = function(mainProperty){
             var property = JSON.stringify(mainProperty);
             property = JSON.parse(property);
