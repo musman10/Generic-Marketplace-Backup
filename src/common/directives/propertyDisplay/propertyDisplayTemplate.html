@@ -1,17 +1,17 @@
-<div >
+<!--<div >
 
 
     <div ng-if="data == 'name'">
        <md-header class="md-display-2">{{property.slice(0).toUpperCase()}}</md-header>
     </div>
-   <!-- <div ng-if="data == '_id' ||">
+   &lt;!&ndash; <div ng-if="data == '_id' ||">
         <md-header class="md-display-2">{{data}}</md-header>
-    </div>-->
+    </div>&ndash;&gt;
     <div ng-if="(!(data == 'name') && (data != null))">
         <label>{{data[0].toUpperCase() + data.slice(1).toLowerCase()}}</label>
     </div>
-    <!--<md-header>{{data}}</md-header>-->
-    <!--<div ng-if="isArray(property)">
+    &lt;!&ndash;<md-header>{{data}}</md-header>&ndash;&gt;
+    &lt;!&ndash;<div ng-if="isArray(property)">
         &lt;!&ndash;<div ng-if="isObject(property)">&ndash;&gt;
             <div ng-repeat="p in property">
                 &lt;!&ndash;<div ng-repeat="(keyIn, valueIn) in p">&ndash;&gt;
@@ -19,32 +19,155 @@
                 &lt;!&ndash;</div>&ndash;&gt;
             </div>
         &lt;!&ndash;</div>&ndash;&gt;
-    </div>-->
+    </div>&ndash;&gt;
     <div ng-if="isObject(property)">
         <div ng-if="isArray(property)">
-            <!--<div ng-if="isObject(property)">-->
+            &lt;!&ndash;<div ng-if="isObject(property)">&ndash;&gt;
             <div ng-repeat="p in property">
                 <property-display property="p" ></property-display>
             </div>
         </div>
-            <!--</div>-->
+            &lt;!&ndash;</div>&ndash;&gt;
         <div ng-if="!(isArray(property))">
-        <!--<div ng-repeat="p in property">-->
+        &lt;!&ndash;<div ng-repeat="p in property">&ndash;&gt;
             <div ng-repeat="(keyIn, valueIn) in property">
                 <property-display property="valueIn" data="keyIn"></property-display>
             </div>
-        <!--</div>-->
+        &lt;!&ndash;</div>&ndash;&gt;
         </div>
     </div>
     <div ng-if="!(isObject(property))">
         <div ng-if="!(data == 'name')">
             <md-subheader>{{property}}</md-subheader>
         </div>
-        <!--<span class="md-display">{{property}}</span>-->
-        <!--<br>-->
+        &lt;!&ndash;<span class="md-display">{{property}}</span>&ndash;&gt;
+        &lt;!&ndash;<br>&ndash;&gt;
     </div>
-    <!--<br>-->
-   <!-- <label>{{data[property.name]}}</label>-->
+    &lt;!&ndash;<br>&ndash;&gt;
+   &lt;!&ndash; <label>{{data[property.name]}}</label>&ndash;&gt;
+</div>-->
+
+<!--{{data}}-->
+<!--{{property}}-->
+
+{{keyRequired}}
+<td  style="width: 20%; border:0;" ng-if="data != null">
+    {{data}}
+</td>
+<!--<td  colspan="2">-->
+
+    <td style="border:0;" >
+        <div ng-if="!((!(isObject(property)) && !(isArray(property))))">
+            <!--<table class="table table-striped table-bordered table-hover" style="background-color:red">-->
+                <!--<td>-->
+    <div ng-if="isObject(property)">
+        <div ng-if="isArray(property)">
+            <div ng-if="property.length != 0">
+            <table style="background-color: transparent;" class="table " ng-if="isObject(property[0])">
+                <thead>
+                    <tr ng-repeat="p in property track by $index" ng-if="$index == 0">
+                        <th style="width: 20px; padding:10px" ng-repeat="(keyIn, valueIn) in p" property-display="row" data="keyIn">
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="p in property" >
+                      <!--<span class="md-display">{{property}}</span>-->
+                    <td  style="border:0;width: 20px" ng-repeat="(keyIn, valueIn) in p" property-display="row" property="valueIn" >
+                    </td>
+                        <!--<br>-->
+                </tr>
+                </tbody>
+            </table>
+                <table style="background-color: transparent;" class="table " ng-if="!isObject(property[0])">
+                    <tbody>
+                    <tr ng-repeat="p in property" property-display="row" property="p">
+
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!--</div>-->
+        <div ng-if="!(isArray(property))">
+            <table style="background-color: transparent;" class="table">
+            <!--<div ng-repeat="p in property">-->
+            <tr ng-repeat="(keyIn, valueIn) in property" property-display="row" property="valueIn" data="keyIn">
+            </tr>
+            <!--</div>-->
+            </table>
+        </div>
+
+    </div>
+                <!--</td>-->
+            </table>
+        </div>
+   <div ng-if="(!(isObject(property)) && !(isArray(property)))">
+         {{property}}
+   </div><!--<span class="md-display">{{property}}</span>-->
+        <!--<br>-->
+    </td>
+
+
+
+
+
+
+
+
+<!--
+
+
+<div >
+
+
+    <div ng-if="data == 'name'">
+        <md-header class="md-display-2">{{property.slice(0).toUpperCase()}}</md-header>
+    </div>
+    &lt;!&ndash; <div ng-if="data == '_id' ||">
+         <md-header class="md-display-2">{{data}}</md-header>
+     </div>&ndash;&gt;
+    <div ng-if="(!(data == 'name') && (data != null))">
+        <label>{{data[0].toUpperCase() + data.slice(1).toLowerCase()}}</label>
+    </div>
+    &lt;!&ndash;<md-header>{{data}}</md-header>&ndash;&gt;
+    <div ng-if="isArray(property)">
+        &lt;!&ndash;<div ng-if="isObject(property)">&ndash;&gt;
+            <div ng-repeat="p in property">
+                &lt;!&ndash;<div ng-repeat="(keyIn, valueIn) in p">&ndash;&gt;
+                    <property-display property="valueIn" data="keyIn"></property-display>
+                &lt;!&ndash;</div>&ndash;&gt;
+            </div>
+        &lt;!&ndash;</div>&ndash;&gt;
+    </div>
+    <div ng-if="isObject(property)">
+        <div ng-if="isArray(property)">
+            &lt;!&ndash;<div ng-if="isObject(property)">&ndash;&gt;
+            <div ng-repeat="p in property">
+                <property-display property="p" ></property-display>
+            </div>
+        </div>
+        &lt;!&ndash;</div>&ndash;&gt;
+        <div ng-if="!(isArray(property))">
+            &lt;!&ndash;<div ng-repeat="p in property">&ndash;&gt;
+            <div ng-repeat="(keyIn, valueIn) in property">
+                <property-display property="valueIn" data="keyIn"></property-display>
+            </div>
+            &lt;!&ndash;</div>&ndash;&gt;
+        </div>
+    </div>
+    <div ng-if="!(isObject(property))">
+        <div ng-if="!(data == 'name')">
+            <md-subheader>{{property}}</md-subheader>
+        </div>
+        &lt;!&ndash;<span class="md-display">{{property}}</span>&ndash;&gt;
+        &lt;!&ndash;<br>&ndash;&gt;
+    </div>
+    &lt;!&ndash;<br>&ndash;&gt;
+    &lt;!&ndash; <label>{{data[property.name]}}</label>&ndash;&gt;
 </div>
 
+
+
+-->
 
