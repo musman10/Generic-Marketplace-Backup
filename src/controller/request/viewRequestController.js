@@ -3,7 +3,7 @@
  */
 
 angular.module('angularApp')
-    .controller('viewRequestController', [ '$scope','$state', 'app', '$stateParams', 'viewRequestService', 'mainService',  function ($scope,$state,app,$stateParams,viewRequestService,mainService) {
+    .controller('viewRequestController', [ '$scope','$state', 'app', '$stateParams', 'viewRequestService', 'mainService','NgTableParams','$filter',  function ($scope,$state,app,$stateParams,viewRequestService,mainService,NgTableParams,$filter) {
        /* $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing',
@@ -27,7 +27,10 @@ angular.module('angularApp')
             delete information_to_print.post_user_id;
             information_to_print.tenantname = information_to_print2.tenantname.name;
             $scope.result = information_to_print;
+
+           // $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
         });
+        
 
         $scope.viewResponse = function(){
             debugger;
