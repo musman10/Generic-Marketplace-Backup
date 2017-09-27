@@ -123,6 +123,12 @@ angular.module('angularApp')
                 controller  : 'TableController',
                 parent:'MasterLayout'
             })
+            .state('ViewPackages', {
+                url         : '/packages/view',
+                templateUrl : 'public/templates/packages/viewPackages.html',
+                controller  : 'ViewPackagesController',
+                parent:'MasterLayout'
+            })
 }]);
 
     var app = {

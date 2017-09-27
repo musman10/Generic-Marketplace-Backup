@@ -1,0 +1,123 @@
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1">Packages</h3>
+</md-toolbar>
+
+
+
+<!--<div ng-repeat="p in packages">
+
+<details>
+    <summary>
+        <ul>
+            <md-checkbox class= "md-primary" ng-model="data.cb1" aria-label="Checkbox 1">
+            <li class="titleName">{{p.name}}</li>
+            <li class="titleValue"> {{p.price}}</li>
+            </md-checkbox>
+        </ul>
+    </summary>
+    <div>
+        <div class="content">
+            Description: <p>{{p.description}}</p>
+            For: <p>{{p.days}}</p>
+            Number of Rquests Allowed: <p>{{p.numberOfRequests}}</p>
+        </div>
+    </div>
+</details>
+</div>-->
+
+
+
+
+<div ng-cloak>
+    <md-content>
+        <md-tabs md-dynamic-height md-border-bottom md-selected="myTabIndex">
+            <md-tab label="Packages">
+                <md-content class="md-padding">
+
+                    <div ng-repeat="p in packages track by $index">
+
+                        <details>
+                            <summary>
+                                <ul>
+                                    <md-checkbox class= "md-primary" ng-model="data.cb1" aria-label="Checkbox 1" ng-click="addPackage(p, $index)">
+                                        <li class="titleName">{{p.name}}</li>
+                                        <li class="titleValue"> {{p.price}}</li>
+                                    </md-checkbox>
+                                </ul>
+                            </summary>
+                            <div>
+                                <div class="content">
+                                    Description: <p>{{p.description}}</p>
+                                    For: <p>{{p.days}}</p>
+                                    Number of Rquests Allowed: <p>{{p.numberOfRequests}}</p>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                    <md-button class="md-raised md-primary" aria-label="FAB" ng-click="myTabIndex = myTabIndex+1" >Proceed To Checkout</md-button>
+                </md-content>
+            </md-tab>
+            <md-tab label="Bill" ng-disabled>
+                <md-content class="md-padding">
+
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>
+                                Package Name
+                            </th>
+
+                            <th>
+                                Package Requests
+                            </th>
+
+                            <th>
+                                Package Price
+                            </th>
+                        </tr>
+                        </thead>
+                        <tr ng-repeat="p in userPackage">
+                            <td>{{p.name}}</td>
+                            <td>{{p.numberOfRequests}}</td>
+                            <td>{{p.price}}</td>
+                        </tr>
+                        <tr>
+                            <td>Total</td>
+                            <td>{{totalRequests}}</td>
+                            <td>{{totalPrice}}</td>
+                        </tr>
+                    </table>
+                    <md-button class="md-raised md-primary" aria-label="FAB" ng-click="myTabIndex = myTabIndex-1" >Back To Packages</md-button>
+                    <md-button class="md-raised md-primary" aria-label="FAB" ng-click="myTabIndex = myTabIndex+2" >Proceed To Payment</md-button>
+                </md-content>
+            </md-tab>
+            <md-tab label="Payment" >
+                <md-content class="md-padding">
+                        <md-input-container>
+                            <label>Card Type</label>
+                            <md-select ng-model="cardType">
+                                <md-option ng-repeat="cardType in cardTypes" value="{{cardType}}">{{cardType}}</md-option>
+                                <!--<md-option ng-repeat="state in ctrl.states" ng-value="state.abbrev" ng-disabled="$index === 1">
+                                    {{state.abbrev}}
+                                </md-option>-->
+                             </md-select>
+                        </md-input-container>{{cardType}}<br>
+                        <md-input-container>
+                            <label>Card Number</label>
+                            <input type="text" name="cardNumber" ng-model="cardNumber" required ng-pattern="/[0-9]/" >
+                        </md-input-container><br>
+                         <md-input-container>
+                          <label>Name On Card</label>
+                          <input type="text" name="cardName" ng-model="cardName" required >
+                        </md-input-container><br>
+                        <md-input-container>
+                          <label>Expiry Date</label>
+                          <input type="date" name="expiryDate" ng-model="expiryDate" required >
+                        </md-input-container><br>
+                    <md-button class="md-raised md-primary" aria-label="FAB" ng-click="myTabIndex = myTabIndex-1" >Back To Bill</md-button>
+                    <md-button class="md-raised md-primary" aria-label="FAB" ng-click="addPayment()">Submit</md-button>
+                </md-content>
+            </md-tab>
+        </md-tabs>
+    </md-content>
+</div>

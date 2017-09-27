@@ -54,6 +54,36 @@ router.post('/user/view', function(req, res, next) {
   service(req.body , res);
 });
 
+/* Packages view service */
+router.post('/packages/view', function(req, res, next) {
+  var service = require("./packages/viewPackages");
+  service(req.body , res);
+});
+
+/* Packages user packages insert service */
+router.post('/packages/userPackages/insert', function(req, res, next) {
+  var service = require("./packages/insertPackage");
+  service(req.body , res);
+});
+
+/* User bills insert service */
+router.post('/bills/userBills/insert', function(req, res, next) {
+  var service = require("./bills/insertBill");
+  service(req.body , res);
+});
+
+/* User bill Packages insert service */
+router.post('/bills/userBillPackages/insert', function(req, res, next) {
+  var service = require("./bills/insertBillPackages");
+  service(req.body , res);
+});
+
+/* Payment insert service */
+router.post('/payment/insert', function(req, res, next) {
+  var service = require("./payment/insertPayment");
+  service(req.body , res);
+});
+
 /* Userr signup service */
 router.post('/user/signup', function(req, res, next) {
   var service = require("./user/signup");
