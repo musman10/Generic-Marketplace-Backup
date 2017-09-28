@@ -16,6 +16,10 @@ angular.module('angularApp')
     $scope.tenantName = app.tenant.name;
     $scope.userConfList = app.tenant.users;
 
+    app.loginUser={};
+    console.log("app.LoginUser: ");
+    console.log(app.loginUser);
+
     $scope.signup = function(userTypeName){
         $state.go("TenantUserSignup", {
             userType: userTypeName
