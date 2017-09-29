@@ -18,7 +18,7 @@ angular.module('angularApp')
                 //str = JSON.stringify(app);
                 //console.log(str);
                 mainService.createTenantUserObjects();
-                $state.go('TenantLogin');    
+                $state.go('IndexPage');
             });
         }
         else{

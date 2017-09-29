@@ -123,6 +123,11 @@ angular.module('angularApp')
                 controller  : 'TableController',
                 parent:'MasterLayout'
             })
+            .state('IndexPage', {
+                url         : '/index',
+                templateUrl : 'public/templates/index/index.html',
+                controller  : 'IndexController',
+            })
 }]);
 
     var app = {

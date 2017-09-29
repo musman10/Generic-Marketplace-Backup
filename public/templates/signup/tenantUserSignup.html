@@ -1,3 +1,4 @@
+<!--
 <md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
     <h3 class="md-display-1">{{tenantName}}</h3>
 </md-toolbar>
@@ -10,6 +11,751 @@
     </div>
     <md-button class="md-raised md-primary" aria-label="FAB" ng-click="signup()" ng-disabled="form.$invalid" >Sign Up</md-button>
     </ng-form>
-    <!--{{userConf.properties}}-->
+    &lt;!&ndash;{{userConf.properties}}&ndash;&gt;
     </md-card>
+</div>
+-->
+
+
+
+<div ng-if="userType== 'Sider'">
+
+<header>
+    <nav>
+        <div class="row fixed-top middle-xs header  header-companies
+      ">
+            <div class="header-burger hidden-lg">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="header-logo">
+                <a href="companies.html">
+                    <img src="images/logo.svg" alt="Side Logo" class="side-logo-blue">
+                    <img src="images/logo-white.svg" alt="Side Logo" class="side-logo-white">
+                </a>
+            </div>
+            <div class="header-navigation end-xs">
+                <ul>
+                    <li class="hidden-xs hidden-md">
+                        <div class="header-link" id="tasks">
+                            Tasks
+                            <i id="tasks-icon" class="side-arrow-bottom icons"></i>
+
+                            <div class="header-tasks hidden-xs hidden-md">
+                                <div class="row center-xs">
+                                    <a href="tasks.html#office
+" class="header-tasks-item">
+                                        <h3>
+                                            <i class="side-office icons green"></i>npDemoOffice
+                                        </h3>
+                                        <ul>
+                                            <li>Admin Assistant</li>
+                                            <li>Customer Support</li>
+                                            <li>Online Research...</li>
+                                        </ul>
+                                    </a>
+                                    <a href="tasks.html#logistic
+" class="header-tasks-item">
+                                        <h3>
+                                            <i class="side-logistic icons pink"></i>npDemoLogistics
+                                        </h3>
+                                        <ul>
+                                            <li>Packing and Order Prep</li>
+                                            <li>Handling</li>
+                                            <li>Inventory...</li>
+                                        </ul>
+                                    </a>
+                                    <a href="tasks.html#sales
+" class="header-tasks-item">
+                                        <h3>
+                                            <i class="side-sales-rep icons orange"></i>npDemoSales Rep
+                                        </h3>
+                                        <ul>
+                                            <li>Business Development</li>
+                                            <li>Sales Assistant</li>
+                                            <li>Product Demo...</li>
+                                        </ul>
+                                    </a>
+                                    <a href="tasks.html#event
+" class="header-tasks-item">
+                                        <h3>
+                                            <i class="side-event icons yellow"></i>npDemoEvent
+                                        </h3>
+                                        <ul>
+                                            <li>Event Hosts</li>
+                                            <li>Waiting Staff</li>
+                                            <li>Event Coordinator...</li>
+                                        </ul>
+                                    </a>
+                                </div>
+                                <div class="row center-xs middle-xs header-cta">
+                                    <a href="tasks.html">
+                                        Show more tasks
+                                        <i class="icons side-arrow-2-left"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </li>
+                    <li class="hidden-xs hidden-md">
+                        <a class="header-link" href="pricing.html">
+                            Pricing
+                        </a>
+                    </li>
+                    <li class="hidden-xs hidden-md">
+                        <a class="header-link" href="stories.html">
+                            Use cases
+                        </a>
+                    </li>
+                    <li class="hidden-xs hidden-md">
+                        <a class="header-link" href="https://help.side.co/hc/en-gb">
+                            Help Center
+                        </a>
+                    </li>
+                    <li class="hidden-xs">
+                        <a class="header-link" href="signin.html">
+                            Sign in
+                        </a>
+                    </li>
+                    <li class="hidden-xs">
+                        <a href="https://team.side.co/en/signup" class="btn btn-lg btn-primary" id="companyOnboardingHeader">
+                            Company Signup
+                        </a>
+                    </li>
+                    <li class="hidden-xs">
+                        <a href="../en.html" class="btn btn-lg btn-green">
+                            Work as a npDemo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="header-sidebar-overlay"></div>
+            <div id="sidebar-swipe" class="swipe-aera"></div>
+            <div class="hidden-lg header-sidebar">
+                <ul>
+                    <li>
+                        <div class="header-logo">
+                            <a href="../index.html">
+                                <img src="images/logo.svg" alt="Side Logo">
+                            </a>
+                        </div>
+                    </li>
+                    <li>
+                        <a class="header-link" href="tasks.html">
+                            Tasks
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="pricing.html">
+                            Pricing
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="stories.html">
+                            Use cases
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="https://help.side.co/hc/en-gb">
+                            Help Center
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="signin.html">
+                            Sign in
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://team.side.co/en/signup" class="btn btn-primary white" id="companyOnboardingHeader">
+                            Company Signup
+                        </a>
+                    </li>
+                    <li>
+                        <a href="../en.html" class="btn btn-green white">
+                            Work as a npDemo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+
+<div class="cointainer">
+
+
+
+    <div class="contact-form">
+
+
+
+        <h1 class="main-h1">Register</h1>
+        <p class="gray-text">
+
+
+            Please note: This is the sign up page for npDemo (for jobs in London).
+
+
+
+        </p>
+
+
+
+        <br>
+        <br>
+        <br>
+
+
+        <div class="contact-col-1">
+
+
+            <form>
+
+
+
+
+
+
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <input type="text" required="" ng-model="user.username">
+                        <span class="highlight"></span>
+                        <span class="bar"></span>
+                        <label>User Name</label>
+                    </div>
+
+                </div>
+                <div class="form-row">
+
+                    <div class="group">
+                        <input type="password" required="" ng-model="user.password">
+                        <span class="highlight"></span>
+                        <span class="bar"></span>
+                        <label>Password</label>
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <input type="text" required="" ng-model="user.firstName">
+                        <span class="highlight"></span>
+                        <span class="bar"></span>
+                        <label>First Name</label>
+                    </div>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <input type="text" required="" ng-model="user.lastName">
+                        <span class="highlight"></span>
+                        <span class="bar"></span>
+                        <label>Last Name</label>
+                    </div>
+
+                </div>
+
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <select ng-model="user.gender">
+                            <option value="I am a">I am a</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <input type="text" required="" ng-model="user.email">
+                        <span class="highlight"></span>
+                        <span class="bar"></span>
+                        <label>Email</label>
+                    </div>
+
+                </div>
+
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <input type="text" required="" ng-model="user.phoneNumber">
+                        <span class="highlight"></span>
+                        <span class="bar"></span>
+                        <label>Phone Number</label>
+                    </div>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <select ng-model="user.age">
+                            <option disbaled>How old are you?</option>
+                            <option value="over18">Over 18</option>
+                            <option value="under18">Under 18</option>
+                        </select>
+                    </div>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <select ng-model="user.source">
+                            <option value="How did you hear about npDemo?">How did you hear about npDemo?</option>
+                            <option value="Google search">Google search</option>
+                            <option value="KCL Part-Time Job Fair">KCL Part-Time Job Fair</option>
+                            <option value="A friend who's on Side">A friend who's on Side</option>
+                            <option value="Facebook Ad">Facebook Ad</option>
+                            <option value="Job ad on a job board">Job ad on a job board</option>
+                            <option value="WeWork Fair">WeWork Fair</option>
+                            <option value="Post in a Facebook group">Post in a Facebook group</option>
+                            <option value="Twitter post">Twitter post</option>
+                            <option value="A friend not on npDemo yet">A friend not on npDemo yet</option>
+                            <option value="Press article">Press article</option>
+                            <option value="Contacted on Linkedin">Contacted on Linkedin</option>
+                            <option value="University job fair">University job fair</option>
+
+
+                        </select>
+                    </div>
+
+                </div>
+
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <select ng-model="user.availability">
+                            <option value="What's your general weekly availability?">What's your general weekly availability?</option>
+                            <option value="A Few, couple hours a week">A Few, couple hours a week</option>
+                            <option value="BPart-time, couple days a week">BPart-time, couple days a week</option>
+                            <option value="CFull-time, 35 hours a week">CFull-time, 35 hours a week</option>
+
+
+
+                        </select>
+                    </div>
+
+                </div>
+
+
+
+                <div class="form-row">
+
+                    <div class="group">
+                        <select ng-model="user.isStudent">
+                            <option value="Are you a student">Are you a student?</option>
+                            <option value="Yes">Yes</option>
+                            <option value="Not anymore">Not anymore</option>
+
+
+
+
+                        </select>
+                    </div>
+
+                </div>
+
+
+
+
+
+
+
+            </form>
+
+
+        </div>
+
+
+
+
+
+
+
+
+        <div class="submit-button-row">
+
+            <input type="button" name="" value="Submit" class="submit-form-btn" ng-click="signup()">
+
+        </div>
+
+
+    </div>
+
+
+
+
+</div>
+</div>
+
+
+<!--<script async defer src="async.html"></script>-->
+
+
+<div ng-if="userType == 'Company'">
+
+    <header>
+        <nav>
+            <div class="row fixed-top middle-xs header  header-companies
+      ">
+                <div class="header-burger hidden-lg">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="header-logo">
+                    <a href="companies.html">
+                        <img src="images/logo.svg" alt="Side Logo" class="side-logo-blue">
+                        <img src="images/logo-white.svg" alt="Side Logo" class="side-logo-white">
+                    </a>
+                </div>
+                <div class="header-navigation end-xs">
+                    <ul>
+                        <li class="hidden-xs hidden-md">
+                            <div class="header-link" id="tasks">
+                                Tasks
+                                <i id="tasks-icon" class="side-arrow-bottom icons"></i>
+
+                                <div class="header-tasks hidden-xs hidden-md">
+                                    <div class="row center-xs">
+                                        <a href="tasks.html#office
+" class="header-tasks-item">
+                                            <h3>
+                                                <i class="side-office icons green"></i>
+                                                npDemo Office
+                                            </h3>
+                                            <ul>
+                                                <li>Admin Assistant</li>
+                                                <li>Customer Support</li>
+                                                <li>Online Research...</li>
+                                            </ul>
+                                        </a>
+                                        <a href="tasks.html#logistic
+" class="header-tasks-item">
+                                            <h3>
+                                                <i class="side-logistic icons pink"></i>
+                                                npDemo Logistics
+                                            </h3>
+                                            <ul>
+                                                <li>Packing and Order Prep</li>
+                                                <li>Handling</li>
+                                                <li>Inventory...</li>
+                                            </ul>
+                                        </a>
+                                        <a href="tasks.html#sales
+" class="header-tasks-item">
+                                            <h3>
+                                                <i class="side-sales-rep icons orange"></i>
+                                                npDemo Sales Rep
+                                            </h3>
+                                            <ul>
+                                                <li>Business Development</li>
+                                                <li>Sales Assistant</li>
+                                                <li>Product Demo...</li>
+                                            </ul>
+                                        </a>
+                                        <a href="tasks.html#event
+" class="header-tasks-item">
+                                            <h3>
+                                                <i class="side-event icons yellow"></i>
+                                                npDemo Event
+                                            </h3>
+                                            <ul>
+                                                <li>Event Hosts</li>
+                                                <li>Waiting Staff</li>
+                                                <li>Event Coordinator...</li>
+                                            </ul>
+                                        </a>
+                                    </div>
+                                    <div class="row center-xs middle-xs header-cta">
+                                        <a href="tasks.html">
+                                            Show more tasks
+                                            <i class="icons side-arrow-2-left"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </li>
+                        <li class="hidden-xs hidden-md">
+                            <a class="header-link" href="pricing.html">
+                                Pricing
+                            </a>
+                        </li>
+                        <li class="hidden-xs hidden-md">
+                            <a class="header-link" href="stories.html">
+                                Use cases
+                            </a>
+                        </li>
+                        <li class="hidden-xs hidden-md">
+                            <a class="header-link" href="https://help.side.co/hc/en-gb">
+                                Help Center
+                            </a>
+                        </li>
+                        <li class="hidden-xs">
+                            <a class="header-link" href="signin.html">
+                                Sign in
+                            </a>
+                        </li>
+                        <li class="hidden-xs">
+                            <a href="https://team.side.co/en/signup" class="btn btn-lg btn-primary" id="companyOnboardingHeader">
+                                Company Signup
+                            </a>
+                        </li>
+                        <li class="hidden-xs">
+                            <a href="../en.html" class="btn btn-lg btn-green">
+                                Work as a npDemo
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="header-sidebar-overlay"></div>
+                <div id="sidebar-swipe" class="swipe-aera"></div>
+                <div class="hidden-lg header-sidebar">
+                    <ul>
+                        <li>
+                            <div class="header-logo">
+                                <a href="../index.html">
+                                    <img src="images/logo.svg" alt="Side Logo">
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <a class="header-link" href="tasks.html">
+                                Tasks
+                            </a>
+                        </li>
+                        <li>
+                            <a class="header-link" href="pricing.html">
+                                Pricing
+                            </a>
+                        </li>
+                        <li>
+                            <a class="header-link" href="stories.html">
+                                Use cases
+                            </a>
+                        </li>
+                        <li>
+                            <a class="header-link" href="https://help.side.co/hc/en-gb">
+                                Help Center
+                            </a>
+                        </li>
+                        <li>
+                            <a class="header-link" href="signin.html">
+                                Sign in
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://team.side.co/en/signup" class="btn btn-primary white" id="companyOnboardingHeader">
+                                Company Signup
+                            </a>
+                        </li>
+                        <li>
+                            <a href="../en.html" class="btn btn-green white">
+                                Work as a npDemo
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+    <div class="cointainer">
+
+
+
+        <div class="contact-form">
+
+
+
+            <h1 class="main-h1">One last thing...</h1>
+            <p class="gray-text">Tell us a bit more about you and your company before you post a task</p>
+
+
+
+            <br>
+            <br>
+            <br>
+
+
+            <div class="contact-col-1">
+
+
+                <form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="text" required="" ng-model="user.email">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>Your email</label>
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="text" required="" ng-model="user.fullName">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>Your first name and last name</label>
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="text" required="" ng-model="user.username">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>User Name</label>
+                        </div>
+
+                    </div>
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="password" required="" ng-model="user.password">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>Choose a password</label>
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="text" required="" ng-model="user.phoneNumber">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>Your phone number</label>
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="text" required="" ng-model="user.companyName">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>Your company name</label>
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="text" required="" ng-model="user.countryName">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>Your country</label>
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="text" required="" ng-model="user.source">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>I heard about this via</label>
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="form-row">
+
+                        <div class="group">
+                            <input type="text" required="" ng-model="user.numberOfEmployees">
+                            <span class="highlight"></span>
+                            <span class="bar"></span>
+                            <label>Number of Employees</label>
+                        </div>
+
+                    </div>
+
+
+
+                </form>
+
+
+            </div>
+
+
+
+
+            <div class="submit-button-row">
+
+                <input type="button" name="" value="Submit" class="submit-form-btn" ng-click="signup()">
+
+            </div>
+
+
+        </div>
+
+
+
+
+    </div>
+
 </div>
