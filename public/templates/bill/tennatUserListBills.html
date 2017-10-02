@@ -1,0 +1,26 @@
+<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
+    <h3 class="md-display-1">User Bills</h3>
+</md-toolbar>
+<div>
+
+    <table ng-table="BillTable" class="table table-striped table-bordered table-hover" show-filter="true">
+        <tr ng-repeat="bill in $data">
+            <td data-title="'No. '" >
+                {{ $index + 1 }}
+            </td>
+            <td data-title="'Invoice Number'" filter="{ invoiceNumber: 'text'}" sortable="'invoiceNumber'">
+                <a href=/bill/view/{{bill._id}}>{{bill.invoiceNumber}}</a>
+            </td>
+            <td data-title="'Date'" filter="{dateCreated:'text'}" sortable="'dateCreated'">
+                {{bill.dateCreated}}
+            </td>
+            <td data-title="'Amount'" filter="{amount:'text'}" sortable="'amount'">
+                {{bill.amount}}
+            </td>
+            <td data-title="'Payment Status'" filter="{paymentStatus:'text'}" sortable="'paymentStatus'">
+                {{bill.paymentStatus}}
+            </td>
+        </tr>
+    </table>
+
+</div>

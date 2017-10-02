@@ -117,6 +117,12 @@ angular.module('angularApp')
                 controller  : 'UserListPostRequestsController',
                 parent:'MasterLayout'
             })
+            .state('TennatUserListBills', {
+                url         : '/bill/userBills',
+                templateUrl : 'public/templates/bill/tennatUserListBills.html',
+                controller  : 'TennatUserListBillsController',
+                parent:'MasterLayout'
+            })
             .state('Table', {
                 url         : '/table/table',
                 templateUrl : 'public/templates/table/table.html',
