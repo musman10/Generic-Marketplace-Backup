@@ -136,6 +136,18 @@ router.post('/request/update/addResponse', function(req, res, next) {
   service(req.body,res);
 });
 
+  /* User Bill List By Userid service */
+router.get('/bill/getUserBillList/ByUserId/:userid', function(req, res, next) {
+  var service = require("./bill/getUserBillListByUserid");
+  service(req.params.userid,res);
+});
+
+/* User Bill By Billid service */
+router.get('/bill/getUserBill/ByBillId/:billid', function(req, res, next) {
+  var service = require("./bill/getUserBillByBillid");
+  service(req.params.billid,res);
+});
+
 /* DB Create service */
 router.get('/db/create', function(req, res, next) {
   var service = require("./db/create");
