@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.6.5
+ * @license AngularJS v1.6.6
  * (c) 2010-2017 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -106,7 +106,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.6.5/' +
+    message += '\nhttp://errors.angularjs.org/1.6.6/' +
       (module ? module + '/' : '') + code;
 
     for (i = 0, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -2784,11 +2784,11 @@ function toDebugString(obj, maxDepth) {
 var version = {
   // These placeholder strings will be replaced by grunt's `build` task.
   // They need to be double- or single-quoted.
-  full: '1.6.5',
+  full: '1.6.6',
   major: 1,
   minor: 6,
-  dot: 5,
-  codeName: 'toffee-salinization'
+  dot: 6,
+  codeName: 'interdimensional-cable'
 };
 
 
@@ -2934,7 +2934,7 @@ function publishExternalAPI(angular) {
       });
     }
   ])
-  .info({ angularVersion: '1.6.5' });
+  .info({ angularVersion: '1.6.6' });
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -8496,6 +8496,31 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
     return preAssignBindingsEnabled;
   };
 
+  /**
+   * @ngdoc method
+   * @name  $compileProvider#strictComponentBindingsEnabled
+   *
+   * @param {boolean=} enabled update the strictComponentBindingsEnabled state if provided, otherwise just return the
+   * current strictComponentBindingsEnabled state
+   * @returns {*} current value if used as getter or itself (chaining) if used as setter
+   *
+   * @kind function
+   *
+   * @description
+   * Call this method to enable/disable strict component bindings check. If enabled, the compiler will enforce that
+   * for all bindings of a component that are not set as optional with `?`, an attribute needs to be provided
+   * on the component's HTML tag.
+   *
+   * The default value is false.
+   */
+  var strictComponentBindingsEnabled = false;
+  this.strictComponentBindingsEnabled = function(enabled) {
+    if (isDefined(enabled)) {
+      strictComponentBindingsEnabled = enabled;
+      return this;
+    }
+    return strictComponentBindingsEnabled;
+  };
 
   var TTL = 10;
   /**
@@ -10523,12 +10548,20 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       }
     }
 
+    function strictBindingsCheck(attrName, directiveName) {
+      if (strictComponentBindingsEnabled) {
+        throw $compileMinErr('missingattr',
+          'Attribute \'{0}\' of \'{1}\' is non-optional and must be set!',
+          attrName, directiveName);
+      }
+    }
 
     // Set up $watches for isolate scope and controller bindings.
     function initializeDirectiveBindings(scope, attrs, destination, bindings, directive) {
       var removeWatchCollection = [];
       var initialChanges = {};
       var changes;
+
       forEach(bindings, function initializeBinding(definition, scopeName) {
         var attrName = definition.attrName,
         optional = definition.optional,
@@ -10540,7 +10573,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
           case '@':
             if (!optional && !hasOwnProperty.call(attrs, attrName)) {
+              strictBindingsCheck(attrName, directive.name);
               destination[scopeName] = attrs[attrName] = undefined;
+
             }
             removeWatch = attrs.$observe(attrName, function(value) {
               if (isString(value) || isBoolean(value)) {
@@ -10567,6 +10602,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           case '=':
             if (!hasOwnProperty.call(attrs, attrName)) {
               if (optional) break;
+              strictBindingsCheck(attrName, directive.name);
               attrs[attrName] = undefined;
             }
             if (optional && !attrs[attrName]) break;
@@ -10611,6 +10647,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           case '<':
             if (!hasOwnProperty.call(attrs, attrName)) {
               if (optional) break;
+              strictBindingsCheck(attrName, directive.name);
               attrs[attrName] = undefined;
             }
             if (optional && !attrs[attrName]) break;
@@ -10636,6 +10673,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '&':
+            if (!optional && !hasOwnProperty.call(attrs, attrName)) {
+              strictBindingsCheck(attrName, directive.name);
+            }
             // Don't assign Object.prototype method to scope
             parentGet = attrs.hasOwnProperty(attrName) ? $parse(attrs[attrName]) : noop;
 
@@ -11168,7 +11208,7 @@ function $HttpParamSerializerProvider() {
       if (!params) return '';
       var parts = [];
       forEachSorted(params, function(value, key) {
-        if (value === null || isUndefined(value)) return;
+        if (value === null || isUndefined(value) || isFunction(value)) return;
         if (isArray(value)) {
           forEach(value, function(v) {
             parts.push(encodeUriQuery(key)  + '=' + encodeUriQuery(serializeValue(v)));
@@ -11264,10 +11304,15 @@ function defaultHttpResponseTransform(data, headers) {
 
     if (tempData) {
       var contentType = headers('Content-Type');
-      if ((contentType && (contentType.indexOf(APPLICATION_JSON) === 0)) || isJsonLike(tempData)) {
+      var hasJsonContentType = contentType && (contentType.indexOf(APPLICATION_JSON) === 0);
+
+      if (hasJsonContentType || isJsonLike(tempData)) {
         try {
           data = fromJson(tempData);
         } catch (e) {
+          if (!hasJsonContentType) {
+            return data;
+          }
           throw $httpMinErr('baddata', 'Data must be a valid JSON object. Received: "{0}". ' +
           'Parse error: "{1}"', data, e);
         }
@@ -11580,6 +11625,7 @@ function $HttpProvider() {
      *   - **headers** – `{function([headerName])}` – Header getter function.
      *   - **config** – `{Object}` – The configuration object that was used to generate the request.
      *   - **statusText** – `{string}` – HTTP status text of the response.
+     *   - **xhrStatus** – `{string}` – Status of the XMLHttpRequest (`complete`, `error`, `timeout` or `abort`).
      *
      * A response status code between 200 and 299 is considered a success status and will result in
      * the success callback being called. Any response status code outside of that range is
@@ -12421,9 +12467,9 @@ function $HttpProvider() {
           } else {
             // serving from cache
             if (isArray(cachedResp)) {
-              resolvePromise(cachedResp[1], cachedResp[0], shallowCopy(cachedResp[2]), cachedResp[3]);
+              resolvePromise(cachedResp[1], cachedResp[0], shallowCopy(cachedResp[2]), cachedResp[3], cachedResp[4]);
             } else {
-              resolvePromise(cachedResp, 200, {}, 'OK');
+              resolvePromise(cachedResp, 200, {}, 'OK', 'complete');
             }
           }
         } else {
@@ -12480,10 +12526,10 @@ function $HttpProvider() {
        *  - resolves the raw $http promise
        *  - calls $apply
        */
-      function done(status, response, headersString, statusText) {
+      function done(status, response, headersString, statusText, xhrStatus) {
         if (cache) {
           if (isSuccess(status)) {
-            cache.put(url, [status, response, parseHeaders(headersString), statusText]);
+            cache.put(url, [status, response, parseHeaders(headersString), statusText, xhrStatus]);
           } else {
             // remove promise from the cache
             cache.remove(url);
@@ -12491,7 +12537,7 @@ function $HttpProvider() {
         }
 
         function resolveHttpPromise() {
-          resolvePromise(response, status, headersString, statusText);
+          resolvePromise(response, status, headersString, statusText, xhrStatus);
         }
 
         if (useApplyAsync) {
@@ -12506,7 +12552,7 @@ function $HttpProvider() {
       /**
        * Resolves the raw $http promise.
        */
-      function resolvePromise(response, status, headers, statusText) {
+      function resolvePromise(response, status, headers, statusText, xhrStatus) {
         //status: HTTP response status code, 0, -1 (aborted by timeout / promise)
         status = status >= -1 ? status : 0;
 
@@ -12515,12 +12561,13 @@ function $HttpProvider() {
           status: status,
           headers: headersGetter(headers),
           config: config,
-          statusText: statusText
+          statusText: statusText,
+          xhrStatus: xhrStatus
         });
       }
 
       function resolvePromiseWithResult(result) {
-        resolvePromise(result.data, result.status, shallowCopy(result.headers()), result.statusText);
+        resolvePromise(result.data, result.status, shallowCopy(result.headers()), result.statusText, result.xhrStatus);
       }
 
       function removePendingReq() {
@@ -12621,7 +12668,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       var jsonpDone = jsonpReq(url, callbackPath, function(status, text) {
         // jsonpReq only ever sets status to 200 (OK), 404 (ERROR) or -1 (WAITING)
         var response = (status === 200) && callbacks.getResponse(callbackPath);
-        completeRequest(callback, status, response, '', text);
+        completeRequest(callback, status, response, '', text, 'complete');
         callbacks.removeCallback(callbackPath);
       });
     } else {
@@ -12656,18 +12703,29 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
             status,
             response,
             xhr.getAllResponseHeaders(),
-            statusText);
+            statusText,
+            'complete');
       };
 
       var requestError = function() {
         // The response is always empty
         // See https://xhr.spec.whatwg.org/#request-error-steps and https://fetch.spec.whatwg.org/#concept-network-error
-        completeRequest(callback, -1, null, null, '');
+        completeRequest(callback, -1, null, null, '', 'error');
+      };
+
+      var requestAborted = function() {
+        completeRequest(callback, -1, null, null, '', 'abort');
+      };
+
+      var requestTimeout = function() {
+        // The response is always empty
+        // See https://xhr.spec.whatwg.org/#request-error-steps and https://fetch.spec.whatwg.org/#concept-network-error
+        completeRequest(callback, -1, null, null, '', 'timeout');
       };
 
       xhr.onerror = requestError;
-      xhr.onabort = requestError;
-      xhr.ontimeout = requestError;
+      xhr.onabort = requestAborted;
+      xhr.ontimeout = requestTimeout;
 
       forEach(eventHandlers, function(value, key) {
           xhr.addEventListener(key, value);
@@ -12717,14 +12775,14 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       }
     }
 
-    function completeRequest(callback, status, response, headersString, statusText) {
+    function completeRequest(callback, status, response, headersString, statusText, xhrStatus) {
       // cancel timeout and subsequent timeout promise resolution
       if (isDefined(timeoutId)) {
         $browserDefer.cancel(timeoutId);
       }
       jsonpDone = xhr = null;
 
-      callback(status, response, headersString, statusText);
+      callback(status, response, headersString, statusText, xhrStatus);
     }
   };
 
@@ -15350,7 +15408,7 @@ function findConstantAndWatchExpressions(ast, $filter, parentIsPure) {
       findConstantAndWatchExpressions(ast.property, $filter, astIsPure);
     }
     ast.constant = ast.object.constant && (!ast.computed || ast.property.constant);
-    ast.toWatch = [ast];
+    ast.toWatch = ast.constant ? [] : [ast];
     break;
   case AST.CallExpression:
     isStatelessFilter = ast.filter ? isStateless($filter, ast.callee.name) : false;
@@ -15359,9 +15417,7 @@ function findConstantAndWatchExpressions(ast, $filter, parentIsPure) {
     forEach(ast.arguments, function(expr) {
       findConstantAndWatchExpressions(expr, $filter, astIsPure);
       allConstants = allConstants && expr.constant;
-      if (!expr.constant) {
-        argsToWatch.push.apply(argsToWatch, expr.toWatch);
-      }
+      argsToWatch.push.apply(argsToWatch, expr.toWatch);
     });
     ast.constant = allConstants;
     ast.toWatch = isStatelessFilter ? argsToWatch : [ast];
@@ -15378,9 +15434,7 @@ function findConstantAndWatchExpressions(ast, $filter, parentIsPure) {
     forEach(ast.elements, function(expr) {
       findConstantAndWatchExpressions(expr, $filter, astIsPure);
       allConstants = allConstants && expr.constant;
-      if (!expr.constant) {
-        argsToWatch.push.apply(argsToWatch, expr.toWatch);
-      }
+      argsToWatch.push.apply(argsToWatch, expr.toWatch);
     });
     ast.constant = allConstants;
     ast.toWatch = argsToWatch;
@@ -15390,17 +15444,14 @@ function findConstantAndWatchExpressions(ast, $filter, parentIsPure) {
     argsToWatch = [];
     forEach(ast.properties, function(property) {
       findConstantAndWatchExpressions(property.value, $filter, astIsPure);
-      allConstants = allConstants && property.value.constant && !property.computed;
-      if (!property.value.constant) {
-        argsToWatch.push.apply(argsToWatch, property.value.toWatch);
-      }
+      allConstants = allConstants && property.value.constant;
+      argsToWatch.push.apply(argsToWatch, property.value.toWatch);
       if (property.computed) {
-        findConstantAndWatchExpressions(property.key, $filter, astIsPure);
-        if (!property.key.constant) {
-          argsToWatch.push.apply(argsToWatch, property.key.toWatch);
-        }
+        //`{[key]: value}` implicitly does `key.toString()` which may be non-pure
+        findConstantAndWatchExpressions(property.key, $filter, /*parentIsPure=*/false);
+        allConstants = allConstants && property.key.constant;
+        argsToWatch.push.apply(argsToWatch, property.key.toWatch);
       }
-
     });
     ast.constant = allConstants;
     ast.toWatch = argsToWatch;
@@ -22996,15 +23047,20 @@ var htmlAnchorDirective = valueFn({
  *
  * ## A note about browser compatibility
  *
- * Edge, Firefox, and Internet Explorer do not support the `details` element, it is
+ * Internet Explorer and Edge do not support the `details` element, it is
  * recommended to use {@link ng.ngShow} and {@link ng.ngHide} instead.
  *
  * @example
      <example name="ng-open">
        <file name="index.html">
-         <label>Check me check multiple: <input type="checkbox" ng-model="open"></label><br/>
+         <label>Toggle details: <input type="checkbox" ng-model="open"></label><br/>
          <details id="details" ng-open="open">
-            <summary>Show/Hide me</summary>
+            <summary>List</summary>
+            <ul>
+              <li>Apple</li>
+              <li>Orange</li>
+              <li>Durian</li>
+            </ul>
          </details>
        </file>
        <file name="protractor.js" type="protractor">
@@ -31112,7 +31168,9 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  *     more than one tracking expression value resolve to the same key. (This would mean that two distinct objects are
  *     mapped to the same DOM element, which is not possible.)
  *
- *     Note that the tracking expression must come last, after any filters, and the alias expression.
+ *     <div class="alert alert-warning">
+ *       <strong>Note:</strong> the `track by` expression must come last - after any filters, and the alias expression.
+ *     </div>
  *
  *     For example: `item in items` is equivalent to `item in items track by $id(item)`. This implies that the DOM elements
  *     will be associated by item identity in the array.
@@ -38439,7 +38497,7 @@ angular.module('ui.router.state')
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
 /**
- * @license AngularJS v1.6.5
+ * @license AngularJS v1.6.6
  * (c) 2010-2017 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -42575,7 +42633,7 @@ angular.module('ngAnimate', [], function initAngularHelpers() {
   isFunction  = angular.isFunction;
   isElement   = angular.isElement;
 })
-  .info({ angularVersion: '1.6.5' })
+  .info({ angularVersion: '1.6.6' })
   .directive('ngAnimateSwap', ngAnimateSwapDirective)
 
   .directive('ngAnimateChildren', $$AnimateChildrenDirective)
@@ -78983,14 +79041,14 @@ angular.module("material.core").constant("$MD_THEME_CSS", "md-autocomplete.md-TH
 
 
 })(window, window.angular);;window.ngMaterial={version:{full: "1.1.5"}};
-angular.module('angularApp', ['ui.router','ngAnimate','ngAria','ngMaterial','ngMessages'])
+angular.module('angularApp', ['ui.router','ngAnimate','ngAria','ngMaterial','ngMessages','ngTable','ADM-dateTimePicker'])
 
 /**
  * Created by semianchuk on 08.10.16.
  */
 angular.module('angularApp')
     .controller('mainController', [ '$scope','$state', 'mainFactory', 'mainService', 'mainProvider', '$location','app', function ($scope, $state, mainFactory, mainService, mainProvider,$location,app) {
-        debugger;
+        debugger
         $scope.location=$location;
         $scope.url = $scope.location.host();
         $scope.state = $state.current;
@@ -79155,6 +79213,48 @@ angular.module('angularApp')
             }
         }
 
+        this.checkPostRequestPermission = function(){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].hasParent == 0){
+                    for(j=0;j<app.tenant.requests[i].postUsers.length;j++){
+                        if(app.tenant.requests[i].postUsers[j].name == app.loginUser.userType)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        this.checkViewRequestPermission = function(){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].hasParent == 0){
+                    for(j=0;j<app.tenant.requests[i].viewUsers.length;j++){
+                        if(app.tenant.requests[i].viewUsers[j].name == app.loginUser.userType)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        this.getRequestConfsByUserType = function(userType){
+            postRequestTypes = [];
+            for(i=0;i<app.tenant.users.length;i++){
+                if(app.tenant.users[i].name == userType){
+                    for(k=0;k<app.tenant.requests.length;k++){
+                        if(app.tenant.requests[k].hasParent == 0){
+                            for(j=0;j<app.tenant.requests[k].postUsers.length;j++){
+                                if(app.tenant.requests[k].postUsers[j].name == userType)
+                                    postRequestTypes.push(app.tenant.requests[k].name);
+                            }
+                        }
+                    }
+                    return postRequestTypes;
+                }
+            }
+            return postRequestTypes;
+        }
+
     }]);
 /**
  * Created by semianchuk on 08.10.16.
@@ -79166,7 +79266,7 @@ angular.module('angularApp')
         $stateProvider
             .state('main', {
                 url         : '/',
-                controller  : 'mainController',
+                controller  : 'mainController'
             })
             .state('MasterLayout', {
                 //abstract: true,
@@ -79176,7 +79276,7 @@ angular.module('angularApp')
             .state('TenantLogin', {
                 url         : '/login',
                 templateUrl : 'public/templates/login/tenantLogin.html',
-                controller  : 'TenantLoginController',
+                controller  : 'TenantLoginController'
             })
             .state('TenantUserSignup', {
                 url         : '/signup',
@@ -79209,7 +79309,19 @@ angular.module('angularApp')
                 controller  : 'TenantRegisterController',
                 parent:'MasterLayout'
             })
-	    .state('ListTenant', {
+ 	        .state('ViewMyProfile', {
+                url         : '/profile/viewmyprofile',
+                templateUrl : 'public/templates/profile/viewMyProfile.html',
+                controller  : 'viewMyProfileController',
+                parent:'MasterLayout'
+            })
+            .state('ViewRequest', {
+                url         : '/request/view/:requestId',
+                templateUrl : 'public/templates/request/viewRequest.html',
+                controller  : 'viewRequestController',
+                parent:'MasterLayout'
+            })
+            .state('ListTenant', {
                 url         : '/tenant/list',
                 templateUrl : 'public/templates/tenant/list.html',
                 controller  : 'TenantListController',
@@ -79227,12 +79339,12 @@ angular.module('angularApp')
                 controller  : 'RequestListController',
                 parent:'MasterLayout'
             })
-            .state('ViewRequest', {
+           /* .state('ViewRequest', {
                 url         : '/request/view/:requestId',
                 templateUrl : 'public/templates/request/view.html',
                 controller  : 'RequestViewController',
                 parent:'MasterLayout'
-            })
+            })*/
             .state('ListUser', {
                 url         : '/user/list/byTenantId/:tenantId',
                 templateUrl : 'public/templates/user/list.html',
@@ -79257,6 +79369,18 @@ angular.module('angularApp')
                 controller  : 'UserListRequestsController',
                 parent:'MasterLayout'
             })
+            .state('TennatUserListPostRequests', {
+                url         : '/user/list/post/request',
+                templateUrl : 'public/templates/request/userListPostRequests.html',
+                controller  : 'UserListPostRequestsController',
+                parent:'MasterLayout'
+            })
+            .state('Table', {
+                url         : '/table/table',
+                templateUrl : 'public/templates/table/table.html',
+                controller  : 'TableController',
+                parent:'MasterLayout'
+            })
 }]);
 
     var app = {
@@ -79278,6 +79402,14 @@ angular.module('angularApp')
     };
 
 }]);
+angular.module('angularApp')
+    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : tenantLoginService.getPrivate()
+        };
+    }]);
 angular.module('angularApp')
 .controller('AdminLoginController', [ '$scope','$state','adminLoginService',  function ($scope,$state,adminLoginService) {
     $scope.description = {
@@ -79362,33 +79494,185 @@ angular.module('angularApp')
     }
 }]);
 
+/**
+ * Created by asd on 8/30/2017.
+ */
+
 angular.module('angularApp')
-    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
-        $scope.description = {
-            message1  : 'My first Angular app',
-            message2 : 'developing for testing',
-            message3 : tenantLoginService.getPrivate()
+    .controller('viewMyProfileController', [ '$scope','$stateParams','mainService','$state','app','createObjectService','viewMyProfileService',  function ($scope,$stateParams,mainService,$state,app,createObjectService,viewMyProfileService) {
+        //$scope.description = {
+        //    message1  : 'My first Angular app',
+        //    message2 : 'developing for testing',
+        //    message3 : viewMyProfileService.getPrivate()
+        //};
+
+        $scope.insertPropertyValue = function(property,name,loginUserProperty){
+
+            if(property.list == 'true') {
+                if (property.subProperties.length == 0) {
+                    for (j = 0; j < loginUserProperty[name].length; j++) {
+                        var tempConf = JSON.stringify(property);
+                        tempConf = JSON.parse(tempConf);
+                        tempConf.value = loginUserProperty[name][j];
+                        property.propertiesList.push(tempConf);
+                    }
+                }
+                else if(property.subProperties.length != 0){
+                    for (j = 0; j < loginUserProperty[name].length; j++) {
+                        var tempConf = JSON.stringify(property);
+                        tempConf = JSON.parse(tempConf);
+                        tempConf.subProperties = [];
+
+                        for(k=0;k<property.subProperties.length;k++){
+                            childName = property.subProperties[k].name;
+                            var subProperty = $scope.insertPropertyValue(property.subProperties[k],childName,loginUserProperty[name][j]);
+                            tempConf.subProperties.push(subProperty);
+                        }
+                        property.propertiesList.push(tempConf);
+                    }
+                }
+            }
+            else if(property.list != 'true'){
+
+                if (property.subProperties.length != 0){
+                    for(k=0;k<property.subProperties.length;k++){
+                        childName = property.subProperties[k].name;
+                        var subProperty = $scope.insertPropertyValue(property.subProperties[k],childName,loginUserProperty[name]);
+                    }
+                }
+                else {
+                    if(loginUserProperty.hasOwnProperty(name)){
+                        // if(loginUserProperty[name] == "saira"){
+                        property.value = loginUserProperty[name];
+                        console.log( loginUserProperty[name]);
+                        console.log( property);
+                        return property;
+                    }
+                }
+
+            }
+
         };
+
+        $scope.userConf1 = mainService.getUserConfByUserType(app.loginUser.userType);
+        $scope.userConf = JSON.stringify($scope.userConf1);
+        $scope.userConf = JSON.parse($scope.userConf);
+        userProperties =$scope.userConf.properties;
+        console.log("app ===" );
+        console.log(JSON.stringify(app.loginUser));
+        console.log(JSON.stringify($scope.userConf));
+        debugger;
+        for(i=0;i<userProperties.length;i++) {
+            console.log(userProperties[i].name);
+            name = userProperties[i].name;
+            var prop = $scope.insertPropertyValue(userProperties[i],name,app.loginUser);
+
+        }
+
+        $scope.viewMyProfile = function(){
+            debugger;
+            console.log("View my profile");
+        }
+
+        $scope.update = function(){
+            debugger;
+            var updatedUser = createObjectService.createFormObject($scope.userConf);
+            updatedUser.tenantId = app.tenant._id;
+            updatedUser._id = app.loginUser._id;
+            updatedUser.dateCreated = new Date(app.loginUser.dateCreated);
+            viewMyProfileService.updateUserProfile(updatedUser).then(function(response){
+                console.log(response);
+                if(response.success == true){
+                    updatedUser._id = updatedUser._id.toString();
+                    app.loginUser = updatedUser;
+                    alert("You have successfully updated your profile !");
+                    $state.go("AdminHome");
+                }
+                else{
+                    alert("There is some problem updating your profile");
+                }
+            });
+        }
+
+
     }]);
+
 angular.module('angularApp')
-    .controller('RequestListController', [ '$scope','$stateParams','requestListService','app',  function ($scope,$stateParams,requestListService,app) {
+    .controller('RequestListController', [ '$scope','$filter','$stateParams','requestListService','app','NgTableParams',  function ($scope,$filter,$stateParams,requestListService,app,NgTableParams) {
         $scope.description = {
             message: requestListService.getPrivate()
         };
         $scope.tenantID=$stateParams.tenantId;
         $scope.result;
-        $scope.pageTitle = " List Of Requests";
+        $scope.pageTitle = "Requests List";
+
+        //requestListService.getRequestList($scope.tenantID).then(
+        //    function(response){
+        //        $scope.result= response.data;
+        //    }
+        //);
 
         requestListService.getRequestList($scope.tenantID).then(
             function(response){
-                $scope.result= response.data;
+                debugger;
+                var result= response.data;
+                $scope.result=[];
+                for (var i = 0; i < result.length; i++) {
+                    var reqname = result[i].name;
+                    var req_id = result[i]._id;
+                    var username = "";
+                    if(result[i].hasOwnProperty("requestdetails")){
+                        var username = result[i].requestdetails.name;
+                    }
+                    var temp =
+                    {
+                        _id : req_id,
+                        reqname : reqname,
+                        username : username
+                    };
+                    $scope.result.push(temp);
+                }
+                $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
             }
         );
+
+
+        //$scope.requestTable = new NgTableParams({
+        //    page: 1,
+        //    count: 10
+        //
+        //}, {
+        //    getData: function ( params) {
+        //        requestListService.getRequestList($scope.tenantID).then(
+        //            function(response){
+        //                var result= response.data;
+        //                $scope.result=[];
+        //                for (var i = 0; i < result.length; i++) {
+        //                    var reqname = result[i].reqname;
+        //                    var username = result[i].requestdetails.username;
+        //                    var temp =
+        //                    {
+        //                        reqname : reqname,
+        //                        username : username
+        //                    };
+        //                    $scope.result.push(temp);
+        //                }
+        //                console.log("result"+result);
+        //                total= $scope.result.length;
+        //                $scope.data = params.sorting() ? $filter('orderBy')($scope.result, params.orderBy()) : $scope.result;
+        //                $scope.data = params.filter() ? $filter('filter')($scope.data, params.filter()) : $scope.data;
+        //                $scope.data = $scope.data.slice((params.page() - 1) * params.count(), params.page() * params.count());
+        //                return $scope.data;
+        //            }
+        //        );
+        //
+        //    }
+        //});
         //alert("my list request controller");
 
     }]);
 angular.module('angularApp')
-.controller('RequestPostController', [ '$scope','$state','requestPostService','mainService','createObjectService',  function ($scope,$state,requestPostService,mainService,createObjectService) {
+.controller('RequestPostController', [ '$scope','$state','requestPostService','mainService','createObjectService','$mdDialog','$mdToast',  function ($scope,$state,requestPostService,mainService,createObjectService,$mdDialog,$mdToast) {
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
@@ -79398,26 +79682,68 @@ angular.module('angularApp')
     $scope.requestType = "";
     $scope.requestConf;
 
-    $scope.loadPostRequestForm = function(){
+    $scope.postRequestTypes = mainService.getRequestConfsByUserType(app.loginUser.userType);
+
+    $scope.loadPostRequestForm = function(postRequestType){
+        $scope.requestType = postRequestType;
         debugger;
         $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
     };
 
     $scope.post = function(){
+        $mdDialog.show({
+            //targetEvent: $event,
+            template:
+            '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+            '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+            '       <h3>Posting Request ...</h3>' +
+            '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+            '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+            '       </div>'+
+            '  </md-dialog-content>' +
+            '</md-dialog>'
+        });
+
         $scope.request = createObjectService.createFormObject($scope.requestConf);
         var formJSON = JSON.stringify($scope.request);
         formJSON = formJSON.substring(0, formJSON.length - 1);
         formJSON = formJSON + ",";
         formJSON = formJSON + '"postUserId":' + '"' + app.loginUser._id + '",';
         formJSON = formJSON + '"userResponses":[],';
-        formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '"';
+        formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '",';
+        formJSON = formJSON + '"hasParent":' + '"' + $scope.requestConf.hasParent + '"';
         formJSON = formJSON + '}';
         $scope.request = JSON.parse(formJSON);
         requestPostService.postRequest($scope.request).then(function(response){
+            $mdDialog.hide();
             var str = JSON.stringify(response);
             console.log(str);
             if(response.success == true){
-                $state.go("TenantUserHome");
+                var last = {
+                    bottom: false,
+                    top: true,
+                    left: false,
+                    right: true
+                };
+                $scope.getToastPosition = function() {
+                    //sanitizePosition();
+
+                    return Object.keys($scope.toastPosition)
+                        .filter(function(pos) { return $scope.toastPosition[pos]; })
+                        .join(' ');
+                };
+
+                $scope.toastPosition = angular.extend({},last);
+
+                var pinTo = $scope.getToastPosition();
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent('Request Posted Successfully!')
+                        .position(pinTo )
+                        .hideDelay(3000)
+                );
+
+                $state.go("TennatUserListPostRequests");
             }
             else{
                 alert(response.error[0]);
@@ -79430,7 +79756,50 @@ angular.module('angularApp')
 
 }]);
 angular.module('angularApp')
-    .controller('UserListRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListRequestsService',  function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListRequestsService) {
+    .controller('UserListPostRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListPostRequestsService',  function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListPostRequestsService) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : requestPostService.getPrivate()
+        };
+
+
+        $scope.requests;
+        $scope.requestConfigurations = app.tenant.requests;
+        $scope.requestTypes = [];
+        $scope.requestResponses = [];
+        $scope.userid = app.loginUser._id;
+
+        debugger;
+        for(i=0;i<$scope.requestConfigurations.length;i++){
+            for(j=0;j<$scope.requestConfigurations[i].userResponses.length;j++){
+                if($scope.requestConfigurations[i].userResponses[j].user.name == app.loginUser.userType){
+                    response = {
+                        request:$scope.requestConfigurations[i],
+                        responses:$scope.requestConfigurations[i].userResponses[j].responseRequests
+                    }
+                    $scope.requestResponses.push(response);
+                    break;
+                }
+            }
+        }
+
+
+        $scope.listRequestsByUserId = function(userId){
+            debugger;
+            userListPostRequestsService.listPostRequestsByUserId(userId).then(function(response){
+                $scope.requests = response.data;
+                for(i=0;i<$scope.requests.length;i++){
+                    $scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+                    $scope.requests[i].datePosted = $scope.requests[i].datePosted.toLocaleString();
+                }
+            });
+        };
+
+        $scope.listRequestsByUserId(app.loginUser._id);
+    }]);
+angular.module('angularApp')
+    .controller('UserListRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListRequestsService','$mdDialog','$mdToast',  function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListRequestsService,$mdDialog,$mdToast) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing',
@@ -79445,7 +79814,7 @@ angular.module('angularApp')
 
         for(i=0;i<$scope.requestConfigurations.length;i++){
             for(j=0;j<$scope.requestConfigurations[i].viewUsers.length;j++){
-                if($scope.requestConfigurations[i].viewUsers[j].name == 'jobseeker' && $scope.requestConfigurations[i].hasParent != "1"){
+                if($scope.requestConfigurations[i].viewUsers[j].name == app.loginUser.userType && $scope.requestConfigurations[i].hasParent != "1"){
                     $scope.requestTypes.push($scope.requestConfigurations[i].name);
                     break;
                 }
@@ -79454,7 +79823,7 @@ angular.module('angularApp')
 
         for(i=0;i<$scope.requestConfigurations.length;i++){
             for(j=0;j<$scope.requestConfigurations[i].userResponses.length;j++){
-                if($scope.requestConfigurations[i].userResponses[j].user.name == 'jobseeker'){
+                if($scope.requestConfigurations[i].userResponses[j].user.name == app.loginUser.userType){
                     response = {
                         request:$scope.requestConfigurations[i],
                         responses:$scope.requestConfigurations[i].userResponses[j].responseRequests
@@ -79482,6 +79851,8 @@ angular.module('angularApp')
                             }
 
                     }
+                    $scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+                    $scope.requests[i].datePosted = $scope.requests[i].datePosted.toLocaleString();
                 }
             });
         };
@@ -79489,6 +79860,19 @@ angular.module('angularApp')
         $scope.listRequestsByRequestTypes($scope.requestTypes);
 
         $scope.respondRequest = function(request,responseRequestConf){
+            $mdDialog.show({
+                //targetEvent: $event,
+                template:
+                '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+                '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+                '       <h3>Posting Request ...</h3>' +
+                '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+                '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+                '       </div>'+
+                '  </md-dialog-content>' +
+                '</md-dialog>'
+            });
+
             responseRequestConf = JSON.parse(responseRequestConf);
             debugger;
             responseRequest = createObjectService.createFormObject(responseRequestConf);
@@ -79517,23 +79901,50 @@ angular.module('angularApp')
                                 requestId: response.data._id
                             }
                             requestUpdateService.addResponse(request._id, requestResponse).then(function(response){
+                                $mdDialog.hide();
                                 var str = JSON.stringify(response);
                                 console.log(str);
                                 if(response.success == true){
                                     //$state.go("TenantUserHome");
-                                    alert("your request is sent successfully");
+                                    var last = {
+                                        bottom: false,
+                                        top: true,
+                                        left: false,
+                                        right: true
+                                    };
+                                    $scope.getToastPosition = function() {
+                                        //sanitizePosition();
+
+                                        return Object.keys($scope.toastPosition)
+                                            .filter(function(pos) { return $scope.toastPosition[pos]; })
+                                            .join(' ');
+                                    };
+
+                                    $scope.toastPosition = angular.extend({},last);
+
+                                    var pinTo = $scope.getToastPosition();
+                                    $mdToast.show(
+                                        $mdToast.simple()
+                                            .textContent('Request Posted Successfully!')
+                                            .position(pinTo )
+                                            .hideDelay(3000)
+                                    );
+                                    //alert("your request is sent successfully");
                                 }
                                 else{
+                                    $mdDialog.hide();
                                     alert(response.error[0]);
                                 }
                             });
                         }
                         else{
+                            $mdDialog.hide();
                             alert(response.error[0]);
                         }
                     });
                 }
                 else{
+                    $mdDialog.hide();
                     alert(response.error[0]);
                 }
             });
@@ -79551,6 +79962,48 @@ angular.module('angularApp')
         $scope.requestID=$stateParams.requestId;
 
         //alert("View Request controller");
+
+    }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+
+angular.module('angularApp')
+    .controller('viewRequestController', [ '$scope','$state', 'app', '$stateParams', 'viewRequestService', 'mainService','NgTableParams','$filter',  function ($scope,$state,app,$stateParams,viewRequestService,mainService,NgTableParams,$filter) {
+       /* $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : viewRequestController.getPrivate()
+        };*/
+
+        var requestId = $stateParams.requestId;
+        viewRequestService.view(requestId).then(function(response){
+            console.log(response);
+           // $scope.result = response.data;
+            var information_to_print = response.data[0];
+            var information_to_print2 = response.data2[0];
+            debugger;
+            delete information_to_print._id;
+            delete information_to_print.postUserId;
+            information_to_print.postusername = information_to_print.username.username;
+            delete information_to_print.username;
+            delete information_to_print.user_response;
+            delete information_to_print.userResponses;
+            delete information_to_print.tenantId;
+            delete information_to_print.post_user_id;
+            information_to_print.tenantname = information_to_print2.tenantname.name;
+            $scope.result = information_to_print;
+
+           // $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
+        });
+        
+
+        $scope.viewResponse = function(){
+            debugger;
+            viewRequestService.viewResponse(requestId).then(function(response){
+                $scope.responses = response.data;
+            });
+        };
 
     }]);
 angular.module('angularApp')
@@ -79596,27 +80049,95 @@ angular.module('angularApp')
 }]);
 
 angular.module('angularApp')
-    .controller('TenantListController', [ '$scope','tenantListService','app',  function ($scope,tenantListService,app) {
+    .controller('TableController', [ '$scope','$filter','app','NgTableParams',  function ($scope,$filter,app,NgTableParams) {
+    /*.controller('TableController', function ($scope, app, $filter, ngTableParams) {*/
+
+
+
+        $scope.users= [
+                {
+                    "id":1,
+                    "first_name":"Philip",
+                    "last_name":"Kim",
+                    "email":"pkim0@mediafire.com",
+                    "country":"Indonesia",
+                    "ip_address":"29.107.35.8"
+                },
+                {
+                    "id":2,
+                    "first_name":"Judith",
+                    "last_name":"Austin",
+                    "email":"jaustin1@mapquest.com",
+                    "country":"China",
+                    "ip_address":"173.65.94.30"
+                },
+                {
+                    "id":3,
+                    "first_name":"Julie",
+                    "last_name":"Wells",
+                    "email":"jwells2@illinois.edu",
+                    "country":"Finland",
+                    "ip_address":"9.100.80.145"
+                },
+                {
+                    "id":4,
+                    "first_name":"Gloria",
+                    "last_name":"Greene",
+                    "email":"ggreene3@blogs.com",
+                    "country":"Indonesia",
+                    "ip_address":"69.115.85.157"
+                },
+                {
+                    "id":5,
+                    "first_name":"Andrea",
+                    "last_name":"Greene",
+                    "email":"agreene4@fda.gov",
+                    "country":"Russia",
+                    "ip_address":"128.72.13.52"
+                }
+        ];
+
+
+        $scope.usersTable = new NgTableParams({
+            page: 1,
+            count: 10
+        }, {
+
+            total: $scope.users.length,
+            getData: function ( params) {
+                $scope.data = params.sorting() ? $filter('orderBy')($scope.users, params.orderBy()) : $scope.users;
+                $scope.data = params.filter() ? $filter('filter')($scope.data, params.filter()) : $scope.data;
+                $scope.data = $scope.data.slice((params.page() - 1) * params.count(), params.page() * params.count());
+                return $scope.data;
+            }
+        });
+
+
+    }]);
+
+
+angular.module('angularApp')
+    .controller('TenantListController', [ '$scope','$filter','tenantListService','app','NgTableParams','$q', function ($scope,$filter,tenantListService,app,NgTableParams,$q) {
         $scope.description = {
             message: tenantListService.getPrivate()
         };
-        $scope.result;
-        $scope.pageTitle = " List Of Tenants ";
+        //$scope.result = [{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'}];
+        $scope.pageTitle = "Tenants List ";
+        $scope.tenantsTable;
 
-        tenantListService.getTenantList().then(
-                function(response){
-                    $scope.result= response.data;
-                }
+        debugger;
+
+        $scope.tenantList = tenantListService.getTenantList().then(
+            function(response){
+                $scope.tenantsTable = new NgTableParams({count: 20}, { dataset: response.data});
+            }
         );
-
-       // alert("my list tenant controller");
-
     }]);
 /**
  * Created by Usman Irfan on 15.09.17.
  */
 angular.module('angularApp')
-.controller('TenantRegisterController', [ '$scope','tenantRegisterService','app','$q',  function ($scope,tenantRegisterService,app,$q) {
+.controller('TenantRegisterController', [ '$scope','tenantRegisterService','app','$q','$state','$mdDialog','$mdToast',  function ($scope,tenantRegisterService,app,$q,$state,$mdDialog,$mdToast) {
    
     $scope.userPropertyIds = 0;
     $scope.tenantuserIds = 0;
@@ -79648,8 +80169,8 @@ angular.module('angularApp')
                 name: 'username',
                 value:'',
                 type:'text',
-                min:'',
-                max:'',
+                min:'3',
+                max:'15',
                 required:'true',
                 pattern:'',
                 list:false,
@@ -79661,8 +80182,8 @@ angular.module('angularApp')
                 name: 'password',
                 value:'',
                 type:'password',
-                min:'',
-                max:'',
+                min:'3',
+                max:'15',
                 required:'true',
                 pattern:'',
                 list:false,
@@ -79674,8 +80195,8 @@ angular.module('angularApp')
                 name: 'name',
                 value:'',
                 type:'text',
-                min:'',
-                max:'',
+                min:'3',
+                max:'30',
                 required:'true',
                 pattern:'',
                 list:false,
@@ -79741,8 +80262,8 @@ angular.module('angularApp')
                     name: 'name',
                     value:'',
                     type:'text',
-                    min:'',
-                    max:'',
+                    min:'3',
+                    max:'50',
                     required:'true',
                     pattern:'',
                     list:false,
@@ -79880,75 +80401,134 @@ angular.module('angularApp')
         }
     }
 
-    $scope.registerTenant = function(){
+    $scope.registerTenant = function(ev){
         //console.log($scope.tenant.users.length);
-        
-        for(j=0;j<$scope.tenant.users.length;j++){
-            var userPropertiesLength = $scope.tenant.users[j].properties.length;
-            for(i=0;i<userPropertiesLength;i++){
-                if($scope.tenant.users[j].properties[i].parentId != 0){
-                    $scope.tenant.users[j].properties.splice(i,1);
-                    userPropertiesLength--;
-                    i--;
-                }
-            }
-        }
+        var confirm = $mdDialog.confirm()
+            .title('Please confirm')
+            .textContent('Are you sure you want to create new tenant with specified configuration.')
+            .targetEvent(ev)
+            .ok('Yes')
+            .cancel('Cancel');
 
-        for(j=0;j<$scope.tenant.requests.length;j++){
-            var requestPropertiesLength = $scope.tenant.requests[j].properties.length;
-            for(i=0;i<requestPropertiesLength;i++){
-                if($scope.tenant.requests[j].properties[i].parentId != 0){
-                    $scope.tenant.requests[j].properties.splice(i,1);
-                    requestPropertiesLength--;
-                    i--;
-                }
-            }
-        }
-        str = JSON.stringify($scope.tenant);
-        console.log(str);
+            $mdDialog.show(confirm).then(function() {
+                //alert("yes");
+                $mdDialog.show({
+                    //targetEvent: $event,
+                    template:
+                    '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+                    '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+                    '       <h3>Creating Tenant ...</h3>' +
+                    '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+                    '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+                    '       </div>'+
+                    '  </md-dialog-content>' +
+                    '</md-dialog>'
+                });
 
-        tenantRegisterService.register($scope.tenant,app.baseUrl).then(function(response){
-
-        });
-    }
-
-    $scope.checkPropertyNameUnique = function(formField,propertyName,list){
-        debugger;
-        var fieldName = formField;
-        if($scope.tenantRegistrationForm.hasOwnProperty(formField)){
-            fieldName = formField;
-        }
-        else{
-            propertyName = propertyName.substring(0, propertyName.length - 1);
-            fieldName = formField + propertyName;
-        }
-
-        $scope.tenantRegistrationForm[fieldName].$viewValue;
-        var matchCounter=0
-
-            for(i=0;i<list.length;i++){
-                if($scope.tenantRegistrationForm[fieldName].$viewValue == list[i].name) {
-                    matchCounter++;
-                    if(matchCounter == 2) {
-                        $scope.tenantRegistrationForm[fieldName].$setValidity('unique', false);
-                        break;
+                for(j=0;j<$scope.tenant.users.length;j++){
+                    var userPropertiesLength = $scope.tenant.users[j].properties.length;
+                    for(i=0;i<userPropertiesLength;i++){
+                        if($scope.tenant.users[j].properties[i].parentId != 0){
+                            $scope.tenant.users[j].properties.splice(i,1);
+                            userPropertiesLength--;
+                            i--;
+                        }
                     }
                 }
-                else{
-                    $scope.tenantRegistrationForm[fieldName].$setValidity('unique', true);
+
+                for(j=0;j<$scope.tenant.requests.length;j++){
+                    var requestPropertiesLength = $scope.tenant.requests[j].properties.length;
+                    for(i=0;i<requestPropertiesLength;i++){
+                        if($scope.tenant.requests[j].properties[i].parentId != 0){
+                            $scope.tenant.requests[j].properties.splice(i,1);
+                            requestPropertiesLength--;
+                            i--;
+                        }
+                    }
+                }
+                str = JSON.stringify($scope.tenant);
+                console.log(str);
+
+                tenantRegisterService.register($scope.tenant,app.baseUrl).then(function(response){
+                    $mdDialog.hide();
+                    var pinTo = $scope.getToastPosition();
+
+                    $mdToast.show(
+                        $mdToast.simple()
+                            .textContent('Tenant Created Successfully!')
+                            .position(pinTo )
+                            .hideDelay(3000)
+                    );
+                    $state.go("ListTenant");
+                });
+
+            }, function() {
+                //alert("no");
+            });
+
+
+    }
+
+    $scope.checkPropertyNameUnique = function(formField,list,r,fieldIndex){
+        debugger;
+
+        var fieldName = formField;
+
+        fieldName = formField + fieldIndex;
+        var matchCounter=0;
+
+        for(i=0;i<list.length;i++){
+            if(r.name == list[i].name){
+                matchCounter++;
+                if(matchCounter == 2) {
+                    //r.name  = r.name .substring(0, r.name.length - 1);
+                    $scope.tenantRegistrationForm[fieldName].$setValidity('unique', false);
+                    break;
                 }
             }
-
-
-
+            else{
+                $scope.tenantRegistrationForm[fieldName].$setValidity('unique', true);
+            }
+        }
 
 
     };
 
-    $scope.test = function(){
-        return "xyz";
+    $scope.removeFromList = function(item,list){
+        for(i=0;i<list.length;i++){
+            if(item == list[i])
+                list.splice(i,1);
+        }
+    };
+
+    var last = {
+        bottom: false,
+        top: true,
+        left: false,
+        right: true
+    };
+
+    $scope.toastPosition = angular.extend({},last);
+
+    $scope.getToastPosition = function() {
+        //sanitizePosition();
+
+        return Object.keys($scope.toastPosition)
+            .filter(function(pos) { return $scope.toastPosition[pos]; })
+            .join(' ');
+    };
+
+    function sanitizePosition() {
+        var current = $scope.toastPosition;
+
+        if ( current.bottom && last.top ) current.top = false;
+        if ( current.top && last.bottom ) current.bottom = false;
+        if ( current.right && last.left ) current.left = false;
+        if ( current.left && last.right ) current.right = false;
+
+        last = angular.extend({},current);
     }
- 
+
 }]);
 
 angular.module('angularApp')
@@ -79965,51 +80545,59 @@ angular.module('angularApp')
 
     }]);
 angular.module('angularApp')
-    .controller('UserListController', [ '$scope','$stateParams','userListService','app',  function ($scope,$stateParams,userListService,app) {
+    .controller('UserListController', [ '$scope','$filter','$stateParams','userListService','app','NgTableParams',  function ($scope,$filter,$stateParams,userListService,app,NgTableParams) {
         $scope.description = {
             message: userListService.getPrivate()
         };
         $scope.tenantID=$stateParams.tenantId;
         $scope.result;
-        $scope.pageTitle = " List Of Users";
+        $scope.pageTitle = " Users List";
 
         userListService.getUserList($scope.tenantID).then(
             function(response){
-                $scope.result= response.data;
+                $scope.userTable = new NgTableParams({count: 2}, { dataset: response.data});
             }
         );
-        //alert("my list user controller");
 
     }]);
 angular.module('angularApp')
-    .controller('UserViewController', [ '$scope','$stateParams','userViewService','app',  function ($scope,$stateParams,userViewService,app) {
+    .controller('UserViewController', [ '$scope','$stateParams','userViewService','app', 'userListPostRequestsService',  function ($scope,$stateParams,userViewService,app,userListPostRequestsService) {
         $scope.description = {
             message: userViewService.getPrivate()
         };
 
-        $scope.pageTitle = "User Page ";
-        $scope.userID=$stateParams.userId;
+        var userId = $stateParams.userId;
+        userViewService.view(userId).then(function(response){
+            console.log(response);
+            // $scope.result = response.data;
+            var information_to_print = response.data[0];
+            debugger;
+            information_to_print.tenantName = information_to_print.tenantName.name;
+            delete information_to_print.tenantId;
+            delete information_to_print._id;
+            information_to_print.dateCreated =  new Date(information_to_print.dateCreated).toLocaleString();
+            information_to_print.dateLastModified = new Date(information_to_print.dateLastModified).toLocaleString();
+            $scope.result = information_to_print;
+
+            // $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
+        });
+
+        $scope.listRequestsByUserId = function(userId){
+            debugger;
+            userListPostRequestsService.listPostRequestsByUserId(userId).then(function(response){
+                $scope.requests = response.data;
+                for(i=0;i<$scope.requests.length;i++){
+                    $scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+                    $scope.requests[i].datePosted = $scope.requests[i].datePosted.toLocaleString();
+                    console.log($scope.requests[i]);
+                }
+            });
+        };
+        $scope.listRequestsByUserId(userId);
 
         //alert("View User controller");
 
     }]);
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-.service('adminService', ['$http','$q', function ($http,$q) {
-
-    var thisIsPrivate = "adminService";
-    
-    this.getPrivate = function() {
-        return thisIsPrivate;
-    };
-
-    this.login = function(){
-        return true;
-    }
-
-}]);
 /**
  * Created by Usman Irfan.
  */
@@ -80029,7 +80617,7 @@ angular.module('angularApp')
             formJSON = this.createFormJSON(conf.properties,formJSON,skipPropertyName);
             formJSON = formJSON.substring(0, formJSON.length - 1);
             formJSON = formJSON + '}';
-            alert(formJSON);
+            //alert(formJSON);
             var formObject = JSON.parse(formJSON);
             return formObject;
         };
@@ -80087,6 +80675,7 @@ angular.module('angularApp')
         }
 
     }]);
+
 /**
  * Created by Usman Irfan.
  */
@@ -80156,6 +80745,23 @@ angular.module('angularApp')
 
 }]);
 
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+.service('adminService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "adminService";
+    
+    this.getPrivate = function() {
+        return thisIsPrivate;
+    };
+
+    this.login = function(){
+        return true;
+    }
+
+}]);
 /**
  * Created by Usman Irfan.
  */
@@ -80258,6 +80864,32 @@ angular.module('angularApp')
  * Created by Usman Irfan.
  */
 angular.module('angularApp')
+    .service('userListPostRequestsService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "requestPostService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.listPostRequestsByUserId = function(userid){
+            var deferred = $q.defer();
+
+            $http.get(app.baseUrl + "api/user/post/request/list/userid/" + userid)
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
     .service('userListRequestsService', ['$http','$q', function ($http,$q) {
 
         var thisIsPrivate = "requestPostService";
@@ -80282,6 +80914,51 @@ angular.module('angularApp')
         }
 
     }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+
+angular.module('angularApp')
+    .service('viewRequestService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "viewRequestService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.view = function(requestId){
+
+            var deferred = $q.defer();
+            var reqData = {
+                requestId: requestId
+            };
+            $http.post(app.baseUrl + "api/request/view" , reqData)
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+        this.viewResponse = function(requestId){
+            var deferred = $q.defer();
+            var listRequestPayload = {
+                requestId:requestId
+            };
+            $http.post(app.baseUrl + "api/request/response/",listRequestPayload)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
+    }]);
 angular.module('angularApp')
     .service('requestViewService', ['$http','$q', function ($http,$q) {
 
@@ -80290,6 +80967,157 @@ angular.module('angularApp')
         this.getPrivate = function() {
             return thisIsPrivate;
         };
+
+    }]);
+/**
+ * Created by asd on 8/30/2017.
+ */
+
+angular.module('angularApp')
+    .service('viewMyProfileService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "viewMyProfileService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.updateUserProfile = function(updatedUser){
+
+            var deferred = $q.defer();
+            $http.post(app.baseUrl + "api/user/updateUser" , updatedUser )
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+.service('tenantUserSignupService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "tenantUserSignupService";
+    
+    this.getPrivate = function() {
+        return thisIsPrivate;
+    };
+
+    this.createFormObject = function(userConf){
+        debugger;
+        var formJSON = '{';
+        var skipPropertyName = false;
+        formJSON = this.createFormJSON(userConf.properties,formJSON,skipPropertyName);
+        formJSON = formJSON.substring(0, formJSON.length - 1);
+        formJSON = formJSON + '}';
+        alert(formJSON);
+        var formObject = JSON.parse(formJSON);
+        return formObject;
+    };
+
+    this.createFormJSON = function(userProperties,formJSON,skipPropertyName){
+        var properties = userProperties;
+        var i = 0;
+        var p = JSON.stringify(properties);
+        for(i;i<properties.length;i++){
+            if(skipPropertyName == true)
+                properties[i].list = "";
+
+            if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
+                if(properties[i].list == "true") {
+
+                    if(properties[i].subProperties.length != 0) {
+                        formJSON = formJSON + '"' + properties[i].name + '":[';
+                        for(var j=0;j<properties[i].propertiesList.length;j++) {
+                            formJSON = formJSON + '{';
+                            formJSON = this.createFormJSON(properties[i].propertiesList[j].subProperties, formJSON,false);
+                            formJSON = formJSON.substring(0, formJSON.length - 1);
+                            formJSON = formJSON + '},';
+                        }
+                        formJSON = formJSON.substring(0, formJSON.length - 1);
+                        formJSON = formJSON + '],';
+                    }
+                    else{
+                        formJSON = formJSON + '"' + properties[i].name + '":[';
+                        if(properties[i].propertiesList != 0) {
+                            formJSON = this.createFormJSON(properties[i].propertiesList, formJSON, true);
+                            formJSON = formJSON.substring(0, formJSON.length - 1);
+                            formJSON = formJSON + '],';
+                        }
+                        else
+                            formJSON = formJSON + '],';
+                    }
+                }
+                else if(properties[i].subProperties.length != 0){
+                    formJSON = formJSON + '"' + properties[i].name + '"' +  ':{';
+                    formJSON = this.createFormJSON(properties[i].subProperties, formJSON,false);
+                    formJSON = formJSON.substring(0, formJSON.length - 1);
+                    formJSON = formJSON + '},';
+                }
+                else {
+                    if(skipPropertyName == true){
+                        if(properties[i].type == "dateTime") {
+                            properties[i].value = new Date(properties[i].value);
+                            properties[i].value = JSON.stringify(properties[i].value);
+                            formJSON = formJSON + properties[i].value + ',';
+                        }
+                        else
+                            formJSON = formJSON + '"'+ properties[i].value +'",';
+                    }
+                    else {
+                        if(properties[i].type == "dateTime") {
+                            properties[i].value = new Date(properties[i].value);
+                            properties[i].value = JSON.stringify(properties[i].value);
+                            formJSON = formJSON + '"' + properties[i].name + '":' + properties[i].value + ',';
+                        }
+                        else
+                        formJSON = formJSON + '"' + properties[i].name + '":"' + properties[i].value + '",';
+                    }
+                }
+            }
+        }
+        return formJSON;
+    }
+
+    this.signup = function(user,app){
+        var deferred = $q.defer();
+        user.tenantId = app.tenant._id;
+        $http.post(app.baseUrl + "api/user/signup",user)
+            .then(function(response) {
+                str = JSON.stringify(response);
+                console.log(str);
+                return deferred.resolve(response.data);
+            });
+        return deferred.promise;
+    }
+}]);
+
+
+angular.module('angularApp')
+    .service('toastService', ['$http','$q','$mdToast', function ($http,$q,$mdToast) {
+
+        var thisIsPrivate = "userViewService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.showToast = function(message,toastPosition){
+            debugger;
+            var pinTo = toastPosition;
+            $mdToast.show(
+                $mdToast.simple()
+                    .textContent('Tenant Created Successfully!')
+                    .position(pinTo )
+                    .hideDelay(3000)
+            );
+        }
 
     }]);
 angular.module('angularApp')
@@ -80380,95 +81208,24 @@ angular.module('angularApp')
             return thisIsPrivate;
         };
 
-    }]);
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-.service('tenantUserSignupService', ['$http','$q', function ($http,$q) {
+        this.view = function(userId){
 
-    var thisIsPrivate = "tenantUserSignupService";
-    
-    this.getPrivate = function() {
-        return thisIsPrivate;
-    };
+            var deferred = $q.defer();
+            var userData = {
+                userId: userId
+            };
+            $http.post(app.baseUrl + "api/user/view" , userData)
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
 
-    this.createFormObject = function(userConf){
-        debugger;
-        var formJSON = '{';
-        var skipPropertyName = false;
-        formJSON = this.createFormJSON(userConf.properties,formJSON,skipPropertyName);
-        formJSON = formJSON.substring(0, formJSON.length - 1);
-        formJSON = formJSON + '}';
-        alert(formJSON);
-        var formObject = JSON.parse(formJSON);
-        return formObject;
-    };
-
-    this.createFormJSON = function(userProperties,formJSON,skipPropertyName){
-        var properties = userProperties;
-        var i = 0;
-        var p = JSON.stringify(properties);
-        for(i;i<properties.length;i++){
-            if(skipPropertyName == true)
-                properties[i].list = "";
-
-            if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
-                if(properties[i].list == "true") {
-
-                    if(properties[i].subProperties.length != 0) {
-                        formJSON = formJSON + '"' + properties[i].name + '":[';
-                        for(var j=0;j<properties[i].propertiesList.length;j++) {
-                            formJSON = formJSON + '{';
-                            formJSON = this.createFormJSON(properties[i].propertiesList[j].subProperties, formJSON,false);
-                            formJSON = formJSON.substring(0, formJSON.length - 1);
-                            formJSON = formJSON + '},';
-                        }
-                        formJSON = formJSON.substring(0, formJSON.length - 1);
-                        formJSON = formJSON + '],';
-                    }
-                    else{
-                        formJSON = formJSON + '"' + properties[i].name + '":[';
-                        if(properties[i].propertiesList != 0) {
-                            formJSON = this.createFormJSON(properties[i].propertiesList, formJSON, true);
-                            formJSON = formJSON.substring(0, formJSON.length - 1);
-                            formJSON = formJSON + '],';
-                        }
-                        else
-                            formJSON = formJSON + '],';
-                    }
-                }
-                else if(properties[i].subProperties.length != 0){
-                    formJSON = formJSON + '"' + properties[i].name + '"' +  ':{';
-                    formJSON = this.createFormJSON(properties[i].subProperties, formJSON,false);
-                    formJSON = formJSON.substring(0, formJSON.length - 1);
-                    formJSON = formJSON + '},';
-                }
-                else {
-                    if(skipPropertyName == true){
-                        formJSON = formJSON + '"'+ properties[i].value +'",';
-                    }
-                    else
-                        formJSON = formJSON + '"' + properties[i].name + '":"'+ properties[i].value +'",';
-                }
-            }
         }
-        return formJSON;
-    }
 
-    this.signup = function(user,app){
-        var deferred = $q.defer();
-        user.tenantId = app.tenant._id;
-        $http.post(app.baseUrl + "api/user/signup",user)
-            .then(function(response) {
-                str = JSON.stringify(response);
-                console.log(str);
-                return deferred.resolve(response.data);
-            });
-        return deferred.promise;
-    }
-}]);
-
+    }]);
 angular.module('angularApp')
     .directive('propertyConfiguration', function () {
         return {
@@ -80557,6 +81314,62 @@ angular.module('angularApp')
         //};
 
         //alert($scope.property.name);
+        $scope.removeProperty = function(property){
+            debugger;
+            for(i=0;i<$scope.properties.length;i++){
+                if($scope.properties[i] == property)
+                    $scope.properties.splice(i,1);
+            }
+        };
+    }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+angular.module('angularApp')
+    .directive('propertyDisplay', function () {
+        return {
+            restrict : "A",
+            templateUrl : "src/common/directives/propertyDisplay/propertyDisplayTemplate.html",
+            /*scope: {
+                property: '=',
+                data: '='
+            },*/
+            scope: {
+                row : '=propertyDisplay',
+                property : '=',
+                data: '=',
+                keyRequired: '@'
+            },
+            controller:"PropertyDisplayController"
+        };
+    });
+/**
+ * Created by asd on 9/6/2017.
+ */
+angular.module('angularApp')
+    .controller('PropertyDisplayController', [ '$scope','NgTableParams','$filter', function ($scope,NgTableParams,$filter) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+debugger;
+
+        $scope.isArray=function(type){
+           if( angular.isArray(type))
+               return true;
+            else
+               return false;
+        }
+
+        $scope.isObject=function(type){
+            if( angular.isObject(type))
+                return true;
+            else
+                return false;
+        }
+
+
+
     }]);
 angular.module('angularApp')
 .directive('propertyInput', function () {
@@ -80580,6 +81393,11 @@ angular.module('angularApp')
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
+        debugger;
+        if($scope.property.type == 'dateTime'){
+            $scope.property.value = new Date($scope.property.value);
+        }
+
         $scope.addPropertyInList = function(mainProperty){
             var property = JSON.stringify(mainProperty);
             property = JSON.parse(property);
@@ -80598,13 +81416,106 @@ angular.module('angularApp')
             restrict : "E",
             templateUrl : "src/common/directives/requestResponse/requestResponseTemplate.html",
             scope: {
-                response: '='
+                response: '=',
+                requestResponses: '=',
+                userid: '='
             },
             controller:"RequestResponseController"
         };
     });
 angular.module('angularApp')
-    .controller('RequestResponseController', [ '$scope', function ($scope) {
+    .controller('RequestResponseController', [ '$scope','requestPostService','requestGetService','requestUpdateService','createObjectService', function ($scope,requestPostService,requestGetService,requestUpdateService,createObjectService) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+        debugger;
+        if($scope.response.requestDetails.hasOwnProperty('datePosted')){
+            $scope.response.requestDetails.datePosted = new Date($scope.response.requestDetails.datePosted);
+            $scope.response.requestDetails.datePosted = $scope.response.requestDetails.datePosted.toLocaleString();
+        }
+
+        if($scope.response.hasOwnProperty('requestDetails')){
+            $scope.response.requestDetails.userResponded = false;
+            for(i=0;i<$scope.response.requestDetails.userResponses.length;i++){
+
+
+
+                if($scope.response.requestDetails.userResponses[i].userId == $scope.userid){
+                    $scope.response.requestDetails.userResponded = true;
+                }
+
+            }
+        }
+
+
+        $scope.respondRequest = function(request,responseRequestConf){
+            responseRequestConf = JSON.parse(responseRequestConf);
+            debugger;
+            responseRequest = createObjectService.createFormObject(responseRequestConf);
+            var formJSON = JSON.stringify(responseRequest);
+            formJSON = formJSON.substring(0, formJSON.length - 1);
+            formJSON = formJSON + ",";
+            formJSON = formJSON + '"postUserId":' + '"' + app.loginUser._id + '",';
+            formJSON = formJSON + '"userResponses":[],';
+            formJSON = formJSON + '"requestType":' + '"' + responseRequestConf.name + '"';
+            formJSON = formJSON + '}';
+            responseRequest = JSON.parse(formJSON);
+            responseRequest.name = request.requestId + $scope.userid;
+
+            requestPostService.postRequest(responseRequest).then(function(response){
+                var str = JSON.stringify(response);
+                console.log(str);
+                if(response.success == true){
+                    //$state.go("TenantUserHome");
+                    requestGetService.getRequestByName(responseRequest.name).then(function(response){
+                        var str = JSON.stringify(response);
+                        console.log(str);
+                        if(response.success == true){
+                            //$state.go("TenantUserHome");
+                            var requestResponse = {
+                                userId : app.loginUser._id,
+                                requestId: response.data._id
+                            }
+                            requestUpdateService.addResponse(request.requestId, requestResponse).then(function(response){
+                                var str = JSON.stringify(response);
+                                console.log(str);
+                                if(response.success == true){
+                                    //$state.go("TenantUserHome");
+                                    alert("your request is sent successfully");
+                                }
+                                else{
+                                    alert(response.error[0]);
+                                }
+                            });
+                        }
+                        else{
+                            alert(response.error[0]);
+                        }
+                    });
+                }
+                else{
+                    alert(response.error[0]);
+                }
+            });
+
+            console.log(formJSON);
+        }
+
+    }]);
+angular.module('angularApp')
+    .directive('requestResponseExpansion', function () {
+        return {
+            restrict : "E",
+            templateUrl : "src/common/directives/requestResponseExpansion/requestResponseExpansionTemplate.html",
+            scope: {
+                response: '='
+            },
+            controller:"RequestResponseExpansionController"
+        };
+    });
+angular.module('angularApp')
+    .controller('RequestResponseExpansionController', [ '$scope', function ($scope) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
@@ -80623,13 +81534,21 @@ angular.module('angularApp')
         };
     });
 angular.module('angularApp')
-    .controller('SideMenuController', [ '$scope', 'app', function ($scope,app) {
+    .controller('SideMenuController', [ '$scope', 'app','mainService', function ($scope,app,mainService) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
         $scope.appType = app.appType;
+
+        if($scope.appType == "tenant"){
+            $scope.postRequestPermission = mainService.checkPostRequestPermission();
+            $scope.viewRequestPermission = mainService.checkViewRequestPermission();
+        }
+
     }]);
+
+
 angular.module('angularApp')
     .directive('topNav', function () {
         return {
@@ -80688,3 +81607,1623 @@ angular.module('angularApp').factory('usernameservice', function($q, $http) {
         return deferred.promise;
     }
 });
+/*
+ * Picking date & time in AngularJS is easier than ever.
+ * 
+ * Demo: http://amirkabirdataminers.github.io/ADM-dateTimePicker
+ *
+ * @version 1.2.0
+ *
+ * © 2017 Amirkabir Data Miners <info@adm-co.net> - www.adm-co.net
+ */
+
+(function(angular) {
+    'use strict';
+    
+    if (!angular.merge)
+        angular.merge = angular.extend;
+
+    String.prototype.toPersianDigits = function(){
+        var id= ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+        return this.replace(/[0-9]/g, function(w){
+            return id[+w]
+        });
+    };
+    String.prototype.toEnglishDigits = function(){
+        var id= {'۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+        return this.replace(/[^0-9.]/g, function(w){
+            return id[w]||w;
+        });
+    };
+    String.prototype.lZero = function() {
+        return (this.length<2 ? '0'+this : this);
+    };
+    Array.prototype.toNumber = function() {
+        return this.map(function(item) {return Number(item);});
+    };
+    Array.prototype.dtp_toDate = function(type) {
+        var splitter = '-';
+        if (/invalid/i.test(new Date('1991-9-12')))
+            splitter = '/';
+        
+        var date = this.join(splitter);
+        if (this.length == 5)
+            date = this.slice(0,3).join(splitter) +' '+ this.slice(3,5).join(':')
+        if (!type) return date;
+        date = new Date(date);
+        if (type == 'unix')
+            return date.getTime();
+        return date;
+    };
+    Number.prototype.lZero = function() {
+        return (this<10 ? '0'+this : this);
+    };
+    Date.prototype.dtp_shortDate = function () {
+        return [this.getFullYear(), this.getMonth() + 1, this.getDate()].dtp_toDate();
+    }
+    
+    var ADMdtpProvider = function() {
+
+        var options = {
+            calType: 'gregorian',
+            format: 'YYYY/MM/DD hh:mm', 
+            multiple: true,
+            autoClose: false,
+            transition: true,
+            disabled: [],
+            smartDisabling: true,
+            minuteStep: 1,
+            gregorianStartDay: 0,
+            gregorianDic: {
+                title: 'Gregorian',
+                monthsNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                daysNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                todayBtn: 'Today',
+            },
+            jalaliDic: {
+                title: 'جلالی',
+                monthsNames: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+                daysNames: ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'],
+                todayBtn: 'امروز'
+            }
+        };
+
+        var ADMdtp = {
+            getOptions: function(type) {
+                var typeOptions = type && options[type] || options;
+                return typeOptions;
+            }
+        };
+
+        this.setOptions = function(type, customOptions) {
+            if (!customOptions) {
+                customOptions = type;
+                options = angular.merge(options, customOptions);
+                return;
+            }
+            options[type] = angular.merge(options[type] || {}, customOptions);
+        };
+
+        this.$get = function() {
+            return ADMdtp;
+        };
+
+    };
+    
+    var ADMdtpDigitTypeFilter = function() {
+        return function(input, type) {
+            return type=='jalali' ? String(input).toPersianDigits() : input;
+        };
+    };
+    
+    var ADMdtpConvertor = function() {
+        
+        function getJalaliDate(date) {
+            var daysPassedInGregorianCalender = getDaysPassedInGregorianCalender(date);
+            daysPassedInGregorianCalender -= 226894;
+            return getJalaliDateOfDay(daysPassedInGregorianCalender);
+        }
+        function getJalaliDateOfDay(daysPassedInJalaliCalender) {
+            var yearOfDay = getYearJalaliCalender(daysPassedInJalaliCalender);
+
+            var monthOfDay = getMonthJalaliCalender(daysPassedInJalaliCalender, yearOfDay);
+
+            var dayOfMonth = getDayJalaliCalender(daysPassedInJalaliCalender, yearOfDay, monthOfDay);
+            var date =
+                {
+                    day: dayOfMonth,
+                    month: monthOfDay,
+                    year: yearOfDay
+                };
+            return date;
+        }
+        function getDayJalaliCalender(daysPassedInJalaliCalender, yearOfDay, monthOfDay) {
+            var leaps = howManyLeapsYearPassedInJalaliCalender(yearOfDay);
+            daysPassedInJalaliCalender -= leaps + ((yearOfDay - 1) * 365);
+            for (var i = 1; i < monthOfDay; i++) {
+                if (i <= 6) {
+                    daysPassedInJalaliCalender -= 31;
+                }
+                else {
+                    daysPassedInJalaliCalender -= 30;
+                }
+            }
+            return daysPassedInJalaliCalender;
+        }
+        function getMonthJalaliCalender(daysPassedInJalaliCalender, yearOfDay) {
+            var leaps = howManyLeapsYearPassedInJalaliCalender(yearOfDay);
+            daysPassedInJalaliCalender -= leaps + ((yearOfDay - 1) * 365);
+            var jalaliMonths = getJalaliMonths();
+            for (var i = 0; i < jalaliMonths.length; i++) {
+                if (daysPassedInJalaliCalender <= jalaliMonths[i].count) {
+                    return jalaliMonths[i].id;
+                }
+                daysPassedInJalaliCalender -= jalaliMonths[i].count;
+            }
+            return 12;
+        }
+        function getJalaliMonths() {
+            return [
+                { id: 1, count: 31 },
+                { id: 2, count: 31 },
+                { id: 3, count: 31 },
+                { id: 4, count: 31 },
+                { id: 5, count: 31 },
+                { id: 6, count: 31 },
+                { id: 7, count: 30 },
+                { id: 8, count: 30 },
+                { id: 9, count: 30 },
+                { id: 10, count: 30 },
+                { id: 11, count: 30 },
+                { id: 12, count: 29 }
+            ];
+        }
+        function getYearJalaliCalender(daysPassedInJalaliCalender) {
+            var years = Math.floor((daysPassedInJalaliCalender - 1) / 365);
+            var leapsCount = 0;
+            if (years > 22) {
+                var year1 = years - 22 - 1;
+                var year2 = years - 22;
+
+                var siose = Math.floor(year1 / 33);
+                var remainYear = (year2 - (siose * 33));
+                if (remainYear >= 28) {
+                    remainYear = 28;
+                }
+                var a = Math.floor(remainYear / 4);
+                var sum = a + (siose * 8) + 6;
+                var sal = Math.floor((daysPassedInJalaliCalender - sum) / 365);
+                leapsCount = howManyLeapsYearPassedInJalaliCalender(sal);
+                if (daysPassedInJalaliCalender - (sal * 365) - leapsCount - (isLeapYearInJalaliCalender(sal) ? 1 : 0) > 0) {
+                    sal++;
+                    return sal;
+                }
+                else if (daysPassedInJalaliCalender - (sal * 365) + leapsCount <= 0) {
+                    return sal;
+                }
+                return sal;
+
+            }
+            else {
+                if (years < 1) {
+                    leapsCount = 0;
+                }
+                else if (years >= 1 && years <= 4) {
+                    leapsCount = 1;
+                }
+                else if (years >= 5 && years <= 8) {
+                    leapsCount = 2;
+                }
+                else if (years >= 9 && years <= 12) {
+                    leapsCount = 3;
+                }
+                else if (years >= 13 && years <= 16) {
+                    leapsCount = 4;
+                }
+                else if (years >= 17 && years < 22) {
+                    leapsCount = 5;
+                }
+                else {
+                    leapsCount = 6;
+                }
+                years = Math.floor((daysPassedInJalaliCalender - leapsCount - 1) / 365);
+
+                return years + 1;
+            }
+        }
+        function howManyLeapsYearPassedInJalaliCalender(year) {
+            if (year < 23) {
+                switch (year) {
+                    case 1:
+                        return 0;
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                        return 1;
+                    case 6:
+                    case 7:
+                    case 8:
+                    case 9:
+                        return 2;
+                    case 10:
+                    case 11:
+                    case 12:
+                    case 13:
+                        return 3;
+                    case 14:
+                    case 15:
+                    case 16:
+                    case 17:
+                        return 4;
+                    case 18:
+                    case 19:
+                    case 20:
+                    case 21:
+                    case 22:
+                        return 5;
+
+
+                }
+            }
+            var yearAfterFirstEra = year - 22;
+            var countSioSe = Math.floor((yearAfterFirstEra - 1) / 33);
+            var remainOfNormalLeapsYear = yearAfterFirstEra - countSioSe * 33;
+            if (remainOfNormalLeapsYear > 28) {
+                remainOfNormalLeapsYear = 28;
+            }
+            var leapsCount = Math.floor(remainOfNormalLeapsYear / 4) + countSioSe * 8 + 6;
+            if (isLeapYearInJalaliCalender(year) && (yearAfterFirstEra - countSioSe * 33) <= 28) {
+                leapsCount--;
+            }
+            return leapsCount;
+        }
+        
+        function getDaysPassedInGregorianCalender(date) {
+            var gregorianMonths = getGregorianMonths();
+            var passedLeapYears = howManyGregorianLeapsYearPassed(date.year);
+            var days = passedLeapYears;
+            var isMiladiLeaps = isGregorianLeapYear(date.year);
+            days += (date.year - 1) * 365;
+            for (var i = 0; i < date.month - 1; i++) {
+                if (isMiladiLeaps && i + 1 == 2) {
+                    gregorianMonths[i].count = 29;
+                }
+                days += gregorianMonths[i].count;
+
+            }
+            days += date.day;
+            return days;
+        }
+        function getGregorianMonths() {
+            return [
+                { id: 1, count: 31 },
+                { id: 2, count: 28 },
+                { id: 3, count: 31 },
+                { id: 4, count: 30 },
+                { id: 5, count: 31 },
+                { id: 6, count: 30 },
+                { id: 7, count: 31 },
+                { id: 8, count: 31 },
+                { id: 9, count: 30 },
+                { id: 10, count: 31 },
+                { id: 11, count: 30 },
+                { id: 12, count: 31 }
+            ];
+        }
+        function isGregorianLeapYear(year) {
+            if (year % 4 != 0) {
+                return false;
+            }
+            if (year % 100 != 0) {
+                return true;
+            }
+            if (year % 400 != 0) {
+                return false;
+            }
+            return true;
+        }
+        function howManyGregorianLeapsYearPassed(year) {
+            var yearsPassed = year - 1;
+            var countOfFourYears = Math.floor(yearsPassed / 4);
+            var countOfHandredYears = Math.floor(yearsPassed / 100);
+            var countOfFourHandredYears = Math.floor(yearsPassed / 400);
+            return countOfFourYears - countOfHandredYears + countOfFourHandredYears;
+        }
+        function getGregorianYear(gregorianPassedDays) {
+            var pureYear = Math.floor((gregorianPassedDays) / 365);
+            var gregorianLeapsYear = howManyGregorianLeapsYearPassed(pureYear);
+            var year = Math.floor((gregorianPassedDays - gregorianLeapsYear) / 365);
+            var remainDay = gregorianPassedDays - year * 365 - gregorianLeapsYear;
+            if (remainDay != 0) {
+                year++;
+            }
+            else if (isGregorianLeapYear(year + 1)) {
+                year += gregorianLeapsYear / 365;
+            }
+            return Math.floor(year);
+        }
+        function getGregorianMonth(daysPassed) {
+            var year = getGregorianYear(daysPassed);
+            var leaspYearCount = howManyGregorianLeapsYearPassed(year);
+            daysPassed -= (year - 1) * 365 + leaspYearCount;
+            var months = getGregorianMonths();
+            var month = 0;
+            var isCurrentYearLeaps = isGregorianLeapYear(year);
+            for (var i = 0; i < months.length; i++) {
+                if (isCurrentYearLeaps && months[i].id == 2) {
+                    months[i].count = 29;
+                }
+                if (daysPassed < months[i].count) {
+                    if (daysPassed != 0 || month == 0) {
+                        month++;
+                    }
+                    return month;
+                }
+                daysPassed -= months[i].count;
+                month = months[i].id;
+            }
+            return month;
+        }
+        function getGregorianDayOfMonthByPassedDay(daysPassed) {
+            var year = getGregorianYear(daysPassed);
+            var month = getGregorianMonth(daysPassed);
+            return getGregorianDayOfMonth(year, month, daysPassed);
+        }
+
+        function getGregorianDayOfMonth(year, month, daysPassed) {
+            var leaspYearCount = howManyGregorianLeapsYearPassed(year);
+            var months = getGregorianMonths();
+            var sumOfMonths = 0;
+            for (var i = 0; i < months.length; i++) {
+                if (months[i].id < month) {
+                    sumOfMonths += months[i].count;
+                }
+            }
+            if (isGregorianLeapYear(year) && month > 2) {
+                sumOfMonths++;
+            }
+            return daysPassed - (year - 1) * 365 - leaspYearCount - sumOfMonths;
+        }
+        function getDaysPassedInJalaliCalander(date) {
+            var days = date.day;
+            days += passedDaysFromMonthsInJalaliCalander(date.month);
+            days += passedDaysToYearsInJalaliCalander(date.year);
+            return days;
+        }
+
+        function passedDaysFromMonthsInJalaliCalander(month) {
+            var days = 0;
+            var months = getJalaliMonths();
+            for (var i = 0; i < month - 1; i++) {
+                days += months[i].count;
+            }
+            return days;
+        }
+
+        function passedDaysToYearsInJalaliCalander(years) {
+            var days = howManyLeapsYearPassedInJalaliCalender(years);
+            days += (years - 1) * 365;
+            return days;
+        }
+
+        function getGregorianDate(date) {
+            var daysPassed = getDaysPassedInJalaliCalander(date) + 226894;
+            var day = getGregorianDayOfMonthByPassedDay(daysPassed);
+            var month = getGregorianMonth(daysPassed);
+            var year = getGregorianYear(daysPassed);
+            if (day == 0)
+            {
+                day = 31;
+                month = 12;
+                year--;
+            }
+            return {
+                day: day,
+                month: month,
+                year: year
+            };
+
+        }
+        var isLeapYearInJalaliCalender = function(years) {
+            if (years == 1 || years == 5 || years == 9 || years == 13 || years == 17 || years == 22) {
+                return true;
+            }
+            else if (years < 22) {
+                return false;
+            }
+            var year = years - 22;
+            var siosesal = Math.floor(year / 33);
+            return ((year - (siosesal * 33)) % 4 == 0) && (year - (siosesal * 33)) / 4 != 8;
+        }
+        var getPersianDate = function(year, month, day) {
+            year = (year<=99)?(2000+year):year;
+            var date = { year: year, month: month, day: day };
+            date = getJalaliDate(date);
+            return date;
+        }
+        var getGregorianDates = function(year, mont, day) {
+            year = (year<=99)?(1300+year):year;
+            var date= getGregorianDate( {
+                day: day,
+                month: mont,
+                year: year
+            });
+            return date;
+        }
+        
+        return {
+            toJalali: getPersianDate,
+            toGregorian: getGregorianDates,
+            isLeapJalali: isLeapYearInJalaliCalender
+        }
+    }
+    
+    var ADMdtpFactory = function(ADMdtpConvertor) {
+
+        this.dateFormat = function(date, time, format, notView) {
+            if (!date.year) return '';
+
+            var year = date.year;
+            var halfYear = notView ? date.year : date.year%100;
+            var month = date.month.lZero();
+            var day = date.day.lZero();
+            var hour = time.hour.lZero();
+            var minute = time.minute.lZero();
+            
+            var replaceMap = [
+                {key: 'YYYY', value: year},
+                {key: 'YY', value: halfYear},
+                {key: 'MM', value: month},
+                {key: 'DD', value: day},
+                {key: 'hh', value: hour},
+                {key: 'mm', value: minute}
+            ]
+            
+            for(var i=0,j=replaceMap.length;i<j;i++) {
+                format = format.replace(replaceMap[i].key, replaceMap[i].value);
+            }
+            
+            return format;
+        };
+        this.parseString = function(str, format) {
+            var _keys = [], _date = {};
+            var formats = ['YY/MM/DD', 'YY/MM/DD hh:mm', 'YY-MM-DD', 'YY-MM-DD hh:mm', 'MM/DD/YY', 'MM-DD-YY', 'MM/DD/YY hh:mm', 'MM-DD-YY hh:mm'];
+            formats.unshift(format);
+            
+            for(var i=0,j=formats.length;i<j;i++) {
+                var _isValid = new RegExp('^' + formats[i].replace(/[a-z]+/gi, function(key) {
+                    var _mustReplace = false;
+                    if (key.indexOf('YY') != -1)
+                        _keys.push('year'), _mustReplace=true;
+                    else if (key.indexOf('MM') != -1)
+                        _keys.push('month'), _mustReplace=true;
+                    else if (key.indexOf('DD') != -1)
+                        _keys.push('day'), _mustReplace=true;
+                    else if (key.indexOf('hh') != -1)
+                        _keys.push('hour'), _mustReplace=true;
+                    else if (key.indexOf('mm') != -1)
+                        _keys.push('minute'), _mustReplace=true;
+
+                    if (_mustReplace)
+                        return '[0-9]+';
+                    else 
+                        return key;
+                }).replace(/[(]/g, '[(]').replace(/[)]/g, '[)]') + '$').test(str);
+
+                if (!_isValid)
+                    continue;
+
+                _keys.reverse();
+                
+                str.replace(/[0-9]+/g, function(value) {
+                    _date[_keys.pop()] = Number(value);
+                    return value;
+                });
+                _date.hour = _date.hour || 0;
+                _date.minute = _date.minute || 0;
+
+                return _date;
+            }
+            
+            return false;
+        };
+        this.toRegularFormat = function(date, type, format) {
+            if (!date) return false;
+            
+            if (typeof date == "string")
+                date = this.parseString(date, format);
+            else if (typeof date == "number")
+                date = this.convertFromUnix(date, type);
+            
+            if (!date) return false;
+
+            if (date.year<=99)
+                date.year = ((type == 'jalali') ? 1300+date.year : 2000+date.year);
+            
+            return [date.year, date.month.lZero(), date.day.lZero(), date.hour.lZero(), date.minute.lZero()].dtp_toDate();
+        };
+        this.isDateEqual = function(date1, date2) {
+            var diff = new Date(date1) - new Date(date2);
+            return diff==0;
+        };
+        this.isDateBigger = function(date1, date2) {
+            var diff = new Date(date1) - new Date(date2);
+            return diff>=0;
+        };
+        this.isMonthBigger = function(date1, date2) {
+            var diff = new Date(date1.year, date1.month) - new Date(date2.year, date2.month);
+            return diff>=0;
+        };
+        this.joinTime = function(date, time) {
+            return new Date(new Date(new Date(date).setHours(time.hour)).setMinutes(time.minute));
+        };
+        this.removeTime = function(date) {
+            return [date.getFullYear(), date.getMonth()+1, date.getDate()].dtp_toDate('date');
+        }
+        this.validateJalaliDateSeparate = function(date, time) {
+            if (date.length!=3 || time.length!=2)
+                return false;
+            
+            if (time[0]>23 || time[0]<0 || time[1]>59 || time[1]<0 || date[0]<0 || date[1]<1 || date[1]>12)
+                return false;
+            
+            if (date[1]>0 && date[1]<7) {
+                if (date[2]<1 || date[2]>31)
+                    return false;
+            }
+            else if (date[1]>6 && date[1]<12) {
+                if (date[2]<1 || date[2]>30)
+                    return false;
+            }
+            else if (date[1] == 12) {
+                var isLeap = ADMdtpConvertor.isLeapJalali(date[0]);
+                if ((isLeap && (date[2]<1 || date[2]>30)) || (!isLeap && (date[2]<1 || date[2]>29)))
+                    return false;
+            }
+
+            return true;
+        }
+        this.validateJalaliDate = function(input, format) {
+            var _dateTime;
+            
+            if (typeof input == "number") {
+                var _gDate = new Date(input);
+                if (/invalid/i.test(_gDate))
+                    return false;
+                var _pDate = this.convertToJalali(_gDate);
+                _dateTime = angular.merge(_pDate, {hour: _gDate.getHours(), minute: _gDate.getMinutes()});
+            }
+            else if (typeof input == "string")
+                _dateTime = this.parseString(input, format);
+            
+            else if (input instanceof Object)
+                _dateTime = input;
+            
+            if (!_dateTime) return false;
+            
+            var _date = [_dateTime.year, _dateTime.month, _dateTime.day];
+            var _time = [_dateTime.hour, _dateTime.minute];
+            
+            if (this.validateJalaliDateSeparate(_date, _time)) {
+                var _gDateC = ADMdtpConvertor.toGregorian(_date[0],_date[1],_date[2]);
+                var _gDate = [_gDateC.year, _gDateC.month, _gDateC.day, _time[0], _time[1]].dtp_toDate('date');
+                
+                return {
+                    year: _date[0],
+                    month: _date[1],
+                    day: _date[2],
+                    hour: _time[0],
+                    minute: _time[1],
+                    unix: _gDate.getTime(),
+                    gDate: _gDate
+                }
+            }
+            return false;
+
+        };
+        this.convertToUnix = function(value, type, format) {
+            if (!value)
+                return null;
+            if (typeof value == "number")
+                return value;
+            
+            if (typeof value == "string") {
+                value = this.parseString(value, format);
+            }
+            else if (value instanceof Date)
+                value = {year: value.getFullYear(), month: value.getMonth()+1, day: value.getDate(), hour: value.getHours(), minute: value.getMinutes()};
+            else
+                return null;
+            
+            if (value.year<=99)
+                value.year = ((type == 'jalali') ? 1300+value.year : 2000+value.year);
+            
+            
+            if (type == 'jalali') {
+                var _dateTime = this.validateJalaliDate(value, format);
+                return _dateTime.unix || null;
+            }
+            else if (type == 'gregorian') {
+                var _dateTime = new Date(this.toRegularFormat(value, type));
+                return (/invalid/i.test(_dateTime))?null:_dateTime.getTime();
+            }
+            
+            return null;
+        };
+        this.convertFromUnix = function(unix, type) {
+            var _gDate = new Date(unix);
+            if (type == 'jalali')
+                return this.convertToJalali(_gDate);
+            else if (type == 'gregorian')
+                return {
+                    year: _gDate.getFullYear(),
+                    month: _gDate.getMonth()+1,
+                    day: _gDate.getDate(),
+                    unix: unix
+                };
+        };
+        this.convertToJalali = function(date) {
+            
+            if (date instanceof Date) {
+                var _date = {
+                    year: date.getFullYear(),
+                    month: date.getMonth()+1,
+                    day: date.getDate(),
+                    unix: date.getTime()
+                }
+                date = _date;
+            }
+            if (date instanceof Object) {
+                return angular.merge(ADMdtpConvertor.toJalali(date.year, date.month, date.day), {unix: date.unix});
+            }
+        };
+        this.parseDisablePattern = function(options) {
+            var arr = options.disabled, smart = options.smartDisabling, calType = options.calType, format = options.format;
+            
+            var _inWeek = Array.apply(null, Array(7)).map(Number.prototype.valueOf,0);
+            var _inMonth = Array.apply(null, Array(31)).map(Number.prototype.valueOf,0);
+            var _static = {};
+            
+            if (arr instanceof Array) {
+                for (var i=0,j=arr.length; i<j; i++) {
+                    if (typeof arr[i] == "number") {
+                        var _gDate = new Date(arr[i]);
+                        if (!/invalid/i.test(_gDate))
+                            _static[this.removeTime(_gDate).getTime()] = true;
+                    }
+                    else if (typeof arr[i] == "string") {
+                        arr[i] = arr[i].toLowerCase();
+                        if (arr[i].indexOf('d') == -1 && arr[i].indexOf('i') == -1) {
+                            var _unix = this.convertToUnix(arr[i], calType, format);
+                            if (_unix)
+                                _static[_unix] = true;
+                        }
+                        else {
+                            var _inMonthValid = new RegExp("^[!]?(([0-9]?[0-9])?[d]([+][0-9][0-9]?)?)([&]([0-9]?[0-9])?[d]([+][0-9][0-9]?)?)*?$").test(arr[i]);
+                            var _inWeekhValid = new RegExp("^[!]?([i]([+][0-9][0-9]?)?)([&][i]([+][0-9][0-9]?)?)*?$").test(arr[i]);
+                            
+                            if (_inMonthValid || _inWeekhValid) {
+                                var _not = arr[i][0]=='!';
+                                arr[i] = _not?arr[i].split('!')[1]:arr[i];
+                                var _patt = arr[i].split('&');
+                                
+                                if (_inMonthValid) {
+                                    var _tmpObj = {};
+                                    _patt.forEach(function(item) {
+                                        var _params = item.split(/d[+]?/).map(function(str) {return Number(str);});
+                                        _params[0] = _params[0]?_params[0]:1;
+                                        _params[1]%=31;
+
+                                        for (var k=0; k<31; k++) {
+                                            if (_params[0]!=1 && k%_params[0] == _params[1] || _params[0]==1 && k==_params[1])
+                                                _tmpObj[k] = 1;
+                                        }
+                                    });
+                                    for (var k=0; k<31; k++) {
+                                        if (_not) {
+                                            if (!_tmpObj[k])
+                                                _inMonth[k] = 1;
+                                        }
+                                        else {
+                                            if (_tmpObj[k])
+                                                _inMonth[k] = 1;
+                                        }
+                                    }
+                                }
+                                else if (_inWeekhValid) {
+                                    var _tmpObj = {};
+                                    _patt.forEach(function(item) {
+                                        var _params = item.split(/i[+]?/).map(function(str) {return Number(str);});
+                                        _params[1]%=7;
+                                        _tmpObj[_params[1]] = 1;
+                                    });
+                                    for (var k=0; k<7; k++) {
+                                        if (_not) {
+                                            if (!_tmpObj[k])
+                                                _inWeek[k] = 1;
+                                        }
+                                        else {
+                                            if (_tmpObj[k])
+                                                _inWeek[k] = 1;
+                                        }
+                                        
+                                    }
+                                }
+                            }
+                            else {
+                                console.warn(arr[i] + " is not valid!");
+                            }
+                        }
+                    }
+                }
+            }
+            return {smart: smart, calType: calType, static: _static, inWeek: _inWeek, inMonth: _inMonth};
+        }
+        this.isDayDisable = function(calType, disabled, day) {
+            if (disabled.static[day.unix])
+                return true;
+            
+            var _gap = 0;
+            
+            if (disabled.smart) {
+                if (disabled.calType=='gregorian' && calType=='jalali')
+                    _gap = +1;
+                else if (disabled.calType=='jalali' && calType=='gregorian')
+                    _gap = -1;
+            }
+            else {
+                if (disabled.calType=='gregorian' && calType=='jalali')
+                    _gap = -1;
+                else if (disabled.calType=='jalali' && calType=='gregorian')
+                    _gap = +1;
+            }
+                
+            
+            var _dayName = (day.dayName + 7 + _gap)%7;
+            
+            if (disabled.inMonth[day.day-1])
+                return true;
+            
+            return !!+disabled.inWeek[_dayName];
+        }
+        
+        return {
+            dateFormat: this.dateFormat,
+            parseString: this.parseString,
+            toRegularFormat: this.toRegularFormat,
+            isDateEqual: this.isDateEqual,
+            isDateBigger: this.isDateBigger,
+            isMonthBigger: this.isMonthBigger,
+            joinTime: this.joinTime,
+            removeTime: this.removeTime,
+            validateJalaliDateSeparate: this.validateJalaliDateSeparate,
+            validateJalaliDate: this.validateJalaliDate,
+            convertToUnix: this.convertToUnix,
+            convertFromUnix: this.convertFromUnix,
+            convertToJalali: this.convertToJalali,
+            parseDisablePattern: this.parseDisablePattern,
+            isDayDisable: this.isDayDisable,
+            counter: 0
+        }
+    }
+    
+    var ADMdtpCalendarDirective = function(ADMdtp, ADMdtpConvertor, ADMdtpFactory, constants, $timeout) {
+
+        return {
+            restrict: 'E',
+            replace: true,
+            //require: '^^admDtp',
+            link: function(scope, element, attrs) {
+
+                var admDtp = scope.api;
+                
+                var _standValue;
+                if (!scope.dtpValue.unix)
+                    _standValue = new Date();                   
+                else
+                    _standValue = new Date(scope.dtpValue.fullDate);
+                
+                if (scope.calType == 'jalali')
+                    _standValue = ADMdtpFactory.convertToJalali(_standValue);
+                
+                admDtp.fillDays(_standValue, !scope.option.transition);
+
+                scope.previousMonth = function(flag) {
+                    if (scope.calType == 'jalali' && !flag) {
+                        scope.nextMonth(true);
+                        return;
+                    }
+                    
+                    if (scope.current.month == 1)
+                        scope.current.month = 12, scope.current.year--;
+                    else
+                        scope.current.month--
+                    admDtp.reload();
+                }
+
+                scope.nextMonth = function(flag) {
+                    if (scope.calType == 'jalali' && !flag) {
+                        scope.previousMonth(true);
+                        return;
+                    }
+                        
+                    if (scope.current.month == 12)
+                        scope.current.month = 1, scope.current.year++;
+                    else
+                        scope.current.month++
+                    admDtp.reload();
+                }
+                
+                scope.previousYear = function(flag) {
+                    if (scope.calType == 'jalali' && !flag) {
+                        scope.nextYear(true);
+                        return;
+                    }
+
+                    var _firstYear = scope.generatedYears.shift();
+                    scope.generatedYears = [];
+                    for (var i=1;i<17;i++) {
+                        scope.generatedYears.push(_firstYear - 17 + i);
+                    }
+                }
+
+                scope.nextYear = function(flag) {
+                    if (scope.calType == 'jalali' && !flag) {
+                        scope.previousYear(true);
+                        return;
+                    }
+
+                    var _lastYear = scope.generatedYears.pop();
+                    scope.generatedYears = [];
+                    for (var i=1;i<17;i++) {
+                        scope.generatedYears.push(_lastYear + i);
+                    }
+                }
+                
+                scope.selectMonthInit = function() {
+                    scope.yearSelectStat = false;
+                    scope.monthPickerStat = true;
+                }
+                
+                scope.selectYearInit = function() {
+                    scope.yearSelectStat = true;
+                    scope.generatedYears = [];
+                    for (var i=0;i<16;i++) {
+                        scope.generatedYears.push(scope.current.year + i - 7);
+                    }
+                }
+                
+                scope.selectMonth = function(monthIdx) {
+                    if (monthIdx+1 != scope.current.month) {
+                        scope.current.month = monthIdx+1;
+                        admDtp.reload();
+                    }
+                    scope.monthPickerStat = false;
+                }
+                
+                scope.selectYear = function(yearName) {
+                    if (yearName != scope.current.year) {
+                        scope.current.year = yearName;
+                        admDtp.reload();
+                    }
+                    scope.monthPickerStat = false;
+                    //scope.yearSelectStat = false;
+                }
+
+                scope.selectThisDay = function(day) {
+                    if (day.valid == 0)
+                        return;
+                    
+                    scope.dtpValue.selected = false;
+                    
+                    admDtp.updateMasterValue(day, 'day');
+                    
+                    if (scope.option.autoClose) {
+                        $timeout(function() {
+                            scope.closeCalendar();
+                        },100);
+                        return;
+                    }
+                        
+                    
+                    if (day.disable) {
+                        $timeout(function() {
+                            if (ADMdtpFactory.isMonthBigger(day, scope.current))
+                                scope.nextMonth(true);
+                            else
+                                scope.previousMonth(true);
+                        }, 0);
+                    } else
+                        day.selected = true;
+                }
+                
+                scope.today = function() {
+                    var _standValue = new Date();
+
+                    if (scope.calType == 'jalali')
+                        _standValue = ADMdtpFactory.convertToJalali(_standValue);
+
+                    admDtp.fillDays(_standValue, !scope.option.transition);
+                }
+
+                scope.changeTimeValue = function(variable, value) {
+                    value *= (variable=='minute' ? scope.option.minuteStep : 1);
+                    
+                    var _num = (Number(scope.time[variable]) + value + ((variable=='hour')?24:60)) % ((variable=='hour')?24:60);
+                    var _timeCopy = angular.copy(scope.time);
+                    _timeCopy[variable] = _num.lZero();
+                    
+                    if (scope.dtpValue.unix) {
+                        if (scope.minDate || scope.maxDate) {
+                            var _dateTime = ADMdtpFactory.joinTime(scope.dtpValue.unix, _timeCopy);
+                            if ((scope.minDate && !ADMdtpFactory.isDateBigger(_dateTime,scope.minDate)) || (scope.maxDate && !ADMdtpFactory.isDateBigger(scope.maxDate,_dateTime)))
+                                return;
+                        }
+                    }
+                    
+                    scope.time[variable] = _num.lZero();
+                    
+                    
+                    if (scope.dtpValue.unix)
+                        admDtp.updateMasterValue(false, 'time');
+                    
+                    admDtp.reload();
+                }
+                
+                scope.modelChanged = function(input) {
+                    
+                    var _value = (angular.isDefined(input) ? input : scope.dtpValue.formated);
+                    
+                    if (!_value) {
+                        if (scope.dtpValue.unix)
+                            scope.destroy();
+                        return;
+                    }
+                    
+                    var _inputUnix = ADMdtpFactory.convertToUnix(_value, scope.calType, scope.option.format);
+                    if (!_inputUnix || scope.option.freezeInput || scope.disable || ((scope.minDate && !ADMdtpFactory.isDateBigger(_inputUnix,scope.minDate)) || (scope.maxDate && !ADMdtpFactory.isDateBigger(scope.maxDate,_inputUnix)))) {
+                        admDtp.updateMasterValue(false);
+                        return;
+                    }
+                        
+                    if (_inputUnix == scope.fullData.unix)
+                        return;
+                    
+                    scope.parseInputValue(_value, false, true);
+                    
+                    var _gDate = new Date(_inputUnix);
+                    if (scope.calType == 'jalali')
+                        _gDate = ADMdtpFactory.convertToJalali(_gDate);
+
+                    admDtp.fillDays(_gDate, true);
+                    
+                }
+                admDtp.modelChanged = scope.modelChanged;
+                
+                scope.calTypeChanged = function(calType) {
+                    scope.calType = (calType ? calType : ((scope.calType=='gregorian')?'jalali':'gregorian'));
+                    
+                    scope.monthNames = scope.option[scope.calType + 'Dic'].monthsNames;
+                    scope.daysNames = scope.option[scope.calType + 'Dic'].daysNames;
+                    
+                    var _cur = angular.copy(scope.current);
+                    var _mainDate;
+                    
+                    if (scope.calType == 'jalali') {
+                        _mainDate = ADMdtpConvertor.toJalali(_cur.year, _cur.month, 15);
+                    }
+                    else {
+                        _mainDate = ADMdtpConvertor.toGregorian(_cur.year, _cur.month, 15);
+                        _mainDate = [_mainDate.year, _mainDate.month, _mainDate.day].dtp_toDate('date');
+                    }
+                    
+                    if (scope.dtpValue.unix) {
+                        admDtp.updateMasterValue(ADMdtpFactory.convertFromUnix(scope.dtpValue.unix, scope.calType));
+                    }
+                    
+                    admDtp.fillDays(_mainDate, true);
+                    
+                }
+
+                
+            },
+            //templateUrl: 'js/ADM-dateTimePicker/ADM-dateTimePicker_calendar.html'
+            template: '<div class="ADMdtp-box ADMdtp-calendar-container" ng-class="{rtl: (calType==\'jalali\'), square: monthPickerStat||timePickerStat}"> <div class="dtpNewBox" ng-class="{active: monthPickerStat}"> <i class="calendarIcon" ng-class="{show: monthPickerStat}" ng-click="monthPickerStat = false"> <svg class="dtp-i" viewBox="0 0 24 24"> <use xlink:href="#dtp-i-calendar" /> </svg> </i> <div class="content"> <div class="ADMdtpMonths" ng-class="{onYear: yearSelectStat, rtl: (calType==\'jalali\')}"> <div class="ADMdtpYears"> <svg class="dtp-i dtp-i-180 dtp-trs-3 arrow left" viewBox="0 0 24 24" ng-if="yearSelectStat" ng-click="previousYear()"> <use xlink:href="#dtp-i-right" /> </svg> <p class="dtp-trs-3" ng-click="selectYearInit()">{{current.year | digitType:calType}}</p> <svg class="dtp-i dtp-trs-3 arrow right" viewBox="0 0 24 24" ng-if="yearSelectStat" ng-click="nextYear()"> <use xlink:href="#dtp-i-right" /> </svg> </div> <span ng-repeat="yearName in generatedYears" ng-if="yearSelectStat"><span class="dtp-trs-5" ng-class="{selected: yearName==current.year}" ng-click="selectYear(yearName)">{{yearName | digitType:calType}}</span></span> <span ng-repeat="monthName in monthNames" ng-if="!yearSelectStat"><span class="dtp-trs-5" ng-class="{selected: monthName==current.monthDscr}" ng-click="selectMonth($index)">{{monthName}}</span></span> </div> </div> </div> <div class="dtpNewBox" ng-class="{active: timePickerStat}"> <i class="calendarIcon" ng-class="{show: timePickerStat}" ng-click="timePickerStat = false"> <svg class="dtp-i" viewBox="0 0 24 24"> <use xlink:href="#dtp-i-calendar" /> </svg> </i> <div class="content"> <div class="ADMdtpTime"> <span class="dtpIcon null up" ng-click="changeTimeValue(\'hour\', 1)"><svg class="dtp-i dtp-trs-5 dtp-i-270" viewBox="0 0 24 24"><use xlink:href="#dtp-i-right" /></svg></span><!-- --><span></span><!-- --><span class="dtpIcon null up" ng-click="changeTimeValue(\'minute\', 1)"><svg class="dtp-i dtp-trs-5 dtp-i-270" viewBox="0 0 24 24"><use xlink:href="#dtp-i-right" /></svg></span><!-- --><span>{{time.hour}}</span><!-- --><span class="period">:</span><!-- --><span>{{time.minute}}</span><!-- --><span class="dtpIcon null down" ng-click="changeTimeValue(\'hour\', -1)"><svg class="dtp-i dtp-trs-5 dtp-i-90" viewBox="0 0 24 24"><use xlink:href="#dtp-i-right" /></svg></span><!-- --><span></span><!-- --><span class="dtpIcon null down" ng-click="changeTimeValue(\'minute\', -1)"><svg class="dtp-i dtp-trs-5 dtp-i-90" viewBox="0 0 24 24"><use xlink:href="#dtp-i-right" /></svg></span> </div> </div> </div> <header> <svg class="dtp-i dtp-i-180 dtp-trs-3 arrow left" viewBox="0 0 24 24" ng-click="previousMonth()"> <use xlink:href="#dtp-i-right" /> </svg> <span class="yearMonth" ng-click="selectMonthInit()">{{current.monthDscr}} {{current.year | digitType:calType}}</span> <svg class="dtp-i dtp-trs-3 arrow right" viewBox="0 0 24 24" ng-click="nextMonth()"> <use xlink:href="#dtp-i-right" /> </svg> </header> <div class="daysNames"> <span ng-repeat="dayName in daysNames">{{dayName}}</span> </div> <hr> <div class="ADMdtpDays" ng-class="{loading:loadingDays}"> <span ng-repeat="day in current.days" ng-click="selectThisDay(day)"><span ng-class="[{disable: day.disable||!day.valid, today: day.today, selected: day.selected, valid:(day.valid==2)}, (day.isMin)?((calType==\'jalali\')?\'max\':\'min\'):\'\', (day.isMax)?((calType==\'jalali\')?\'min\':\'max\'):\'\']">{{day.day | digitType:calType}}</span></span> </div> <hr> <footer> <div class="calTypeContainer dtp-trs-3" ng-class="$parent.calType" ng-click="calTypeChanged()" ng-if="option.multiple"> <p class="gregorian">{{option.gregorianDic.title}}</p> <p class="jalali">{{option.jalaliDic.title}}</p> </div> <button type="button" class="today dtp-trs-3" ng-click="today()">{{option[calType + "Dic"].todayBtn}}</button> <svg class="dtp-i dtp-trs-5 timeSelectIcon" viewBox="0 0 24 24" ng-show="option.dtpType != \'date\'" ng-click="timePickerStat = !timePickerStat"> <use xlink:href="#dtp-i-clock" /> </svg> </footer> </div>'
+        }
+    }
+
+    var ADMdtpDirective = function(ADMdtp, ADMdtpConvertor, ADMdtpFactory, constants, $compile, $timeout) {
+
+        return {
+            restrict: 'E',
+            replace: true,
+            transclude: true,
+            require: ['ngModel', 'admDtp'],
+            scope: {
+                options: '=?',
+                fullData: '=?',
+                name: '=?',
+                ngRequired: '=?',
+                onChange: '&?',
+                onDatechange: '&?',
+                onTimechange: '&?',
+                onOpen: '&?',
+                onClose: '&?',
+            },
+            link: function(scope, element, attrs, ctrls) {
+                var ngModel = ctrls[0], admDtp = ctrls[1];
+                scope.api = admDtp;
+                scope.dtpId = 'adm-' + (++ADMdtpFactory.counter);
+                
+                if (!element.find('ng-transclude').children().length) {
+                    scope.defaultTemplate = true;
+                    element.find('ng-transclude').remove();
+                }
+                
+                var _options = scope.options;
+                if (!(_options instanceof Object))
+                    _options = {};
+                scope.option = angular.merge(angular.copy(ADMdtp.getOptions()), _options);
+                scope.option.minuteStep = Math.max(Math.min(scope.option.minuteStep, 60), 1);
+                var dayNames = angular.copy(scope.option.gregorianDic.daysNames);
+                scope.option.gregorianDic.daysNamesUntouched = dayNames;
+                scope.option.gregorianDic.daysNames = dayNames.slice(scope.option.gregorianStartDay,7).concat(dayNames.slice(0,scope.option.gregorianStartDay));
+                
+                scope.disableDays = ADMdtpFactory.parseDisablePattern(scope.option);
+                scope.calType = scope.option.calType;
+                scope.monthNames = scope.option[scope.calType + 'Dic'].monthsNames;
+                scope.daysNames = scope.option[scope.calType + 'Dic'].daysNames;
+                scope.timeoutValue = [0,0];
+                scope.dtpValue = {};
+
+                scope.minDate = scope.mindate?new Date(scope.mindate):null;
+                scope.maxDate = scope.maxdate?new Date(scope.maxdate):null;
+                
+                scope.current = {
+                    year: '',
+                    month: '',
+                    monthDscr: '',
+                    days: []
+                };
+                
+
+                scope.updateMasterValue = function(newDate, releaseTheBeast) {
+                    if (!newDate)
+                        newDate = (scope.dtpValue.unix ? scope.dtpValue : {});
+                        
+
+                    scope.$applyAsync(function() {
+                        scope.dtpValue = newDate;
+                        var minute = Number(scope.time.minute);
+                        minute -= minute % scope.option.minuteStep;
+                        scope.time.minute = minute.lZero();
+                        scope.dtpValue.formated = ADMdtpFactory.dateFormat(newDate, scope.time, scope.option.format);
+                        scope.dtpValue.fullDate = ADMdtpFactory.joinTime(newDate.unix, scope.time);
+                        scope.fullData = {
+                            formated: scope.dtpValue.formated,
+                            lDate: scope.dtpValue.fullDate.dtp_shortDate(),
+                            gDate: scope.dtpValue.fullDate,
+                            unix: scope.dtpValue.fullDate.getTime(),
+                            year: newDate.year,
+                            month: newDate.month,
+                            day: newDate.day,
+                            hour: Number(scope.time.hour),
+                            minute: Number(scope.time.minute),
+                            minDate: scope.minDate,
+                            maxDate: scope.maxDate,
+                            calType: scope.calType,
+                            format: scope.option.format
+                        }
+
+                        ngModel.$setViewValue( scope.dtpValue.formated );
+                        ngModel.$render();
+                            
+                        if (scope.hasInputDtp)
+                            element[0].querySelector('[dtp-input]').value = scope.dtpValue.formated;
+
+                        if (releaseTheBeast) {
+                            if (scope.onChange)
+                                scope.onChange({date:scope.fullData});
+                            if (releaseTheBeast == 'time' && scope.onTimechange)
+                                scope.onTimechange({date:scope.fullData});
+                            else if (releaseTheBeast == 'day' && scope.onDatechange)
+                                scope.onDatechange({date:scope.fullData});
+                        }
+
+                    });
+                }
+                
+                scope.parseInputValue = function(valueStr, resetTime, releaseTheBeast) {
+                    if (valueStr == 'today') {
+                        valueStr = ADMdtpFactory.removeTime(new Date()).getTime();
+                    }
+                    
+                    var _dateTime = false;
+
+                    if (valueStr) {
+
+                        if (scope.calType == 'jalali') {
+                            _dateTime = ADMdtpFactory.validateJalaliDate(valueStr, scope.option.format);
+                        }
+                        else {
+                            if (typeof valueStr == "string")
+                                valueStr = ADMdtpFactory.toRegularFormat(valueStr, scope.calType, scope.option.format);
+                                
+                            _dateTime = new Date(valueStr);
+                            _dateTime = (/invalid/i.test(_dateTime))?false:_dateTime;
+                        }
+                    }
+
+                    if (_dateTime) {
+                        scope.dtpValue = {
+                            year: _dateTime.year || _dateTime.getFullYear(),
+                            month: _dateTime.month || _dateTime.getMonth()+1,
+                            day: _dateTime.day || _dateTime.getDate(),
+                            unix: _dateTime.unix || _dateTime.getTime(),
+                            fullDate: _dateTime.gDate || _dateTime
+                        }
+                        
+                        scope.dtpValue.fullDate = ADMdtpFactory.removeTime(scope.dtpValue.fullDate);
+                        scope.dtpValue.unix = scope.dtpValue.fullDate.getTime();
+
+                        scope.time = {
+                            hour: ( _dateTime.getHours?_dateTime.getHours():_dateTime.hour ).lZero(),
+                            minute: ( _dateTime.getMinutes?_dateTime.getMinutes():_dateTime.minute ).lZero()
+                        }
+
+                        scope.updateMasterValue(false, releaseTheBeast);
+                    }
+                    else {
+                        if (resetTime)
+                            scope.time = {
+                                hour: '00',
+                                minute: '00'
+                            }
+                        }
+                }
+                scope.parseInputValue(ngModel.$viewValue || scope.option.default, true, false);
+                
+                ngModel.$formatters.push(function (val) {
+                    if (!val && scope.dtpValue.unix) {
+                        scope.destroy();
+                    }
+                    else if (scope.dtpValue && val == scope.dtpValue.formated) {
+                    }
+                    else {
+                        scope.parseInputValue(val, false, true);
+                    }
+
+                    return val;
+                });
+                
+                if (scope.option.watchingOptions) {
+                    //return;
+                    scope.$watch('options', function(nuVal, old) {
+                        if (!nuVal || typeof nuVal != 'object') return;
+                        if (old && JSON.stringify(old) == JSON.stringify(nuVal)) return;
+                        
+                        var daysNamesUntouched = scope.option.gregorianDic.daysNamesUntouched;
+                        scope.option = angular.merge(angular.copy(ADMdtp.getOptions()), nuVal);
+                        scope.option.minuteStep = Math.max(Math.min(scope.option.minuteStep, 60), 1);
+                        
+                        if (nuVal.gregorianDic && nuVal.gregorianDic.daysNames)
+                            scope.option.gregorianDic.daysNamesUntouched = nuVal.gregorianDic.daysNames;
+                        else
+                            scope.option.gregorianDic.daysNamesUntouched = daysNamesUntouched;
+                        
+                        var dayNames = angular.copy(scope.option.gregorianDic.daysNamesUntouched);
+                        scope.option.gregorianDic.daysNames = dayNames.slice(scope.option.gregorianStartDay,7).concat(dayNames.slice(0,scope.option.gregorianStartDay));
+
+                        scope.disableDays = ADMdtpFactory.parseDisablePattern(scope.option);
+                        if (scope.calTypeChanged) scope.calTypeChanged(scope.option.calType);
+                    }, true);
+                }                
+                
+                attrs.$observe("disable", function (_newVal) {
+                    scope.$applyAsync(function() {
+                        _newVal = scope.$eval(_newVal);
+                        scope.disable = _newVal;
+                    });
+                });
+                
+                attrs.$observe("mindate", function (_newVal) {
+                    scope.$applyAsync(function() {
+                        _newVal = scope.$eval(_newVal);
+                        scope.minDate = ADMdtpFactory.convertToUnix(_newVal, scope.calType, scope.option.format);
+                    });
+                });
+                
+                attrs.$observe("maxdate", function (_newVal) {
+                    scope.$applyAsync(function() {
+                        _newVal = scope.$eval(_newVal);
+                        scope.maxDate = ADMdtpFactory.convertToUnix(_newVal, scope.calType, scope.option.format);
+                    });
+                }); 
+
+                scope.onKeydown = function(e) {
+                    if (e.keyCode == 9)
+                        scope.closeCalendar();
+                }
+                
+                scope.openCalendar = function() {
+                    if (scope.showCalendarStat || scope.disable)
+                        return;
+                    
+                    scope.timeoutValue[0] = 0;
+                    scope.showCalendarStat = true;
+                    
+                    var _admDtpCalendarHtml = angular.element('<adm-dtp-calendar id="'+ scope.dtpId +'" style="opacity:0; z-index: '+ scope.option.zIndex +';"></adm-dtp-calendar>');
+                    angular.element(document.body).append(_admDtpCalendarHtml);
+
+                    scope.$applyAsync(function () {
+                        $compile(_admDtpCalendarHtml)(scope);
+                    });
+                    
+                    $timeout(function() {
+                        var top = document.documentElement.scrollTop || document.body.scrollTop;
+                        var popup = document.getElementById(scope.dtpId);
+                        var popupBound = popup.getBoundingClientRect();
+                        var _input = element.children().children()[0];
+                        var _inputBound = _input.getBoundingClientRect();
+                        var _corner = {
+                            x: _inputBound.left,
+                            y: _inputBound.top + _inputBound.height
+                        }
+
+                        var _totalSize = {
+                            width: popupBound.width + _corner.x,
+                            height: popupBound.height + _corner.y
+                        }
+                        
+                        var _pos = {
+                            top: '',
+                            bottom: '',
+                            left: '',
+                            right: ''
+                        }
+                        if (_totalSize.height > window.innerHeight)
+                            _pos.top = (top + _inputBound.top - popupBound.height) + 'px';
+                        else
+                            _pos.top = (top + _inputBound.top + _inputBound.height) + 'px';
+                        
+                        if (_totalSize.width > window.innerWidth)
+                            _pos.left = (_corner.x + window.innerWidth - _totalSize.width - 20) + 'px';
+                        else
+                            _pos.left = _corner.x + 'px';
+                        
+                        angular.element(popup).css({top: _pos.top, bottom: _pos.bottom, left: _pos.left, opacity: 1});
+                        
+                    }, 70);
+                    
+                    if (scope.onOpen)
+                        scope.onOpen();
+                }
+                
+                scope.closeCalendar = function() {
+                    if (!scope.showCalendarStat)
+                        return;
+                    
+                    scope.$applyAsync(function() {
+                        scope.monthPickerStat = false;
+                        scope.timePickerStat = false;
+                        scope.showCalendarStat = false;
+                    });
+                
+                    var popup = document.getElementById(scope.dtpId);
+                    if (popup) {
+                        angular.element(popup).remove();
+                        
+                        if (scope.onClose)
+                            scope.onClose();
+                    }
+                    
+                }
+                
+                scope.toggleCalendar = function() {
+                    if (scope.showCalendarStat)
+                        scope.closeCalendar();
+                    else
+                        scope.openCalendar();
+                }
+
+                scope.destroy = function(noRefresh) {
+                    if (scope.disable)
+                        return;
+                    
+                    scope.monthPickerStat = false;
+                    scope.timePickerStat = false;
+                    
+                    scope.current = {
+                        year: '',
+                        month: '',
+                        monthDscr: '',
+                        days: []
+                    };
+                    scope.dtpValue = {};
+                    scope.fullData = {
+                        minDate: scope.minDate,
+                        maxDate: scope.maxDate
+                    }
+                    scope.time = {
+                        hour: '00',
+                        minute: '00'
+                    }
+                    var _standValue = new Date();                   
+
+                    if (scope.calType == 'jalali')
+                        _standValue = ADMdtpFactory.convertToJalali(_standValue);
+
+                    ngModel.$setViewValue('');
+                    ngModel.$render();
+                    
+                    if (!noRefresh)
+                        admDtp.fillDays(_standValue, !scope.option.transition);
+                    
+                    if (scope.onChange)
+                        scope.onChange({date:scope.fullData});
+                }
+                                
+                var dtpOpen = element[0].querySelector('[dtp-open]') || {};
+                dtpOpen.onclick = scope.openCalendar;
+                
+                var dtpClose = element[0].querySelector('[dtp-close]') || {};
+                dtpClose.onclick = scope.closeCalendar;
+
+                var dtpToggle = element[0].querySelector('[dtp-toggle]') || {};
+                dtpToggle.onclick = scope.toggleCalendar;
+                
+                var dtpDestroy = element[0].querySelector('[dtp-destroy]') || {};
+                dtpDestroy.onclick = scope.destroy;
+            },
+            controller: ['$scope', function($scope) {
+
+                this.updateMasterValue = function(newDate, releaseTheBeast) {
+                    $scope.updateMasterValue(newDate, releaseTheBeast);
+                }
+
+                this.fillDays = function(date, noTransition) {
+
+                    if (noTransition)
+                        $scope.timeoutValue[0] = 0;
+                    else
+                        $scope.loadingDays = true;
+
+
+                    var _mainDate = angular.copy(date);
+
+                    if ($scope.calType == 'jalali') {
+                        var _gDate = ADMdtpConvertor.toGregorian(date.year, date.month, 29);
+                        date = [_gDate.year, _gDate.month, _gDate.day].dtp_toDate('date');
+                    }
+
+                    var _input = {
+                        year: date.getFullYear(),
+                        month: date.getMonth()+1,
+                        day: date.getDate()
+                    }
+
+                    $scope.$applyAsync(function() {
+                        var _month = _mainDate.month || (_mainDate.getMonth()+1);
+                        angular.merge($scope.current, {
+                            year: _mainDate.year || _mainDate.getFullYear(),
+                            month: _month,
+                            monthDscr: $scope.monthNames[_month-1]
+                        });
+                    });
+
+                    var startDay, shift = startDay = $scope.option.gregorianStartDay;
+
+                    if ($scope.calType == 'jalali')
+                        shift = 0, startDay = 6;
+
+                    var _today = new Date();
+                    _today = [_today.getFullYear(), _today.getMonth()+1, _today.getDate(), 1, 0].dtp_toDate('unix');
+
+                    var _selected = ($scope.dtpValue.unix || -1), _selectedIdx;
+
+                    var _currDay = [_input.year, _input.month, _input.day, 1, 0].dtp_toDate('date');
+                    var _firstDayName = new Date(angular.copy(_currDay).setDate(1)).getDay();
+
+                    var _days = [];
+
+                    var _diff = -1 * (_firstDayName - shift + 7) % 7,
+                        _ite_date, _disable = true;
+                    var _lastValidStat = -1;
+
+                    if ($scope.calType == 'jalali') {
+                        var _ite_date = new Date(angular.copy(_currDay).setDate(_diff));
+                        var _pDate = ADMdtpConvertor.toJalali(_ite_date.getFullYear(), _ite_date.getMonth()+1, _ite_date.getDate());
+                        _diff -= (Math.ceil((_pDate.day-1)/7)*7 + 1);
+                    }
+
+
+                    while (true) {
+                        _diff++;
+                        var _ite_date = new Date(angular.copy(_currDay).setDate(_diff));
+                        var _pDate = false;
+
+                        if ($scope.calType == 'jalali') {
+                            _pDate = ADMdtpConvertor.toJalali(_ite_date.getFullYear(), _ite_date.getMonth()+1, _ite_date.getDate());
+                        }
+
+                        var _thisDay = _pDate.day || _ite_date.getDate();
+
+                        if (_thisDay == 1)
+                            _disable = !_disable;
+
+                        if (_disable && _thisDay < 8 && _ite_date.getDay() == startDay)
+                            break;
+
+
+                        var _isMin = false;
+                        var _valid = 1;
+                        if ($scope.minDate || $scope.maxDate) {
+                            var _dateTime = ADMdtpFactory.joinTime(_ite_date, $scope.time);
+                            if (($scope.minDate && !ADMdtpFactory.isDateBigger(_dateTime,$scope.minDate)) || ($scope.maxDate && !ADMdtpFactory.isDateBigger($scope.maxDate,_dateTime))) {
+                                _valid = 0;
+
+                                if (_lastValidStat == 2)
+                                    _days[_days.length-1].isMax = true;
+                            }
+                            else {
+                                _valid = 2;
+
+                                if (_lastValidStat == 0)
+                                    _isMin = true;
+                            }
+                            _lastValidStat = _valid;
+                        }
+
+                        var _unix = _ite_date.getTime();
+                        var _dayName = _ite_date.getDay() + (($scope.calType=='jalali')?1:0);
+                        
+                        var _day = {
+                            day: _thisDay,
+                            month: _pDate.month || _ite_date.getMonth()+1,
+                            year: _pDate.year || _ite_date.getFullYear(),
+                            dayName: _dayName,
+                            fullDate: _ite_date,
+                            disable: _disable,
+                            today: (_unix == _today),
+                            selected: (_unix == _selected),
+                            unix: _unix,
+                            valid: _valid,
+                            isMin: _isMin
+                        }
+
+                        if (ADMdtpFactory.isDayDisable($scope.calType, $scope.disableDays, _day))
+                            _day.valid = 0;
+
+                        if (_day.selected)
+                            _selectedIdx = _days.length;
+
+                        _days.push(_day);
+                    }
+
+                    $timeout(function() {
+
+                        $scope.timeoutValue[0] = 500;
+
+                        $scope.$applyAsync(function() {
+                            $scope.current.days = _days;
+                            if (_selectedIdx)
+                                $scope.updateMasterValue($scope.current.days[_selectedIdx]);
+                            $timeout(function() {
+                                $scope.loadingDays = false;
+                            }, $scope.timeoutValue[1]);
+                        });
+
+                    }, $scope.timeoutValue[0]);
+                }
+
+                this.reload = function() {
+                    var _cur = angular.copy($scope.current);
+                    _cur.day = 29;
+                    var _date = [_cur.year, _cur.month, 8].dtp_toDate('date');
+                    if ($scope.calType == 'jalali')
+                        _date = _cur;
+                    this.fillDays(_date, !$scope.option.transition);
+                }
+
+                this.vm = $scope;
+            }],
+            //templateUrl: 'js/ADM-dateTimePicker/ADM-dateTimePicker_view.html'
+            template: '<md-input-container><div class="ADMdtp ADMdtp-container" ng-class="{rtl: (calType==\'jalali\'), touch: option.isDeviceTouch, disable: disable}"> <div class="clickOutContainer" click-out="closeCalendar()"  alias="{{dtpId}}"> <ng-transclude></ng-transclude> <div ng-if="defaultTemplate" ng-class="{touch: option.isDeviceTouch, disable: disable, open: showCalendarStat}"> <label>Date Time</label><input type="text" name="{{name}}" ng-model="dtpValue.formated" ng-focus="openCalendar()" ng-click="openCalendar()" ng-readonly="option.freezeInput || option.isDeviceTouch || disable" ng-blur="modelChanged()" ng-keydown="onKeydown($event)" ng-required="ngRequired" > </md-input-container> <use xlink:href="#dtp-i-close" /> </svg> </div> </div> <svg style="display:none;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"> <defs> <g id="dtp-i-calendar"> <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/> <path d="M0 0h24v24H0z" fill="none"/> </g> <g id="dtp-i-clock"> <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/> <path d="M0 0h24v24H0z" fill="none"/> <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/> </g> <g id="dtp-i-right"> <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/> <path d="M0 0h24v24H0z" fill="none"/> </g> <g id="dtp-i-close"> <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/> <path d="M0 0h24v24H0z" fill="none"/> </g> <g id="dtp-i-off"> <path d="M0 0h24v24H0z" fill="none"/> <path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/> </g> </defs> </svg> </div><md-input-container>'
+        };
+    }
+    
+    var dtpInputDirective = function() {
+        return {
+            require: ['^^admDtp', 'ngModel'],
+            link: function(scope, element, attrs, ctrls) {
+                var admDtp = ctrls[0], ngModel = ctrls[1];
+
+                ngModel.$parsers.push(function() {
+                    return ngModel.$modelValue;
+                })
+
+                admDtp.vm.hasInputDtp = true;
+
+                element.on('focus', function() {
+                    admDtp.vm.openCalendar();
+                });
+                element.on('blur', function() {
+                    admDtp.vm.modelChanged(element[0].value);
+                });
+                
+            }
+        }
+    }
+
+    /* https://github.com/IamAdamJowett/angular-click-outside */
+    var clickOutside = function($document) {
+        return {
+            restrict: 'A',
+            scope: {
+                clickOut: '&'
+            },
+            link: function ($scope, elem, attr) {
+                if (attr.id == undefined) attr.$set('id', 'id_' + Math.random());
+
+                $document.on('click contextmenu', function (e) {
+                    var i = 0,
+                        element;
+
+                    if (!e.target) return;
+                    
+                    var classList = (attr.alias !== undefined) ? attr.alias.replace(', ', ',').split(',') : [];
+                    classList.push(attr.id);
+
+                    for (element = e.target; element; element = element.parentNode) {
+                        var id = element.id;
+                        var classNames = element.className;
+
+                        if (id !== undefined) {
+                            for (i = 0; i < classList.length; i++) {
+                                if (id.indexOf(classList[i]) > -1 || (typeof classNames == 'string' && classNames.indexOf(classList[i]) > -1)) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    $scope.$eval($scope.clickOut);
+                });
+            }
+        };
+    }
+    
+    var ADMdtpConfig = function(ADMdtp) {
+        
+        ADMdtp.setOptions({isDeviceTouch: ('ontouchstart' in window || navigator.maxTouchPoints)});
+        
+        var style = document.createElement('style');
+        style.type = 'text/css';
+        
+        var vendor = function(css) {
+            return '-moz-' + css + '-o-' + css + '-webkit-' + css + css;
+        }
+        
+        for (var i=1; i<51; i++)
+            style.innerHTML += '.ADMdtpDays>span:nth-child('+ i +')>span {'+ vendor('transition: all .5s, transform 0.2s '+ i*.01 +'s cubic-bezier(0.680, -0.550, 0.265, 1.550); ') +'}';
+
+        document.getElementsByTagName('head')[0].appendChild(style);
+        
+    }
+
+    return angular.module('ADM-dateTimePicker', [])
+        .constant('constants', {})
+        .provider('ADMdtp', ADMdtpProvider)
+        .filter('digitType', [ADMdtpDigitTypeFilter])
+        .factory('ADMdtpConvertor', [ADMdtpConvertor])
+        .factory('ADMdtpFactory', ['ADMdtpConvertor', ADMdtpFactory])
+        .directive('admDtp', ['ADMdtp', 'ADMdtpConvertor', 'ADMdtpFactory', 'constants', '$compile', '$timeout', ADMdtpDirective])
+        .directive('admDtpCalendar', ['ADMdtp', 'ADMdtpConvertor', 'ADMdtpFactory', 'constants', '$timeout', ADMdtpCalendarDirective])
+        .directive('dtpInput', [dtpInputDirective])
+        .directive('clickOut', ['$document', clickOutside])
+        .config(['ADMdtpProvider', ADMdtpConfig]);
+}(window.angular));
+
+
+

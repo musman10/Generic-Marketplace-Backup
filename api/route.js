@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var authenticate = require('./middleware/authenticate');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -19,13 +20,13 @@ router.post('/tenant/register', function(req, res, next) {
 });
 
 /* Tenant service */
-router.get('/tenant/:tenantName', function(req, res, next) {
+router.get('/tenant/:tenantName', authenticate, function(req, res, next) {
   var service = require("./tenant/tenant");
   service(req.params.tenantName,res);
 });
 
 /* Tenant list service */
-router.get('/tenant/get/list', function(req, res, next) {
+router.get('/tenant/get/list', authenticate, function(req, res, next) {
   var service = require("./tenant/list");
   service(res);
 });

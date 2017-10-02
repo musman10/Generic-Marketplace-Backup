@@ -21,6 +21,7 @@
     "gulp-plumber": "^1.1.0",
     "gulp-sass": "^2.3.2",
     "gulp-uglify": "^2.1.2",
+    "jsonwebtoken": "^8.0.1",
     "ng-table": "^3.0.1",
     "path": "*",
     "path-exists": "*"

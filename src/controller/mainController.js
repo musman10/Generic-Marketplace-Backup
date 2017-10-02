@@ -3,7 +3,7 @@
  */
 angular.module('angularApp')
     .controller('mainController', [ '$scope','$state', 'mainFactory', 'mainService', 'mainProvider', '$location','app', function ($scope, $state, mainFactory, mainService, mainProvider,$location,app) {
-        debugger;
+        debugger
         $scope.location=$location;
         $scope.url = $scope.location.host();
         $scope.state = $state.current;

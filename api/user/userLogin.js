@@ -3,6 +3,8 @@
  */
 var mongo = require('mongodb');
 var ObjectID = require('mongodb').ObjectID;
+var jwt = require('jsonwebtoken');
+var config = require('../config/db');
 
 module.exports = function(loginUser,response){
     var MongoClient = require('mongodb').MongoClient;
@@ -16,6 +18,7 @@ module.exports = function(loginUser,response){
     status : 200};
     var user = "";
 
+    console.log('user : ', loginUser);
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
         console.log("Mongo");
@@ -65,7 +68,13 @@ module.exports = function(loginUser,response){
                         response.send(dto);
                     }
                     else {
+                        // TODO remove password
+                        // create a token
+                        var token = jwt.sign({ id: result._id }, config.secret, {
+                            expiresIn: 86400 // expires in 24 hours
+                        });
                         dto.data = result;
+                        dto.token = token
                         response.send(dto);
                     }
                     user = result;
