@@ -1,5 +1,5 @@
 angular.module('angularApp')
-    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
+    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app','NgTableParams', function ($scope,$state,tenantLoginService,app,NgTableParams) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing',
@@ -196,6 +196,27 @@ angular.module('angularApp')
             }
             return results;
         }
+
+        var response = {
+            data : [
+                {
+                    username: "hello world",
+                },
+                {
+                    username: "hello world",
+                },
+                {
+                    username: "hello world",
+                },
+                {
+                    username: "hello world",
+                },
+                {
+                    username: "hello world",
+                }
+            ]
+        };
+        $scope.userTable = new NgTableParams({count: 2}, { dataset: response.data});
 
         debugger;
         $scope.tiles = $scope.buildGridModel({

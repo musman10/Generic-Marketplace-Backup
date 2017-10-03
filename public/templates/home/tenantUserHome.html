@@ -70,6 +70,7 @@
 </div>
 
 
+
 <div class="row">
     <md-card style="width:45%;margin:10px;margin-left:30px;position:relative;float:left">
         <div google-chart chart="myChartObject" style="height:400px; width:100%;"></div>
@@ -81,6 +82,40 @@
         <div google-chart chart="myPieChartObject" style="height:400px; width:100%;"></div>
     </md-card>
 </div>
+
+
+<div class="row">
+    <md-card style="width:45%;margin:10px;margin-left:30px;position:relative;float:left">
+        <table ng-table="userTable" class="table table-hover">
+            <tr ng-repeat="user in $data">
+               <!-- <td data-title="'No. '" >
+                    {{ $index + 1 }}
+                </td>-->
+                <td data-title="'Last Five requests'">
+                    <a href=/user/view/{{user._id}}>Java Developer</a>
+                </td>
+
+            </tr>
+        </table>
+    </md-card>
+
+
+
+    <md-card style="width:45%;margin:10px;;position:relative;float:left" >
+        <table ng-table="userTable" class="table table-hover" >
+            <tr ng-repeat="user in $data">
+              <!--  <td data-title="'No. '" >
+                    {{ $index + 1 }}
+                </td>-->
+                <td data-title="'Last Five requests'" >
+                    <a href=/user/view/{{user._id}}>Java Developer</a>
+                </td>
+
+            </tr>
+        </table>
+    </md-card>
+</div>
+
 
 <div class="row">
     <md-card style="width:90%; margin:40px;">
