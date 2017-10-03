@@ -1,1 +1,89 @@
+<style>
+
+    .gridListdemoDynamicTiles .s64 {
+        font-size: 64px; }
+
+    .gridListdemoDynamicTiles .s32 {
+        font-size: 48px; }
+
+
+    .gridListdemoDynamicTiles .gray {
+        background: #f5f5f5; }
+
+    .gridListdemoDynamicTiles .green {
+        background: #b9f6ca; }
+
+    .gridListdemoDynamicTiles .yellow {
+        background: #ffff8d; }
+
+    .gridListdemoDynamicTiles .blue {
+        background: #84ffff; }
+
+    .gridListdemoDynamicTiles .darkBlue {
+        background: #80d8ff; }
+
+    .gridListdemoDynamicTiles .deepBlue {
+        background: #448aff; }
+
+    .gridListdemoDynamicTiles .purple {
+        background: #b388ff; }
+
+    .gridListdemoDynamicTiles .lightPurple {
+        background: #8c9eff; }
+
+    .gridListdemoDynamicTiles .red {
+        background: #ff8a80; }
+
+    .gridListdemoDynamicTiles .pink {
+        background: #ff80ab; }
+
+    </style>
+
 <h1>Welcome!</h1>
+
+<md-grid-list
+        md-cols="1" md-cols-sm="2" md-cols-md="3" md-cols-gt-md="6"
+        md-row-height-gt-md="1:1" md-row-height="4:3"
+        md-gutter="8px" md-gutter-gt-sm="4px" >
+
+    <md-grid-tile ng-repeat="tile in tiles"
+                  md-rowspan="{{tile.span.row}}"
+                  md-colspan="{{tile.span.col}}"
+                  md-colspan-sm="1"
+                  md-colspan-xs="1"
+                  ng-class="tile.background" >
+        <md-icon md-svg-icon="{{tile.icon}}"></md-icon>
+        <md-grid-tile-footer><h3>{{tile.title}}</h3></md-grid-tile-footer>
+    </md-grid-tile>
+</md-grid-list>
+
+<div class="row">
+<md-card style="width:45%;margin:10px;margin-left:30px;position:relative;float:left">
+<div google-chart chart="myChartObject" style="height:400px; width:100%;"></div>
+</md-card>
+
+
+
+<md-card style="width:45%;margin:10px;;position:relative;float:left" >
+    <div google-chart chart="myPieChartObject" style="height:400px; width:100%;"></div>
+</md-card>
+</div>
+
+
+<div class="row">
+    <md-card style="width:45%;margin:10px;margin-left:30px;position:relative;float:left">
+        <div google-chart chart="myChartObject" style="height:400px; width:100%;"></div>
+    </md-card>
+
+
+
+    <md-card style="width:45%;margin:10px;;position:relative;float:left" >
+        <div google-chart chart="myPieChartObject" style="height:400px; width:100%;"></div>
+    </md-card>
+</div>
+
+<div class="row">
+    <md-card style="width:90%; margin:40px;">
+        <div google-chart chart="myChartObject" style="height:400px; width:100%;"></div>
+    </md-card>
+</div>
