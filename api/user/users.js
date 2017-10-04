@@ -6,15 +6,29 @@ module.exports = function(res){
     var dto = {users:[]};
     
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-        db.collection("User").find({}).toArray(function(err, result) {
-          if (err) throw err;
-          console.log(result);
-          dto.users = result;
-          db.close();
-          //return dto;
-          res.send(dto);
-        });
+        try {
+            if (err) throw err;
+            db.collection("User").find({}).toArray(function (err, result) {
+                try {
+                    if (err) throw err;
+                    console.log(result);
+                    dto.users = result;
+                    db.close();
+                    //return dto;
+                    res.send(dto);
+                }catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+            });
+        }catch(e){
+            db.close();
+            dto.success = false;
+            dto.error.push(e.toString());
+            response.send(dto);
+        }
     });
     /*
     var myobj = {
