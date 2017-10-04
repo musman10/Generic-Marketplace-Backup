@@ -174,20 +174,21 @@ angular.module('angularApp')
                 switch (j + 1) {
 
                     case 1:
-                        it.background = "lightPurple";
+                        it.background = "darkBlue";
                         break;
                     case 2:
-                        it.background = "yellow";
+                        it.background = "deepBlue";
                         break;
                     case 3:
-                        it.background = "lightPurple";
+                        it.background = "darkBlue";
                         break;
                     case 4:
-                        it.background = "yellow";
+                        it.background = "deepBlue";
                         break;
 
                     case 5:
-                        it.background = "blue";
+                        it.background = "transparent";
+                        it.data = new Date().toString;
                         it.span.col = 2;
                         break;
                 }
