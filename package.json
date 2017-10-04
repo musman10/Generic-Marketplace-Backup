@@ -21,11 +21,16 @@
     "gulp-plumber": "^1.1.0",
     "gulp-sass": "^2.3.2",
     "gulp-uglify": "^2.1.2",
+    "jsonwebtoken": "^8.0.1",
+    "mongo-join": "^1.0.0",
+    "mongodb": "^2.2.31",
     "ng-table": "^3.0.1",
     "path": "*",
     "path-exists": "*"
   },
   "devDependencies": {
-    "gulp-debug": "^3.1.0"
+    "gulp": "^3.9.1",
+    "gulp-debug": "^3.1.0",
+    "jsonwebtoken": "^8.0.1"
   }
 }

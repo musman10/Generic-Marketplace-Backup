@@ -1,35 +1,27 @@
 var mongo = require('mongodb');
+var User = require('../../repository/user.js');
 
 module.exports = function(res){
-    var MongoClient = require('mongodb').MongoClient;
-    var url = "mongodb://localhost:27017/mydb";
+
     var dto = {users:[]};
     
-    MongoClient.connect(url, function(err, db) {
-        try {
-            if (err) throw err;
-            db.collection("User").find({}).toArray(function (err, result) {
+
+            User.find({}).toArray(function (err, result) {
                 try {
                     if (err) throw err;
                     console.log(result);
                     dto.users = result;
-                    db.close();
+
                     //return dto;
                     res.send(dto);
                 }catch(e){
-                    db.close();
+
                     dto.success = false;
                     dto.error.push(e.toString());
                     response.send(dto);
                 }
             });
-        }catch(e){
-            db.close();
-            dto.success = false;
-            dto.error.push(e.toString());
-            response.send(dto);
-        }
-    });
+
     /*
     var myobj = {
         name:'Abdul Basit',

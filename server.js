@@ -6,6 +6,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var api_routes = require('./api/route');
 var url = require('url');
+var MongoConnection = require('./db/mongo-connection');
 
 function fullUrl(req) {
   return url.format({
@@ -71,5 +72,6 @@ app.get('/', function(req, res){
     //res.sendFile(__dirname + '/index.html');
 });
 */
+MongoConnection.initPool();
 console.log('Server running: http://localhost:8080');
 app.listen(8080);

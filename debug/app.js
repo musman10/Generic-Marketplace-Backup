@@ -42651,410 +42651,6 @@ angular.module('ngAnimate', [], function initAngularHelpers() {
 
 })(window, window.angular);
 
-/**
- * @license AngularJS v1.6.6
- * (c) 2010-2017 Google, Inc. http://angularjs.org
- * License: MIT
- */
-(function(window, angular) {'use strict';
-
-/**
- * @ngdoc module
- * @name ngAria
- * @description
- *
- * The `ngAria` module provides support for common
- * [<abbr title="Accessible Rich Internet Applications">ARIA</abbr>](http://www.w3.org/TR/wai-aria/)
- * attributes that convey state or semantic information about the application for users
- * of assistive technologies, such as screen readers.
- *
- * <div doc-module-components="ngAria"></div>
- *
- * ## Usage
- *
- * For ngAria to do its magic, simply include the module `ngAria` as a dependency. The following
- * directives are supported:
- * `ngModel`, `ngChecked`, `ngReadonly`, `ngRequired`, `ngValue`, `ngDisabled`, `ngShow`, `ngHide`, `ngClick`,
- * `ngDblClick`, and `ngMessages`.
- *
- * Below is a more detailed breakdown of the attributes handled by ngAria:
- *
- * | Directive                                   | Supported Attributes                                                                                |
- * |---------------------------------------------|-----------------------------------------------------------------------------------------------------|
- * | {@link ng.directive:ngModel ngModel}        | aria-checked, aria-valuemin, aria-valuemax, aria-valuenow, aria-invalid, aria-required, input roles |
- * | {@link ng.directive:ngDisabled ngDisabled}  | aria-disabled                                                                                       |
- * | {@link ng.directive:ngRequired ngRequired}  | aria-required                                                                                       |
- * | {@link ng.directive:ngChecked ngChecked}    | aria-checked                                                                                        |
- * | {@link ng.directive:ngReadonly ngReadonly}  | aria-readonly                                                                                       |
- * | {@link ng.directive:ngValue ngValue}        | aria-checked                                                                                        |
- * | {@link ng.directive:ngShow ngShow}          | aria-hidden                                                                                         |
- * | {@link ng.directive:ngHide ngHide}          | aria-hidden                                                                                         |
- * | {@link ng.directive:ngDblclick ngDblclick}  | tabindex                                                                                            |
- * | {@link module:ngMessages ngMessages}        | aria-live                                                                                           |
- * | {@link ng.directive:ngClick ngClick}        | tabindex, keydown event, button role                                                                |
- *
- * Find out more information about each directive by reading the
- * {@link guide/accessibility ngAria Developer Guide}.
- *
- * ## Example
- * Using ngDisabled with ngAria:
- * ```html
- * <md-checkbox ng-disabled="disabled">
- * ```
- * Becomes:
- * ```html
- * <md-checkbox ng-disabled="disabled" aria-disabled="true">
- * ```
- *
- * ## Disabling Attributes
- * It's possible to disable individual attributes added by ngAria with the
- * {@link ngAria.$ariaProvider#config config} method. For more details, see the
- * {@link guide/accessibility Developer Guide}.
- */
-var ngAriaModule = angular.module('ngAria', ['ng']).
-                        info({ angularVersion: '1.6.6' }).
-                        provider('$aria', $AriaProvider);
-
-/**
-* Internal Utilities
-*/
-var nodeBlackList = ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'DETAILS', 'SUMMARY'];
-
-var isNodeOneOf = function(elem, nodeTypeArray) {
-  if (nodeTypeArray.indexOf(elem[0].nodeName) !== -1) {
-    return true;
-  }
-};
-/**
- * @ngdoc provider
- * @name $ariaProvider
- * @this
- *
- * @description
- *
- * Used for configuring the ARIA attributes injected and managed by ngAria.
- *
- * ```js
- * angular.module('myApp', ['ngAria'], function config($ariaProvider) {
- *   $ariaProvider.config({
- *     ariaValue: true,
- *     tabindex: false
- *   });
- * });
- *```
- *
- * ## Dependencies
- * Requires the {@link ngAria} module to be installed.
- *
- */
-function $AriaProvider() {
-  var config = {
-    ariaHidden: true,
-    ariaChecked: true,
-    ariaReadonly: true,
-    ariaDisabled: true,
-    ariaRequired: true,
-    ariaInvalid: true,
-    ariaValue: true,
-    tabindex: true,
-    bindKeydown: true,
-    bindRoleForClick: true
-  };
-
-  /**
-   * @ngdoc method
-   * @name $ariaProvider#config
-   *
-   * @param {object} config object to enable/disable specific ARIA attributes
-   *
-   *  - **ariaHidden** – `{boolean}` – Enables/disables aria-hidden tags
-   *  - **ariaChecked** – `{boolean}` – Enables/disables aria-checked tags
-   *  - **ariaReadonly** – `{boolean}` – Enables/disables aria-readonly tags
-   *  - **ariaDisabled** – `{boolean}` – Enables/disables aria-disabled tags
-   *  - **ariaRequired** – `{boolean}` – Enables/disables aria-required tags
-   *  - **ariaInvalid** – `{boolean}` – Enables/disables aria-invalid tags
-   *  - **ariaValue** – `{boolean}` – Enables/disables aria-valuemin, aria-valuemax and
-   *    aria-valuenow tags
-   *  - **tabindex** – `{boolean}` – Enables/disables tabindex tags
-   *  - **bindKeydown** – `{boolean}` – Enables/disables keyboard event binding on non-interactive
-   *    elements (such as `div` or `li`) using ng-click, making them more accessible to users of
-   *    assistive technologies
-   *  - **bindRoleForClick** – `{boolean}` – Adds role=button to non-interactive elements (such as
-   *    `div` or `li`) using ng-click, making them more accessible to users of assistive
-   *    technologies
-   *
-   * @description
-   * Enables/disables various ARIA attributes
-   */
-  this.config = function(newConfig) {
-    config = angular.extend(config, newConfig);
-  };
-
-  function watchExpr(attrName, ariaAttr, nodeBlackList, negate) {
-    return function(scope, elem, attr) {
-      var ariaCamelName = attr.$normalize(ariaAttr);
-      if (config[ariaCamelName] && !isNodeOneOf(elem, nodeBlackList) && !attr[ariaCamelName]) {
-        scope.$watch(attr[attrName], function(boolVal) {
-          // ensure boolean value
-          boolVal = negate ? !boolVal : !!boolVal;
-          elem.attr(ariaAttr, boolVal);
-        });
-      }
-    };
-  }
-  /**
-   * @ngdoc service
-   * @name $aria
-   *
-   * @description
-   * @priority 200
-   *
-   * The $aria service contains helper methods for applying common
-   * [ARIA](http://www.w3.org/TR/wai-aria/) attributes to HTML directives.
-   *
-   * ngAria injects common accessibility attributes that tell assistive technologies when HTML
-   * elements are enabled, selected, hidden, and more. To see how this is performed with ngAria,
-   * let's review a code snippet from ngAria itself:
-   *
-   *```js
-   * ngAriaModule.directive('ngDisabled', ['$aria', function($aria) {
-   *   return $aria.$$watchExpr('ngDisabled', 'aria-disabled', nodeBlackList, false);
-   * }])
-   *```
-   * Shown above, the ngAria module creates a directive with the same signature as the
-   * traditional `ng-disabled` directive. But this ngAria version is dedicated to
-   * solely managing accessibility attributes on custom elements. The internal `$aria` service is
-   * used to watch the boolean attribute `ngDisabled`. If it has not been explicitly set by the
-   * developer, `aria-disabled` is injected as an attribute with its value synchronized to the
-   * value in `ngDisabled`.
-   *
-   * Because ngAria hooks into the `ng-disabled` directive, developers do not have to do
-   * anything to enable this feature. The `aria-disabled` attribute is automatically managed
-   * simply as a silent side-effect of using `ng-disabled` with the ngAria module.
-   *
-   * The full list of directives that interface with ngAria:
-   * * **ngModel**
-   * * **ngChecked**
-   * * **ngReadonly**
-   * * **ngRequired**
-   * * **ngDisabled**
-   * * **ngValue**
-   * * **ngShow**
-   * * **ngHide**
-   * * **ngClick**
-   * * **ngDblclick**
-   * * **ngMessages**
-   *
-   * Read the {@link guide/accessibility ngAria Developer Guide} for a thorough explanation of each
-   * directive.
-   *
-   *
-   * ## Dependencies
-   * Requires the {@link ngAria} module to be installed.
-   */
-  this.$get = function() {
-    return {
-      config: function(key) {
-        return config[key];
-      },
-      $$watchExpr: watchExpr
-    };
-  };
-}
-
-
-ngAriaModule.directive('ngShow', ['$aria', function($aria) {
-  return $aria.$$watchExpr('ngShow', 'aria-hidden', [], true);
-}])
-.directive('ngHide', ['$aria', function($aria) {
-  return $aria.$$watchExpr('ngHide', 'aria-hidden', [], false);
-}])
-.directive('ngValue', ['$aria', function($aria) {
-  return $aria.$$watchExpr('ngValue', 'aria-checked', nodeBlackList, false);
-}])
-.directive('ngChecked', ['$aria', function($aria) {
-  return $aria.$$watchExpr('ngChecked', 'aria-checked', nodeBlackList, false);
-}])
-.directive('ngReadonly', ['$aria', function($aria) {
-  return $aria.$$watchExpr('ngReadonly', 'aria-readonly', nodeBlackList, false);
-}])
-.directive('ngRequired', ['$aria', function($aria) {
-  return $aria.$$watchExpr('ngRequired', 'aria-required', nodeBlackList, false);
-}])
-.directive('ngModel', ['$aria', function($aria) {
-
-  function shouldAttachAttr(attr, normalizedAttr, elem, allowBlacklistEls) {
-    return $aria.config(normalizedAttr) && !elem.attr(attr) && (allowBlacklistEls || !isNodeOneOf(elem, nodeBlackList));
-  }
-
-  function shouldAttachRole(role, elem) {
-    // if element does not have role attribute
-    // AND element type is equal to role (if custom element has a type equaling shape) <-- remove?
-    // AND element is not in nodeBlackList
-    return !elem.attr('role') && (elem.attr('type') === role) && !isNodeOneOf(elem, nodeBlackList);
-  }
-
-  function getShape(attr, elem) {
-    var type = attr.type,
-        role = attr.role;
-
-    return ((type || role) === 'checkbox' || role === 'menuitemcheckbox') ? 'checkbox' :
-           ((type || role) === 'radio'    || role === 'menuitemradio') ? 'radio' :
-           (type === 'range'              || role === 'progressbar' || role === 'slider') ? 'range' : '';
-  }
-
-  return {
-    restrict: 'A',
-    require: 'ngModel',
-    priority: 200, //Make sure watches are fired after any other directives that affect the ngModel value
-    compile: function(elem, attr) {
-      var shape = getShape(attr, elem);
-
-      return {
-        post: function(scope, elem, attr, ngModel) {
-          var needsTabIndex = shouldAttachAttr('tabindex', 'tabindex', elem, false);
-
-          function ngAriaWatchModelValue() {
-            return ngModel.$modelValue;
-          }
-
-          function getRadioReaction(newVal) {
-            // Strict comparison would cause a BC
-            // eslint-disable-next-line eqeqeq
-            var boolVal = (attr.value == ngModel.$viewValue);
-            elem.attr('aria-checked', boolVal);
-          }
-
-          function getCheckboxReaction() {
-            elem.attr('aria-checked', !ngModel.$isEmpty(ngModel.$viewValue));
-          }
-
-          switch (shape) {
-            case 'radio':
-            case 'checkbox':
-              if (shouldAttachRole(shape, elem)) {
-                elem.attr('role', shape);
-              }
-              if (shouldAttachAttr('aria-checked', 'ariaChecked', elem, false)) {
-                scope.$watch(ngAriaWatchModelValue, shape === 'radio' ?
-                    getRadioReaction : getCheckboxReaction);
-              }
-              if (needsTabIndex) {
-                elem.attr('tabindex', 0);
-              }
-              break;
-            case 'range':
-              if (shouldAttachRole(shape, elem)) {
-                elem.attr('role', 'slider');
-              }
-              if ($aria.config('ariaValue')) {
-                var needsAriaValuemin = !elem.attr('aria-valuemin') &&
-                    (attr.hasOwnProperty('min') || attr.hasOwnProperty('ngMin'));
-                var needsAriaValuemax = !elem.attr('aria-valuemax') &&
-                    (attr.hasOwnProperty('max') || attr.hasOwnProperty('ngMax'));
-                var needsAriaValuenow = !elem.attr('aria-valuenow');
-
-                if (needsAriaValuemin) {
-                  attr.$observe('min', function ngAriaValueMinReaction(newVal) {
-                    elem.attr('aria-valuemin', newVal);
-                  });
-                }
-                if (needsAriaValuemax) {
-                  attr.$observe('max', function ngAriaValueMinReaction(newVal) {
-                    elem.attr('aria-valuemax', newVal);
-                  });
-                }
-                if (needsAriaValuenow) {
-                  scope.$watch(ngAriaWatchModelValue, function ngAriaValueNowReaction(newVal) {
-                    elem.attr('aria-valuenow', newVal);
-                  });
-                }
-              }
-              if (needsTabIndex) {
-                elem.attr('tabindex', 0);
-              }
-              break;
-          }
-
-          if (!attr.hasOwnProperty('ngRequired') && ngModel.$validators.required
-            && shouldAttachAttr('aria-required', 'ariaRequired', elem, false)) {
-            // ngModel.$error.required is undefined on custom controls
-            attr.$observe('required', function() {
-              elem.attr('aria-required', !!attr['required']);
-            });
-          }
-
-          if (shouldAttachAttr('aria-invalid', 'ariaInvalid', elem, true)) {
-            scope.$watch(function ngAriaInvalidWatch() {
-              return ngModel.$invalid;
-            }, function ngAriaInvalidReaction(newVal) {
-              elem.attr('aria-invalid', !!newVal);
-            });
-          }
-        }
-      };
-    }
-  };
-}])
-.directive('ngDisabled', ['$aria', function($aria) {
-  return $aria.$$watchExpr('ngDisabled', 'aria-disabled', nodeBlackList, false);
-}])
-.directive('ngMessages', function() {
-  return {
-    restrict: 'A',
-    require: '?ngMessages',
-    link: function(scope, elem, attr, ngMessages) {
-      if (!elem.attr('aria-live')) {
-        elem.attr('aria-live', 'assertive');
-      }
-    }
-  };
-})
-.directive('ngClick',['$aria', '$parse', function($aria, $parse) {
-  return {
-    restrict: 'A',
-    compile: function(elem, attr) {
-      var fn = $parse(attr.ngClick);
-      return function(scope, elem, attr) {
-
-        if (!isNodeOneOf(elem, nodeBlackList)) {
-
-          if ($aria.config('bindRoleForClick') && !elem.attr('role')) {
-            elem.attr('role', 'button');
-          }
-
-          if ($aria.config('tabindex') && !elem.attr('tabindex')) {
-            elem.attr('tabindex', 0);
-          }
-
-          if ($aria.config('bindKeydown') && !attr.ngKeydown && !attr.ngKeypress && !attr.ngKeyup) {
-            elem.on('keydown', function(event) {
-              var keyCode = event.which || event.keyCode;
-              if (keyCode === 32 || keyCode === 13) {
-                scope.$apply(callback);
-              }
-
-              function callback() {
-                fn(scope, { $event: event });
-              }
-            });
-          }
-        }
-      };
-    }
-  };
-}])
-.directive('ngDblclick', ['$aria', function($aria) {
-  return function(scope, elem, attr) {
-    if ($aria.config('tabindex') && !elem.attr('tabindex') && !isNodeOneOf(elem, nodeBlackList)) {
-      elem.attr('tabindex', 0);
-    }
-  };
-}]);
-
-
-})(window, window.angular);
-
 /*!
  * AngularJS Material Design
  * https://github.com/angular/material
@@ -79753,7 +79349,10 @@ angular.module('angularApp')
                 url         : '/user/list/byTenantId/:tenantId',
                 templateUrl : 'public/templates/user/list.html',
                 controller  : 'UserListController',
-                parent:'MasterLayout'
+                parent:'MasterLayout',
+                params:{
+                    tenantId:''
+                }
             })
             .state('ViewUser', {
                 url         : '/user/view/:userId',
@@ -79767,23 +79366,32 @@ angular.module('angularApp')
                 controller  : 'RequestPostController',
                 parent:'MasterLayout'
             })
-            .state('TennatUserListRequests', {
+            .state('TenantUserListRequests', {
                 url         : '/user/list/request',
                 templateUrl : 'public/templates/request/userListRequests.html',
                 controller  : 'UserListRequestsController',
                 parent:'MasterLayout'
             })
-            .state('TennatUserListPostRequests', {
+            .state('TenantUserListPostRequests', {
                 url         : '/user/list/post/request',
                 templateUrl : 'public/templates/request/userListPostRequests.html',
                 controller  : 'UserListPostRequestsController',
                 parent:'MasterLayout'
             })
-            .state('Table', {
-                url         : '/table/table',
-                templateUrl : 'public/templates/table/table.html',
-                controller  : 'TableController',
+	    .state('TennatUserListBills', {
+                url         : '/bill/userBills',
+                templateUrl : 'public/templates/bill/tennatUserListBills.html',
+                controller  : 'TennatUserListBillsController',
                 parent:'MasterLayout'
+            })
+	    .state('TenantUserCreation', {
+                url         : '/user/create/:tenantId',
+                templateUrl : 'public/templates/user/create.html',
+                controller  : 'CreateController',
+                parent:'MasterLayout',
+                params:{
+                    userType:''
+                }
             })
             .state('ViewPackages', {
                 url         : '/packages/view',
@@ -79804,14 +79412,6 @@ angular.module('angularApp')
     angular.module('angularApp').value('app', app);
 
 angular.module('angularApp')
-    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
-        $scope.description = {
-            message1  : 'My first Angular app',
-            message2 : 'developing for testing',
-            message3 : tenantLoginService.getPrivate()
-        };
-    }]);
-angular.module('angularApp')
 .controller('AdminController', [ '$scope','$state','adminService',  function ($scope,$state,adminService) {
     $scope.description = {
         message1  : 'My first Angular app',
@@ -79821,6 +79421,36 @@ angular.module('angularApp')
 
 }]);
 angular.module('angularApp')
+    .controller('TennatUserListBillsController', [ '$scope','$state','tennatUserListBillsService','app','NgTableParams',  function ($scope,$state,tennatUserListBillsService,app,NgTableParams) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : tennatUserListBillsService.getPrivate()
+        };
+
+        $scope.getUserBills = function(){
+            debugger;
+            userid = app.loginUser._id;
+            tennatUserListBillsService.getUserBills(userid).then(function(response){
+                $scope.userBills = response.data;
+                for(i=0;i<$scope.userBills.length;i++){
+                    $scope.userBills[i].dateCreated = new Date($scope.userBills[i].dateCreated).toLocaleString();
+                }
+                $scope.BillTable = new NgTableParams({count: 10}, { dataset: $scope.userBills});
+            });
+        };
+
+        $scope.getUserBills();
+    }]);
+angular.module('angularApp')
+    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : tenantLoginService.getPrivate()
+        };
+    }]);
+angular.module('angularApp')
 .controller('AdminLoginController', [ '$scope','$state','adminLoginService',  function ($scope,$state,adminLoginService) {
     $scope.description = {
         message1  : 'My first Angular app',
@@ -79828,8 +79458,14 @@ angular.module('angularApp')
         message3 : adminLoginService.getPrivate()
     };
 
+    app.loginUser={};
+    console.log("app.LoginUser: ");
+    console.log(app.loginUser);
+
+
     $scope.login = function(){
         debugger;
+
         username = $scope.userNameAdmin;
         password = $scope.userPasswordAdmin;
         console.log(username + password);
@@ -79840,6 +79476,7 @@ angular.module('angularApp')
                 app.loginUser = response.data;
                 console.log(JSON.stringify(app));
                 $state.go("AdminHome");
+                console.log("app.LoginUser: "+app.loginUser);
             }
             else{
                 $scope.loginErrorMessage = response.error[0];
@@ -79868,6 +79505,10 @@ angular.module('angularApp')
 
     $scope.tenantName = app.tenant.name;
     $scope.userConfList = app.tenant.users;
+
+    app.loginUser={};
+    console.log("app.LoginUser: ");
+    console.log(app.loginUser);
 
     $scope.signup = function(userTypeName){
         $state.go("TenantUserSignup", {
@@ -80172,6 +79813,13 @@ angular.module('angularApp')
                     var reqname = result[i].name;
                     var req_id = result[i]._id;
                     var username = "";
+                    var dateposted=new Date(result[i].datePosted).toLocaleString();
+
+                    var datelastmodified=new Date(result[i].dateLastModified).toLocaleString();
+                       /* response.data[i].dateCreated = new Date(response.data[i].dateCreated).toLocaleString();
+                        response.data[i].dateLastModified = new Date(response.data[i].dateLastModified).toLocaleString();*/
+
+
                     if(result[i].hasOwnProperty("requestdetails")){
                         var username = result[i].requestdetails.name;
                     }
@@ -80179,7 +79827,9 @@ angular.module('angularApp')
                     {
                         _id : req_id,
                         reqname : reqname,
-                        username : username
+                        username : username,
+                        dateposted:dateposted,
+                        datelastmodified:datelastmodified
                     };
                     $scope.result.push(temp);
                 }
@@ -80558,7 +80208,7 @@ angular.module('angularApp')
 
     }]);
 angular.module('angularApp')
-.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,mainService,$state,app) {
+.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','tenantLoginService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,tenantLoginService ,mainService,$state,app) {
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
@@ -80583,7 +80233,9 @@ angular.module('angularApp')
             var str = JSON.stringify(response);
             console.log(str);
             if(response.success == true){
-                $state.go("TenantUserHome");
+
+                $scope.loginInfo();
+                //$state.go("TenantUserHome");
             }
             else{
                 alert(response.error[0]);
@@ -80594,78 +80246,37 @@ angular.module('angularApp')
 
     $scope.formObject = function(){
         $scope.user = tenantUserSignupService.createFormObject($scope.userConf);
-        //console.log($scope.user);
+    }
+
+    $scope.loginInfo = function(){
+        debugger;
+        tenant_id = app.tenant._id;
+        username = $scope.user.username;
+        password = $scope.user.password;
+        console.log("tenantId="+tenant_id + " Username="+username + " password="+password);
+        var loginUser = {
+            tenant_id : tenant_id,
+            username : username,
+            password : password
+        }
+
+        tenantLoginService.getUserInformation(tenant_id, username , password).then(function(response){
+            console.log(response);
+            if(response.success == true){
+                app.loginUser = response.data;
+                console.log(JSON.stringify(app.loginUser));
+                $state.go("TenantUserHome");
+            }
+            else{
+                $scope.loginErrorMessage = response.error[0];
+                $scope.loginError = true;
+            }
+
+        });
+
     }
 
 }]);
-
-angular.module('angularApp')
-    .controller('TableController', [ '$scope','$filter','app','NgTableParams',  function ($scope,$filter,app,NgTableParams) {
-    /*.controller('TableController', function ($scope, app, $filter, ngTableParams) {*/
-
-
-
-        $scope.users= [
-                {
-                    "id":1,
-                    "first_name":"Philip",
-                    "last_name":"Kim",
-                    "email":"pkim0@mediafire.com",
-                    "country":"Indonesia",
-                    "ip_address":"29.107.35.8"
-                },
-                {
-                    "id":2,
-                    "first_name":"Judith",
-                    "last_name":"Austin",
-                    "email":"jaustin1@mapquest.com",
-                    "country":"China",
-                    "ip_address":"173.65.94.30"
-                },
-                {
-                    "id":3,
-                    "first_name":"Julie",
-                    "last_name":"Wells",
-                    "email":"jwells2@illinois.edu",
-                    "country":"Finland",
-                    "ip_address":"9.100.80.145"
-                },
-                {
-                    "id":4,
-                    "first_name":"Gloria",
-                    "last_name":"Greene",
-                    "email":"ggreene3@blogs.com",
-                    "country":"Indonesia",
-                    "ip_address":"69.115.85.157"
-                },
-                {
-                    "id":5,
-                    "first_name":"Andrea",
-                    "last_name":"Greene",
-                    "email":"agreene4@fda.gov",
-                    "country":"Russia",
-                    "ip_address":"128.72.13.52"
-                }
-        ];
-
-
-        $scope.usersTable = new NgTableParams({
-            page: 1,
-            count: 10
-        }, {
-
-            total: $scope.users.length,
-            getData: function ( params) {
-                $scope.data = params.sorting() ? $filter('orderBy')($scope.users, params.orderBy()) : $scope.users;
-                $scope.data = params.filter() ? $filter('filter')($scope.data, params.filter()) : $scope.data;
-                $scope.data = $scope.data.slice((params.page() - 1) * params.count(), params.page() * params.count());
-                return $scope.data;
-            }
-        });
-
-
-    }]);
-
 
 angular.module('angularApp')
     .controller('TenantListController', [ '$scope','$filter','tenantListService','app','NgTableParams','$q', function ($scope,$filter,tenantListService,app,NgTableParams,$q) {
@@ -80680,6 +80291,10 @@ angular.module('angularApp')
 
         $scope.tenantList = tenantListService.getTenantList().then(
             function(response){
+                for(var i=0;i<response.data.length;i++){
+                    response.data[i].dateCreated = new Date(response.data[i].dateCreated).toLocaleString();
+                    response.data[i].dateLastModified = new Date(response.data[i].dateLastModified).toLocaleString();
+                }
                 $scope.tenantsTable = new NgTableParams({count: 20}, { dataset: response.data});
             }
         );
@@ -81096,6 +80711,67 @@ angular.module('angularApp')
 
     }]);
 angular.module('angularApp')
+    .controller('CreateController', [ '$scope','$stateParams','createService','getService','mainService','$state','app',  function ($scope,$stateParams,createService,getService,mainService,$state,app) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : createService.getPrivate(),
+            message4 : getService.getPrivate()
+        };
+        debugger;
+        $scope.userType='';
+        $scope.tenantConf = {};
+        $scope.userConfList = [];
+        $scope.userConf = {};
+
+        $scope.getTenantConfiguration = function() {
+            debugger;
+            getService.getTenantConf($stateParams.tenantId).then(
+                function (response) {
+                    debugger;
+                    $scope.tenantConf = response.tenant[0];
+                    $scope.userConfList = $scope.tenantConf.users;
+                });
+        };
+
+        $scope.getTenantConfiguration();
+        $scope.loadSignUpForm = function(){
+            for(i=0;i<$scope.tenantConf.users.length;i++){
+                    if($scope.tenantConf.users[i].name == $scope.userType)
+                        $scope.userConf = $scope.tenantConf.users[i];
+            }
+        };
+        str = JSON.stringify($scope.user);
+        console.log(str);
+
+        $scope.signup = function(){
+            debugger;
+            $scope.formObject();
+            str = JSON.stringify($scope.user);
+            console.log(str);
+            $scope.user.userType = $scope.userType ;
+            $scope.user.tenantId = $stateParams.tenantId;
+            createService.signup($scope.user,app).then(function(response){
+                debugger;
+                var str = JSON.stringify(response);
+                console.log(str);
+                if(response.success == true){
+                    $state.go("ListUser", {'tenantId': $stateParams.tenantId});
+                }
+                else{
+                    alert(response.error[0]);
+                }
+            });
+
+        }
+
+        $scope.formObject = function(){
+            $scope.user = createService.createFormObject($scope.userConf);
+
+        }
+
+    }]);
+angular.module('angularApp')
     .controller('UserListController', [ '$scope','$filter','$stateParams','userListService','app','NgTableParams',  function ($scope,$filter,$stateParams,userListService,app,NgTableParams) {
         $scope.description = {
             message: userListService.getPrivate()
@@ -81106,6 +80782,10 @@ angular.module('angularApp')
 
         userListService.getUserList($scope.tenantID).then(
             function(response){
+                for(var i=0;i<response.data.length;i++){
+                    response.data[i].dateCreated = new Date(response.data[i].dateCreated).toLocaleString();
+                    response.data[i].dateLastModified = new Date(response.data[i].dateLastModified).toLocaleString();
+                }
                 $scope.userTable = new NgTableParams({count: 2}, { dataset: response.data});
             }
         );
@@ -81166,6 +80846,33 @@ angular.module('angularApp')
     }
 
 }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('tennatUserListBillsService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "adminService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.login = function(){
+            return true;
+        }
+
+        this.getUserBills = function(userid){
+            var deferred = $q.defer();
+            $http.get(app.baseUrl + "api/bill/getUserBillList/ByUserId/" + userid)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+    }]);
 /**
  * Created by Usman Irfan.
  */
@@ -81739,6 +81446,30 @@ angular.module('angularApp')
 }]);
 
 angular.module('angularApp')
+    .service('getService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "getService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.getTenantConf=function(tenantId){
+            var deferred = $q.defer();
+            //user.tenantId = tenantId;
+            /*tenantId = "";*/
+                $http.get(app.baseUrl + "api/tenant/tenantId/"+tenantId)
+                .then(function(response) {
+                     debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+            });
+            return deferred.promise;
+        }
+
+    }]);
+angular.module('angularApp')
     .service('tenantListService', ['$http','$q', function ($http,$q) {
 
         var thisIsPrivate = "tenantListService";
@@ -81817,7 +81548,93 @@ angular.module('angularApp')
         }
 
     }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('createService', ['$http','$q', function ($http,$q) {
 
+        var thisIsPrivate = "createService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.createFormObject = function(userConf){
+            debugger;
+            var formJSON = '{';
+            var skipPropertyName = false;
+            formJSON = this.createFormJSON(userConf.properties,formJSON,skipPropertyName);
+            formJSON = formJSON.substring(0, formJSON.length - 1);
+            formJSON = formJSON + '}';
+            alert(formJSON);
+            var formObject = JSON.parse(formJSON);
+            return formObject;
+        };
+
+        this.createFormJSON = function(userProperties,formJSON,skipPropertyName){
+            var properties = userProperties;
+            var i = 0;
+            var p = JSON.stringify(properties);
+            for(i;i<properties.length;i++){
+                if(skipPropertyName == true)
+                    properties[i].list = "";
+
+                if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
+                    if(properties[i].list == "true") {
+
+                        if(properties[i].subProperties.length != 0) {
+                            formJSON = formJSON + '"' + properties[i].name + '":[';
+                            for(var j=0;j<properties[i].propertiesList.length;j++) {
+                                formJSON = formJSON + '{';
+                                formJSON = this.createFormJSON(properties[i].propertiesList[j].subProperties, formJSON,false);
+                                formJSON = formJSON.substring(0, formJSON.length - 1);
+                                formJSON = formJSON + '},';
+                            }
+                            formJSON = formJSON.substring(0, formJSON.length - 1);
+                            formJSON = formJSON + '],';
+                        }
+                        else{
+                            formJSON = formJSON + '"' + properties[i].name + '":[';
+                            if(properties[i].propertiesList != 0) {
+                                formJSON = this.createFormJSON(properties[i].propertiesList, formJSON, true);
+                                formJSON = formJSON.substring(0, formJSON.length - 1);
+                                formJSON = formJSON + '],';
+                            }
+                            else
+                                formJSON = formJSON + '],';
+                        }
+                    }
+                    else if(properties[i].subProperties.length != 0){
+                        formJSON = formJSON + '"' + properties[i].name + '"' +  ':{';
+                        formJSON = this.createFormJSON(properties[i].subProperties, formJSON,false);
+                        formJSON = formJSON.substring(0, formJSON.length - 1);
+                        formJSON = formJSON + '},';
+                    }
+                    else {
+                        if(skipPropertyName == true){
+                            formJSON = formJSON + '"'+ properties[i].value +'",';
+                        }
+                        else
+                            formJSON = formJSON + '"' + properties[i].name + '":"'+ properties[i].value +'",';
+                    }
+                }
+            }
+            return formJSON;
+        };
+
+        this.signup = function(user,app){
+            var deferred = $q.defer();
+            $http.post(app.baseUrl + "api/user/signup",user)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        };
+
+    }]);
 angular.module('angularApp')
     .service('userListService', ['$http','$q', function ($http,$q) {
 
@@ -81962,6 +81779,45 @@ angular.module('angularApp')
             }
         };
     }]);
+angular.module('angularApp')
+.directive('propertyInput', function () {
+    return {
+        restrict : "E",
+        require: ['^form'],
+        templateUrl : "src/common/directives/propertyInput/propertyInputTemplate.html",
+        scope: {
+            property: '='
+        },
+        controller:"PropertyInputController",
+        link: function(scope, element, attrs, formCtrl) {
+            console.log(formCtrl);
+            scope.form = formCtrl[0];
+        }
+    };
+});
+angular.module('angularApp')
+    .controller('PropertyInputController', [ '$scope', function ($scope) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+        debugger;
+        if($scope.property.type == 'dateTime'){
+            $scope.property.value = new Date($scope.property.value);
+        }
+
+        $scope.addPropertyInList = function(mainProperty){
+            var property = JSON.stringify(mainProperty);
+            property = JSON.parse(property);
+            property.propertiesList = [];
+            property.id = property.id + "-" + mainProperty.propertiesList.length;
+            mainProperty.propertiesList.push(property);
+        };
+
+        $scope.errorMessage = "form.username.$error";
+
+        //alert($scope.property.name);
+    }]);
 /**
  * Created by asd on 9/6/2017.
  */
@@ -82010,45 +81866,6 @@ debugger;
 
 
 
-    }]);
-angular.module('angularApp')
-.directive('propertyInput', function () {
-    return {
-        restrict : "E",
-        require: ['^form'],
-        templateUrl : "src/common/directives/propertyInput/propertyInputTemplate.html",
-        scope: {
-            property: '='
-        },
-        controller:"PropertyInputController",
-        link: function(scope, element, attrs, formCtrl) {
-            console.log(formCtrl);
-            scope.form = formCtrl[0];
-        }
-    };
-});
-angular.module('angularApp')
-    .controller('PropertyInputController', [ '$scope', function ($scope) {
-        $scope.description = {
-            message1  : 'My first Angular app',
-            message2 : 'developing for testing'
-        };
-        debugger;
-        if($scope.property.type == 'dateTime'){
-            $scope.property.value = new Date($scope.property.value);
-        }
-
-        $scope.addPropertyInList = function(mainProperty){
-            var property = JSON.stringify(mainProperty);
-            property = JSON.parse(property);
-            property.propertiesList = [];
-            property.id = property.id + "-" + mainProperty.propertiesList.length;
-            mainProperty.propertiesList.push(property);
-        };
-
-        $scope.errorMessage = "form.username.$error";
-
-        //alert($scope.property.name);
     }]);
 angular.module('angularApp')
     .directive('requestResponse', function () {
