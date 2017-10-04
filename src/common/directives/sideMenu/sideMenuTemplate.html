@@ -103,6 +103,13 @@
                 List Tenants
             </a>
         </li>
+
+        <li>
+            <a href="/admin/login">
+                <i class="sidebar-icon md-star"></i>
+                LogOut
+            </a>
+        </li>
         </div>
         <div ng-if="appType == 'tenant'">
         <li>
@@ -129,16 +136,16 @@
                     Post Request
                 </a>
             </li>
-            <li ng-if="postRequestPermission">
+	    <li ng-if="postRequestPermission">
                 <a href="/bill/userBills">
                     <i class="sidebar-icon md-drafts"></i>
                     My Bill
                 </a>
-            </li>
-<li ng-if="postRequestPermission">
-                <a href="/bill/userBills">
-                    <i class="sidebar-icon md-drafts"></i>
-                    My Bill
+            </li>	
+            <li>
+                <a href="/login">
+                    <i class="sidebar-icon md-send"></i>
+                    LogOut
                 </a>
             </li>
         </div>

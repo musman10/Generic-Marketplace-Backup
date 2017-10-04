@@ -91,7 +91,10 @@ angular.module('angularApp')
                 url         : '/user/list/byTenantId/:tenantId',
                 templateUrl : 'public/templates/user/list.html',
                 controller  : 'UserListController',
-                parent:'MasterLayout'
+                parent:'MasterLayout',
+                params:{
+                    tenantId:''
+                }
             })
             .state('ViewUser', {
                 url         : '/user/view/:userId',
@@ -105,35 +108,32 @@ angular.module('angularApp')
                 controller  : 'RequestPostController',
                 parent:'MasterLayout'
             })
-            .state('TennatUserListRequests', {
+            .state('TenantUserListRequests', {
                 url         : '/user/list/request',
                 templateUrl : 'public/templates/request/userListRequests.html',
                 controller  : 'UserListRequestsController',
                 parent:'MasterLayout'
             })
-            .state('TennatUserListPostRequests', {
+            .state('TenantUserListPostRequests', {
                 url         : '/user/list/post/request',
                 templateUrl : 'public/templates/request/userListPostRequests.html',
                 controller  : 'UserListPostRequestsController',
                 parent:'MasterLayout'
             })
-            .state('TennatUserListBills', {
+	    .state('TennatUserListBills', {
                 url         : '/bill/userBills',
                 templateUrl : 'public/templates/bill/tennatUserListBills.html',
                 controller  : 'TennatUserListBillsController',
                 parent:'MasterLayout'
             })
-            .state('Table', {
-                url         : '/table/table',
-                templateUrl : 'public/templates/table/table.html',
-                controller  : 'TableController',
-                parent:'MasterLayout'
-            })
-            .state('ViewPackages', {
-                url         : '/packages/view',
-                templateUrl : 'public/templates/packages/viewPackages.html',
-                controller  : 'ViewPackagesController',
-                parent:'MasterLayout'
+	    .state('TenantUserCreation', {
+                url         : '/user/create/:tenantId',
+                templateUrl : 'public/templates/user/create.html',
+                controller  : 'CreateController',
+                parent:'MasterLayout',
+                params:{
+                    userType:''
+                }
             })
 }]);
 

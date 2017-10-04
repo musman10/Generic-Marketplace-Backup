@@ -13,22 +13,40 @@ module.exports = function(userid,response){
     //var MongoClient = require('mongodb').MongoClient;
 
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-
-        userid = new ObjectID(userid);
-        var query = { postUserId: userid, hasParent: '0' };
-
-        db.collection("Request").find(query).toArray(function(err, res) {
+        try {
             if (err) throw err;
-            console.log("1 document inserted");
-
-            addResponse(res,0,0,true,false,null,db).then(function(){
-                db.close();
-                dto.data = res;
-                response.send(dto);
+            userid = new ObjectID(userid);
+            var query = {postUserId: userid, hasParent: '0'};
+            db.collection("Request").find(query).toArray(function (err, res) {
+                try {
+                    if (err) throw err;
+                    if (res.length > 0) {
+                        addResponse(res, 0, 0, true, false, null, db).then(function () {
+                            db.close();
+                            dto.data = res;
+                            response.send(dto);
+                        });
+                    }
+                    else {
+                        db.close();
+                        dto.success = false;
+                        dto.error.push("no user post request found");
+                        response.send(dto);
+                    }
+                }catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+                
             });
-
-        });
+        }catch(e){
+            db.close();
+            dto.success = false;
+            dto.error.push(e.toString());
+            response.send(dto);
+        }
 
         function addResponse(res,i,j,userIdRequired,isRequestResponseDetail,requestResponseDetail,db) {
             return new Promise(function (resolve, reject) {

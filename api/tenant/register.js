@@ -8,21 +8,31 @@ module.exports = function(tenant,response){
     //var MongoClient = require('mongodb').MongoClient;
     
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-        //str = JSON.stringify(tenant);
-        //console.log(str);
-        //console.log("helllooo worlddd");
-        //res.send("hello world");
-        tenant.dateCreated = new Date();
-        tenant.dateLastModified = new Date();
-
-        db.collection("Tenant").insert(tenant, function(err, res) {
+        try {
             if (err) throw err;
-            console.log("1 document inserted");
+            tenant.dateCreated = new Date();
+            tenant.dateLastModified = new Date();
+
+            db.collection("Tenant").insert(tenant, function (err, res) {
+                try {
+                    if (err) throw err;
+                    console.log("1 document inserted");
+                    db.close();
+                    dto = {success: true, error: [], status: 200};
+                    response.send(dto);
+                }catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+            });
+        }catch(e){
             db.close();
-            dto = {success:true,error:[],status:200};
+            dto.success = false;
+            dto.error.push(e.toString());
             response.send(dto);
-        });
+        }
     });
 
 }

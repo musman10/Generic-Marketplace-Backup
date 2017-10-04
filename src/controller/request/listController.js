@@ -22,6 +22,13 @@ angular.module('angularApp')
                     var reqname = result[i].name;
                     var req_id = result[i]._id;
                     var username = "";
+                    var dateposted=new Date(result[i].datePosted).toLocaleString();
+
+                    var datelastmodified=new Date(result[i].dateLastModified).toLocaleString();
+                       /* response.data[i].dateCreated = new Date(response.data[i].dateCreated).toLocaleString();
+                        response.data[i].dateLastModified = new Date(response.data[i].dateLastModified).toLocaleString();*/
+
+
                     if(result[i].hasOwnProperty("requestdetails")){
                         var username = result[i].requestdetails.name;
                     }
@@ -29,7 +36,9 @@ angular.module('angularApp')
                     {
                         _id : req_id,
                         reqname : reqname,
-                        username : username
+                        username : username,
+                        dateposted:dateposted,
+                        datelastmodified:datelastmodified
                     };
                     $scope.result.push(temp);
                 }

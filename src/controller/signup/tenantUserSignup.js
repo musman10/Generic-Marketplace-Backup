@@ -1,5 +1,5 @@
 angular.module('angularApp')
-.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,mainService,$state,app) {
+.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','tenantLoginService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,tenantLoginService ,mainService,$state,app) {
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
@@ -24,7 +24,9 @@ angular.module('angularApp')
             var str = JSON.stringify(response);
             console.log(str);
             if(response.success == true){
-                $state.go("TenantUserHome");
+
+                $scope.loginInfo();
+                //$state.go("TenantUserHome");
             }
             else{
                 alert(response.error[0]);
@@ -35,7 +37,34 @@ angular.module('angularApp')
 
     $scope.formObject = function(){
         $scope.user = tenantUserSignupService.createFormObject($scope.userConf);
-        //console.log($scope.user);
+    }
+
+    $scope.loginInfo = function(){
+        debugger;
+        tenant_id = app.tenant._id;
+        username = $scope.user.username;
+        password = $scope.user.password;
+        console.log("tenantId="+tenant_id + " Username="+username + " password="+password);
+        var loginUser = {
+            tenant_id : tenant_id,
+            username : username,
+            password : password
+        }
+
+        tenantLoginService.getUserInformation(tenant_id, username , password).then(function(response){
+            console.log(response);
+            if(response.success == true){
+                app.loginUser = response.data;
+                console.log(JSON.stringify(app.loginUser));
+                $state.go("TenantUserHome");
+            }
+            else{
+                $scope.loginErrorMessage = response.error[0];
+                $scope.loginError = true;
+            }
+
+        });
+
     }
 
 }]);

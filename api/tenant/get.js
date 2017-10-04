@@ -1,43 +1,40 @@
- module.exports = function(requestName,response){
+module.exports = function(tenantId,response){
     var MongoClient = require('mongodb').MongoClient;
     var path = require('path');
     var root_dir = __dirname + '/../../';
     var config = require(root_dir + 'config');
     var url = config.dbConnection.url;
-    var dto = {success:true,error:[],status:200};
+    var dto = {success:true,error:[],status:200,tenant:{}};
     //var MongoClient = require('mongodb').MongoClient;
+    var ObjectID = require('mongodb').ObjectID;
+
 
     MongoClient.connect(url, function(err, db) {
         try {
             if (err) throw err;
-            var queryList = [];
-            var queryExpression = {
-                requestType: ''
-            };
-
-            var query = {name: requestName};
-
-            db.collection("Request").findOne(query, function (err, res) {
+            //console.log(tenantName);
+            var query = {_id: new ObjectID(tenantId)};
+            db.collection("Tenant").find(query).toArray(function (err, result) {
                 try {
                     if (err) throw err;
-                    console.log("1 document retrieved");
+                    console.log(result);
                     db.close();
-                    dto.data = res;
+                    dto.tenant = result;
                     response.send(dto);
-                }catch(e){
+                } catch(e){
                     db.close();
                     dto.success = false;
                     dto.error.push(e.toString());
                     response.send(dto);
                 }
             });
-        }catch(e){
+        }
+        catch(e){
             db.close();
             dto.success = false;
-            dto.error.push(e.toString());
+            dto.error.push("tenant does not exist");
             response.send(dto);
         }
-
     });
 
 }

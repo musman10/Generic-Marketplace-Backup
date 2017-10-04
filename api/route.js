@@ -24,6 +24,12 @@ router.get('/tenant/:tenantName', function(req, res, next) {
   service(req.params.tenantName,res);
 });
 
+/* Tenant service */
+router.get('/tenant/tenantId/:tenantId', function(req, res, next) {
+  var service = require("./tenant/get");
+  service(req.params.tenantId,res);
+});
+
 /* Tenant list service */
 router.get('/tenant/get/list', function(req, res, next) {
   var service = require("./tenant/list");
@@ -118,6 +124,12 @@ router.post('/request/response', function(req, res, next) {
   service(req.body,res);
 });
 
+/* create user service */
+router.post('/user/create/:tenantId', function(req, res, next) {
+  var service = require("./user/createUser");
+  service(req.body,res);
+});
+
 /* get user list service */
 router.get('/user/list/:tenantId', function(req, res, next) {
   var service = require("./user/list");
@@ -152,5 +164,10 @@ router.get('/bill/getUserBill/ByBillId/:billid', function(req, res, next) {
 router.get('/db/create', function(req, res, next) {
   var service = require("./db/create");
   service(res);
+});
+
+router.get('*',function(req, res, next){
+    var service = require("./requestNotFound");
+    service(res);
 });
 module.exports = router;

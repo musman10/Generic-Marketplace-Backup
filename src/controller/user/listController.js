@@ -9,6 +9,10 @@ angular.module('angularApp')
 
         userListService.getUserList($scope.tenantID).then(
             function(response){
+                for(var i=0;i<response.data.length;i++){
+                    response.data[i].dateCreated = new Date(response.data[i].dateCreated).toLocaleString();
+                    response.data[i].dateLastModified = new Date(response.data[i].dateLastModified).toLocaleString();
+                }
                 $scope.userTable = new NgTableParams({count: 2}, { dataset: response.data});
             }
         );

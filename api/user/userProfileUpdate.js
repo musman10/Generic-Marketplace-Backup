@@ -17,31 +17,45 @@ module.exports = function(updatedUser,response){
         status : 200};
 
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-        updatedUser._id = new ObjectID(updatedUser._id)
-        id =  updatedUser._id;
-        var myquery = {
-            _id: id
-        };
-        updatedUser.dateLastModified = new Date();
-        updatedUser.tenantId = new ObjectID(updatedUser.tenantId);
-        updatedUser.dateCreated = new Date(updatedUser.dateCreated);
-        updatedUser.userType = app.loginUser.userType;
-        var newvalues = updatedUser;
-        db.collection("User").updateOne(myquery, newvalues, function(err, res) {
+        try {
             if (err) throw err;
-            if(res.result.nModified < 1){
-                dto.success = false;
-                dto.error.push("Unable to update user");
-                response.send(dto);
-            }
-            else{
-                dto.data = res;
-                response.send(dto);
-            }
+            updatedUser._id = new ObjectID(updatedUser._id)
+            id = updatedUser._id;
+            var myquery = {
+                _id: id
+            };
+            updatedUser.dateLastModified = new Date();
+            updatedUser.tenantId = new ObjectID(updatedUser.tenantId);
+            updatedUser.dateCreated = new Date(updatedUser.dateCreated);
+            updatedUser.userType = app.loginUser.userType;
+            var newvalues = updatedUser;
+            db.collection("User").updateOne(myquery, newvalues, function (err, res) {
+                try {
+                    if (err) throw err;
+                    if (res.result.nModified < 1) {
+                        dto.success = false;
+                        dto.error.push("Unable to update user");
+                        response.send(dto);
+                    }
+                    else {
+                        dto.data = res;
+                        response.send(dto);
+                    }
 
+                    db.close();
+                }catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+            });
+        }catch(e){
             db.close();
-        });
+            dto.success = false;
+            dto.error.push(e.toString());
+            response.send(dto);
+        }
     });
 
 
