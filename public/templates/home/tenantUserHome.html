@@ -39,25 +39,31 @@
 
     </style>
 
-<h1>Welcome!</h1>
+<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
+    <h3 class="md-display-1">Dashboard</h3>
+</md-toolbar>
 
+<div style="padding-top:20px">
+<div class="gridListdemoDynamicTiles" style="margin-left:15px">
 <md-grid-list
         md-cols="1" md-cols-sm="2" md-cols-md="3" md-cols-gt-md="6"
         md-row-height-gt-md="1:1" md-row-height="4:3"
-        md-gutter="8px" md-gutter-gt-sm="4px" >
+        md-gutter="8px" md-gutter-gt-sm="20px" >
 
     <md-grid-tile ng-repeat="tile in tiles"
                   md-rowspan="{{tile.span.row}}"
                   md-colspan="{{tile.span.col}}"
                   md-colspan-sm="1"
                   md-colspan-xs="1"
-                  ng-class="tile.background" >
-        <md-icon md-svg-icon="{{tile.icon}}"></md-icon>
-        <md-grid-tile-footer><h3>{{tile.title}}</h3></md-grid-tile-footer>
+                  ng-class="tile.background"  >
+        <!--<md-icon md-svg-icon="{{tile.icon}}"></md-icon>-->
+        <span style="{{tile.fontSize}}"><b>{{tile.data}}</b></span>
+        <md-grid-tile-footer style="text-align:center"><h3>{{tile.title}}</h3></md-grid-tile-footer>
     </md-grid-tile>
 </md-grid-list>
+</div>
 
-<div class="row">
+<div class="row" style="margin-top:10px;">
 <md-card style="width:45%;margin:10px;margin-left:30px;position:relative;float:left">
 <div google-chart chart="myChartObject" style="height:400px; width:100%;"></div>
 </md-card>
@@ -118,7 +124,8 @@
 
 
 <div class="row">
-    <md-card style="width:90%; margin:40px;">
-        <div google-chart chart="myChartObject" style="height:400px; width:100%;"></div>
+    <md-card style="width:92%; margin-left:30px;margin-top:10px;">
+        <div google-chart chart="requestTime" style="height:400px; width:100%;"></div>
     </md-card>
+</div>
 </div>

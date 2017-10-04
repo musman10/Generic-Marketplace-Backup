@@ -174,21 +174,38 @@ angular.module('angularApp')
                 switch (j + 1) {
 
                     case 1:
-                        it.background = "lightPurple";
+                        it.background = "pink";
+                        it.title = "Req. Posted";
+                        it.data = "8";
+                        it.fontSize = "font-size:40px"
                         break;
                     case 2:
-                        it.background = "yellow";
+                        it.background = "deepBlue";
+                        it.title = "Res. Received";
+                        it.data = "3";
+                        it.fontSize = "font-size:40px"
                         break;
                     case 3:
-                        it.background = "lightPurple";
+                        it.background = "green";
+                        it.title = "Req. Remaining";
+                        it.data = "12";
+                        it.fontSize = "font-size:40px"
                         break;
                     case 4:
-                        it.background = "yellow";
+                        it.background = "red";
+                        it.title = "Req. Used";
+                        it.data = "8";
+                        it.fontSize = "font-size:40px"
                         break;
 
                     case 5:
                         it.background = "blue";
-                        it.span.col = 2;
+                        it.title = "Payments";
+                        it.data = new Date().toGMTString();
+                        //it.data = it.data.getMonth();
+                        //it.data = it.data.toLocaleString();
+                        it.span.col = 1;
+                        it.fontSize = "font-size:20px"
                         break;
                 }
 
@@ -224,5 +241,73 @@ angular.module('angularApp')
             title: "Svg-",
             background: ""
         });
+
+        $scope.requestTime = {};
+
+        $scope.requestTime.type = "ColumnChart";
+
+        $scope.onions = [
+            {v: "Onions"},
+            {v: 3},
+        ];
+
+        $scope.requestTime.data = {"cols": [
+            {id: "t", label: "Topping", type: "string"},
+            {id: "s", label: "Slices", type: "number"}
+        ], "rows": [
+            {c: [
+                {v: "Jan"},
+                {v: 3},
+            ]},
+            {c: [
+                {v: "Feb"},
+                {v: 31}
+            ]},
+            {c: [
+                {v: "Mar"},
+                {v: 1},
+            ]},
+            {c: [
+                {v: "Apr"},
+                {v: 2},
+            ]},
+            {c: [
+                {v: "May"},
+                {v: 3},
+            ]},
+            {c: [
+                {v: "Jun"},
+                {v: 31}
+            ]},
+            {c: [
+                {v: "Jul"},
+                {v: 1},
+            ]},
+            {c: [
+                {v: "Aug"},
+                {v: 2},
+            ]},
+            {c: [
+                {v: "Sep"},
+                {v: 3},
+            ]},
+            {c: [
+                {v: "Oct"},
+                {v: 31}
+            ]},
+            {c: [
+                {v: "Nov"},
+                {v: 1},
+            ]},
+            {c: [
+                {v: "Dec"},
+                {v: 2},
+            ]}
+        ]};
+
+        $scope.requestTime.options = {
+            'title': 'Requests Posted'
+        };
+
 
     }]);
