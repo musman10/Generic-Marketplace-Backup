@@ -95,9 +95,9 @@ router.post('/request/response', function(req, res, next) {
 });
 
 /* create user service */
-router.get('/user/create/:tenantId', function(req, res, next) {
+router.post('/user/create/:tenantId', function(req, res, next) {
   var service = require("./user/createUser");
-  service(req.params.tenantId,res);
+  service(req.body,res);
 });
 
 /* get user list service */
@@ -122,5 +122,10 @@ router.post('/request/update/addResponse', function(req, res, next) {
 router.get('/db/create', function(req, res, next) {
   var service = require("./db/create");
   service(res);
+});
+
+router.get('*',function(req, res, next){
+    var service = require("./requestNotFound");
+    service(res);
 });
 module.exports = router;

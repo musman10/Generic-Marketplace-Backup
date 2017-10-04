@@ -13,29 +13,51 @@ module.exports = function(listRequestPayload,response){
     //var MongoClient = require('mongodb').MongoClient;
 
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-     /*   var queryList = [];
-        var queryExpression = {
-            requestType:''
-        };*/
-      /*  for(i=0;i<listRequestPayload.requestTypes.length;i++){
-            queryExpression.requestType = listRequestPayload.requestTypes[i];
-            queryList.push(queryExpression);
-        }*/
-        id = new ObjectID(listRequestPayload.requestId)
-        var query = { _id : id };
-
-        db.collection("Request").find(query).toArray(function(err, res) {
+        try {
             if (err) throw err;
-            console.log("1 document inserted");
-            req = res;
-            addResponse(req[0],0,false,false,null,db).then(function(){
-                db.close();
-                dto.data = req;
-                response.send(dto);
-            });
+            /*   var queryList = [];
+             var queryExpression = {
+             requestType:''
+             };*/
+            /*  for(i=0;i<listRequestPayload.requestTypes.length;i++){
+             queryExpression.requestType = listRequestPayload.requestTypes[i];
+             queryList.push(queryExpression);
+             }*/
+            id = new ObjectID(listRequestPayload.requestId)
+            var query = {_id: id};
 
-        });
+            db.collection("Request").find(query).toArray(function (err, res) {
+                try {
+                    if (err) throw err;
+                    console.log("1 document inserted");
+                    req = res;
+                    if (res.length > 0) {
+                        addResponse(req[0], 0, false, false, null, db).then(function () {
+                            db.close();
+                            dto.data = req;
+                            response.send(dto);
+                        });
+                    }
+                    else {
+                        db.close();
+                        dto.success = false;
+                        dto.error.push("request responses not found");
+                        response.send(dto);
+                    }
+                }catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+
+            });
+        }catch(e){
+            db.close();
+            dto.success = false;
+            dto.error.push(e.toString());
+            response.send(dto);
+        }
 
         function addResponse(req,j,userIdRequired,isRequestResponseDetail,requestResponseDetail,db){
             return new Promise(function(resolve,reject){

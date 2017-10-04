@@ -10,17 +10,31 @@ module.exports = function(tenantId,response){
 
 
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-        //console.log(tenantName);
-        var query = { _id: new ObjectID(tenantId) };
-        db.collection("Tenant").find(query).toArray(function(err, result) {
+        try {
             if (err) throw err;
-            console.log(result);
+            //console.log(tenantName);
+            var query = {_id: new ObjectID(tenantId)};
+            db.collection("Tenant").find(query).toArray(function (err, result) {
+                try {
+                    if (err) throw err;
+                    console.log(result);
+                    db.close();
+                    dto.tenant = result;
+                    response.send(dto);
+                } catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+            });
+        }
+        catch(e){
             db.close();
-            dto.tenant = result;
+            dto.success = false;
+            dto.error.push("tenant does not exist");
             response.send(dto);
-        });
-
+        }
     });
 
 }
