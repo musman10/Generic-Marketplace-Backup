@@ -135,6 +135,12 @@ angular.module('angularApp')
                     userType:''
                 }
             })
+            .state('ViewPackages', {
+                url         : '/packages/view',
+                templateUrl : 'public/templates/packages/viewPackages.html',
+                controller  : 'ViewPackagesController',
+                parent:'MasterLayout'
+            })
 }]);
 
     var app = {
