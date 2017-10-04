@@ -4,11 +4,17 @@
 angular.module('angularApp')
     .directive('propertyDisplay', function () {
         return {
-            restrict : "E",
+            restrict : "A",
             templateUrl : "src/common/directives/propertyDisplay/propertyDisplayTemplate.html",
-            scope: {
+            /*scope: {
                 property: '=',
                 data: '='
+            },*/
+            scope: {
+                row : '=propertyDisplay',
+                property : '=',
+                data: '=',
+                keyRequired: '@'
             },
             controller:"PropertyDisplayController"
         };

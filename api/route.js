@@ -54,6 +54,12 @@ router.post('/request/view', function(req, res, next) {
   service(req.body , res);
 });
 
+/* User view service */
+router.post('/user/view', function(req, res, next) {
+  var service = require("./user/viewUser");
+  service(req.body , res);
+});
+
 /* Userr signup service */
 router.post('/user/signup', function(req, res, next) {
   var service = require("./user/signup");
