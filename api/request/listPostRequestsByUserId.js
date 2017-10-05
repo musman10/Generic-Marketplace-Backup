@@ -1,4 +1,4 @@
-module.exports = function (responsePayLoad, response) {
+module.exports = function (userid, response) {
     //var MongoClient = require('mongodb').MongoClient;
     var ObjectID = require('mongodb').ObjectID;
     var Request = require('../../repository/request');
@@ -14,7 +14,6 @@ module.exports = function (responsePayLoad, response) {
             if (err) throw err;
             if (res.length > 0) {
                 addResponse(res, 0, 0, true, false, null).then(function () {
-                    db.close();
                     dto.data = res;
                     response.send(dto);
                 });
@@ -186,7 +185,7 @@ module.exports = function (responsePayLoad, response) {
                 }
 
                 var cursor = Request.find(query);
-                var join = {
+                var joinQuery = {
                     field: 'postUserId',
                     to: '_id',
                     from: 'User',
