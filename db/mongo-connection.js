@@ -17,12 +17,16 @@ function initPool(cb){
     return MongoConnection;
 }
 
-function closeAll(){
-    p_db.close();
+function close(){
+    console.log('inside close');
+    if(p_db != null) {
+        p_db.close();
+    }
+    process.exit();
 }
 
 MongoConnection.initPool = initPool;
-MongoConnection.closeAll = closeAll;
+MongoConnection.close = close;
 
 function getInstance(cb){
     if(!p_db){

@@ -75,3 +75,6 @@ app.get('/', function(req, res){
 MongoConnection.initPool();
 console.log('Server running: http://localhost:8080');
 app.listen(8080);
+
+// works only on Ctrl+C
+//process.on('SIGINT', MongoConnection.close());

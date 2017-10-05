@@ -3,9 +3,7 @@ module.exports = function (tenantName, response) {
 
     var dto = {success: true, error: [], status: 200, tenant: {}};
     //var MongoClient = require('mongodb').MongoClient;
-
-
-    if (err) throw err;
+    
     console.log(tenantName);
     var query = {name: tenantName};
     Tenant.find(query).toArray(function (err, result) {
