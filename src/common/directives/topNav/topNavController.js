@@ -1,5 +1,5 @@
 angular.module('angularApp')
-    .controller('TopNavController', [ '$scope', 'app', function ($scope,app) {
+    .controller('TopNavController', [ '$scope', 'app','mainService', function ($scope,app,mainService) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
@@ -10,5 +10,10 @@ angular.module('angularApp')
         }
         else if($scope.appType == "tenant"){
             $scope.headTitle = app.tenant.name;
+        }
+
+        if($scope.appType == "tenant"){
+            $scope.postRequestPermission = mainService.checkPostRequestPermission();
+            $scope.viewRequestPermission = mainService.checkViewRequestPermission();
         }
     }]);

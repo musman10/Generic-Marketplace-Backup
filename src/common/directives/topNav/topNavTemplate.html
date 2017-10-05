@@ -1,3 +1,181 @@
-<nav class="navbar">
-    <span style="font-family: Calibri;font-size:xx-large;color:ghostwhite"><b>{{headTitle}}</b></span>
-</nav>
+<!--<nav class="navbar">-->
+    <!--<span style="font-family: Calibri;font-size:xx-large;color:ghostwhite"><b>{{headTitle}}</b></span>-->
+<!--</nav>-->
+
+<header>
+    <nav>
+        <div class="row fixed-top middle-xs header  header-companies
+      ">
+            <div class="header-burger hidden-lg">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="header-logo">
+                <a href="companies.html">
+                    <img src="images/logo.svg" alt="Side Logo" class="side-logo-blue">
+                    <img src="images/logo-white.svg" alt="Side Logo" class="side-logo-white">
+                </a>
+            </div>
+            <div class="header-navigation end-xs">
+                <ul>
+                    <!--<li class="hidden-xs hidden-md">-->
+                        <!--<div class="header-link" id="tasks">-->
+                            <!--Tasks-->
+                            <!--<i id="tasks-icon" class="side-arrow-bottom icons"></i>-->
+
+                            <!--<div class="header-tasks hidden-xs hidden-md">-->
+                                <!--<div class="row center-xs">-->
+                                    <!--<a href="tasks.html#office-->
+<!--" class="header-tasks-item">-->
+                                        <!--<h3>-->
+                                            <!--<i class="side-office icons green"></i>-->
+                                            <!--npDemoOffice-->
+                                        <!--</h3>-->
+                                        <!--<ul>-->
+                                            <!--<li>Admin Assistant</li>-->
+                                            <!--<li>Customer Support</li>-->
+                                            <!--<li>Online Research...</li>-->
+                                        <!--</ul>-->
+                                    <!--</a>-->
+                                    <!--<a href="tasks.html#logistic-->
+<!--" class="header-tasks-item">-->
+                                        <!--<h3>-->
+                                            <!--<i class="side-logistic icons pink"></i>-->
+                                            <!--npDemoLogistics-->
+                                        <!--</h3>-->
+                                        <!--<ul>-->
+                                            <!--<li>Packing and Order Prep</li>-->
+                                            <!--<li>Handling</li>-->
+                                            <!--<li>Inventory...</li>-->
+                                        <!--</ul>-->
+                                    <!--</a>-->
+                                    <!--<a href="tasks.html#sales-->
+<!--" class="header-tasks-item">-->
+                                        <!--<h3>-->
+                                            <!--<i class="side-sales-rep icons orange"></i>-->
+                                            <!--npDemoSales Rep-->
+                                        <!--</h3>-->
+                                        <!--<ul>-->
+                                            <!--<li>Business Development</li>-->
+                                            <!--<li>Sales Assistant</li>-->
+                                            <!--<li>Product Demo...</li>-->
+                                        <!--</ul>-->
+                                    <!--</a>-->
+                                    <!--<a href="tasks.html#event-->
+<!--" class="header-tasks-item">-->
+                                        <!--<h3>-->
+                                            <!--<i class="side-event icons yellow"></i>-->
+                                            <!--npDemoEvent-->
+                                        <!--</h3>-->
+                                        <!--<ul>-->
+                                            <!--<li>Event Hosts</li>-->
+                                            <!--<li>Waiting Staff</li>-->
+                                            <!--<li>Event Coordinator...</li>-->
+                                        <!--</ul>-->
+                                    <!--</a>-->
+                                <!--</div>-->
+                                <!--<div class="row center-xs middle-xs header-cta">-->
+                                    <!--<a href="tasks.html">-->
+                                        <!--Show more tasks-->
+                                        <!--<i class="icons side-arrow-2-left"></i>-->
+                                    <!--</a>-->
+                                <!--</div>-->
+                            <!--</div>-->
+
+                        <!--</div>-->
+                    <!--</li>-->
+                    <li class="hidden-xs hidden-md" ng-if="!postRequestPermission">
+                        <a class="header-link" href="/user/list/request">
+                            Tasks
+                        </a>
+                    </li>
+                    <li class="hidden-xs hidden-md" ng-if="postRequestPermission">
+                        <a class="header-link" href="/user/list/post/request">
+                            My Tasks
+                        </a>
+                    </li>
+                    <li class="hidden-xs hidden-md" >
+                        <a class="header-link" href="/profile/viewmyprofile">
+                            Profile
+                        </a>
+                    </li>
+                    <li class="hidden-xs hidden-md" ng-if="postRequestPermission">
+                        <a class="header-link" href="">
+                            Packages
+                        </a>
+                    </li>
+                    <li class="hidden-xs hidden-md" ng-if="postRequestPermission">
+                        <a class="header-link" href="">
+                            Bills
+                        </a>
+                    </li>
+                    <li class="hidden-xs">
+                        <a class="header-link" href="">
+                            Logout
+                        </a>
+                    </li>
+                    <!--<li class="hidden-xs">-->
+                        <!--<a href="https://team.side.co/en/signup" class="btn btn-lg btn-primary" id="companyOnboardingHeader">-->
+                            <!--Company Signup-->
+                        <!--</a>-->
+                    <!--</li>-->
+                    <!--<li class="hidden-xs">-->
+                        <!--<a href="../en.html" class="btn btn-lg btn-green">-->
+                            <!--Work as a npDemo-->
+                        <!--</a>-->
+                    <!--</li>-->
+                </ul>
+            </div>
+            <div class="header-sidebar-overlay"></div>
+            <div id="sidebar-swipe" class="swipe-aera"></div>
+            <div class="hidden-lg header-sidebar">
+                <ul>
+                    <li>
+                        <div class="header-logo">
+                            <a href="../index.html">
+                                <img src="images/logo.svg" alt="Side Logo">
+                            </a>
+                        </div>
+                    </li>
+                    <li>
+                        <a class="header-link" href="tasks.html">
+                            Tasks
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="pricing.html">
+                            Pricing
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="stories.html">
+                            Use cases
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="https://help.side.co/hc/en-gb">
+                            Help Center
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="signin.html">
+                            Sign in
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://team.side.co/en/signup" class="btn btn-primary white" id="companyOnboardingHeader">
+                            Company Signup
+                        </a>
+                    </li>
+                    <li>
+                        <a href="../en.html" class="btn btn-green white">
+                            Work as a npDemo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
