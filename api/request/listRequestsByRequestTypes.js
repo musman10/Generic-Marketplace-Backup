@@ -24,15 +24,43 @@ module.exports = function(listRequestPayload,response){
         }
         var query = { $or: queryList };
 
-        db.collection("Request").find(query).toArray(function(err, res) {
+        /*db.collection("Request").find(query).toArray(function(err, res) {
             if (err) throw err;
             console.log("1 document inserted");
+            console.log(res);
+            console.log("res");*/
+        db.collection('Request', function (err, Request) {
+            Request.find(query, function (err, cursor) {
+                var join = new Join(db).on({
+                    field: 'postUserId',
+                    to: '_id',
+                    from: 'User',
+                    as: 'postUserDetails'
+                });
+                console.log("hello");
+                join.toArray(cursor, function (err, joinedDocs) {
+                    // handle array of joined documents here
+                    if (err) throw err;
+                    if (joinedDocs.length == 0) {
+                        db.close();
+                        dto.data = {};
+                        response.send(dto);
+                    }
+                    else{
+                        res = joinedDocs;
+                        addResponse(res,0,0,true,false,null,db).then(function(){
 
-            addResponse(res,0,0,true,false,null,db).then(function(){
-                db.close();
-                dto.data = res;
-                response.send(dto);
+                            db.close();
+                            dto.data = res;
+                            response.send(dto);
+                        });
+                    }
+                });
+
             });
+
+
+
 
         });
 

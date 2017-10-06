@@ -336,9 +336,69 @@
 
 
 
+            <div ng-repeat="r in requests">
+
+                <a href="/request/view/{{r._id}}" class="company-result-row  ">
 
 
-            <a href="javascript:;" class="company-result-row  job-selected">
+
+                    <div class="company-result-left-box">
+
+                        <div class="company-left-col-logo">
+                            <img src="../public/images/companies/fsd-solutions-squarelogo-1505378201511.png">
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+                    <div class="company-result-right-box">
+                        <div class="company-left-job-title">
+
+                            {{r.name}}
+
+                        </div>
+
+
+                        <div class="company-left-title">
+
+                          {{r.postUserDetails.name}}
+
+                        </div>
+
+                        <div class="company-left-city">
+
+                            {{r.location}}
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <div class="date-posted">
+
+
+                        {{r.datePosted}}
+
+
+                    </div>
+
+
+
+
+
+
+
+
+                </a>
+            </div>
+
+        <!--    <a href="javascript:;" class="company-result-row  job-selected">
 
 
 
@@ -813,7 +873,7 @@
 
 
 
-            </a>
+            </a>-->
 
 
 
