@@ -1,4 +1,4 @@
-module.exports = function(responsePayLoad,response){
+module.exports = function(requestName,response){
     //var MongoClient = require('mongodb').MongoClient;
     var ObjectID = require('mongodb').ObjectID;
     var Request = require('../../repository/request');
@@ -25,7 +25,8 @@ module.exports = function(responsePayLoad,response){
         }catch(e){
 
             dto.success = false;
-            dto.error.push(e.toString());
+            dto.error.push("Some error occured!");
+            console.log(e.toString());
             response.send(dto);
         }
     });

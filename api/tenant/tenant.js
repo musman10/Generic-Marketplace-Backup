@@ -18,7 +18,8 @@ module.exports = function (tenantName, response) {
         } catch (e) {
 
             dto.success = false;
-            dto.error.push(e.toString());
+            dto.error.push("Some error occured!");
+            console.log(e.toString());
             response.send(dto);
         }
     });

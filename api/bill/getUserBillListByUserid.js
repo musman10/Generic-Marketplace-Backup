@@ -6,17 +6,29 @@ module.exports = function(userid, response){
 
 
 
+        try {
+            userid = new ObjectID(userid);
 
-        userid = new ObjectID(userid)
-
-        var query = { userId: userid };
-        UserBills.find(query).toArray(function(err, result) {
-            if (err) throw err;
-            console.log(result);
-
-            dto.data= result;
+            var query = {userId: userid};
+            UserBills.find(query).toArray(function (err, result) {
+                try {
+                    if (err) throw err;
+                    console.log(result);
+                    dto.data = result;
+                    response.send(dto);
+                }catch(e){
+                    dto.success = false;
+                    dto.error.push("Some error occured!");
+                    console.log(e.toString());
+                    response.send(dto);
+                }
+            });
+        }catch(e){
+            dto.success = false;
+            dto.error.push("Some error occured!");
+            console.log(e.toString());
             response.send(dto);
-        });
+        }
 
 
 }

@@ -18,6 +18,7 @@ angular.module('angularApp')
             };
             $http.post(app.baseUrl + "api/request/user/list/requestTypes/",listRequestPayload)
                 .then(function(response) {
+                    debugger;
                     str = JSON.stringify(response);
                     console.log(str);
                     return deferred.resolve(response.data);

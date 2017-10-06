@@ -10,6 +10,7 @@ angular.module('angularApp')
          message3 : viewRequestController.getPrivate()
          };*/
 
+        debugger;
         $scope.tenantId = app.loginUser.tenantId;
         $scope.userId = app.loginUser._id;
         $scope.userPackage = [];
@@ -88,6 +89,7 @@ angular.module('angularApp')
                 userPackageObject.dateLastRenewed = "";
                 userPackageObject.dateExpiryUserPackage = dateOfExpiryUserPackage($scope.userPackage[i].days);
                 userPackageObject.packageRenewedList = [];
+                userPackageObject.tenantId = $scope.tenantId;
                 userPackage.push(userPackageObject);
             }
 

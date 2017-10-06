@@ -26,12 +26,15 @@ module.exports = function (listRequestPayload, response) {
                 addResponse(res, 0, 0, true, false, null).then(function () {
                     dto.data = res;
                     response.send(dto);
+                }).catch(function (e) {
+                    console.log(e);
                 });
             }
             else {
 
                 dto.success = false;
                 dto.error.push("request type requests not found");
+                console.log(e.toString());
                 response.send(dto);
             }
 
@@ -39,7 +42,8 @@ module.exports = function (listRequestPayload, response) {
         } catch (e) {
 
             dto.success = false;
-            dto.error.push(e.toString());
+            dto.error.push("Some error occured!");
+            console.log(e.toString());
             response.send(dto);
         }
     });
@@ -98,6 +102,8 @@ module.exports = function (listRequestPayload, response) {
                                 requestResponseDetail = null;
                                 addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                     resolve();
+                                }).catch(function(e){
+                                    console.log(e);
                                 });
                             }
                         }
@@ -119,6 +125,8 @@ module.exports = function (listRequestPayload, response) {
                                         requestResponseDetail = null;
                                         addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                             resolve();
+                                        }).catch(function(e){
+                                            console.log(e);
                                         });
                                     }
                                 }
@@ -129,6 +137,8 @@ module.exports = function (listRequestPayload, response) {
                                     requestResponseDetail = null;
                                     addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                         resolve();
+                                    }).catch(function(e){
+                                        console.log(e);
                                     });
                                 }
                             }
@@ -152,6 +162,8 @@ module.exports = function (listRequestPayload, response) {
                                             requestResponseDetail = null;
                                             addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                                 resolve();
+                                            }).catch(function(e){
+                                                console.log(e);
                                             });
                                         }
                                     }
@@ -162,8 +174,12 @@ module.exports = function (listRequestPayload, response) {
                                         requestResponseDetail = null;
                                         addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                             resolve();
+                                        }).catch(function(e){
+                                            console.log(e);
                                         });
                                     }
+                                }).catch(function(e){
+                                    console.log(e);
                                 });
 
                             }
@@ -174,7 +190,8 @@ module.exports = function (listRequestPayload, response) {
                 } catch (e) {
 
                     dto.success = false;
-                    dto.error.push(e.toString());
+                    console.log(e.toString());
+                    dto.error.push("Some error occured!");
                     response.send(dto);
                 }
             }
@@ -233,6 +250,8 @@ module.exports = function (listRequestPayload, response) {
                                     requestResponseDetail = requestResponseDetail;
                                     addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                         resolve();
+                                    }).catch(function(e){
+                                        console.log(e);
                                     });
                                 }
                             }
@@ -242,6 +261,8 @@ module.exports = function (listRequestPayload, response) {
                                 requestResponseDetail = requestResponseDetail.userResponses[j].requestDetails;
                                 addResponse(res, i, 0, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                     resolve();
+                                }).catch(function(e){
+                                    console.log(e);
                                 });
                             }
                         }
@@ -251,7 +272,8 @@ module.exports = function (listRequestPayload, response) {
                 } catch (e) {
 
                     dto.success = false;
-                    dto.error.push(e.toString());
+                    dto.error.push("Some error occured");
+                    Console.log(e.toString());
                     response.send(dto);
                 }
             }

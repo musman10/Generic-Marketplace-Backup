@@ -30,6 +30,8 @@ module.exports = function (listRequestPayload, response) {
                     addResponse(req[0], 0, false, false, null).then(function () {
                         dto.data = req;
                         response.send(dto);
+                    }).catch(function (e) {
+                        console.log(e);
                     });
                 }
                 else {
@@ -39,7 +41,8 @@ module.exports = function (listRequestPayload, response) {
                 }
             } catch (e) {
                 dto.success = false;
-                dto.error.push(e.toString());
+                dto.error.push("Some error occured!");
+                console.log(e.toString());
                 response.send(dto);
             }
 
@@ -47,7 +50,8 @@ module.exports = function (listRequestPayload, response) {
     } catch (e) {
 
         dto.success = false;
-        dto.error.push(e.toString());
+        dto.error.push("Some error occured!");
+        console.log(e.toString());
         response.send(dto);
     }
 
@@ -145,8 +149,12 @@ module.exports = function (listRequestPayload, response) {
                                         requestResponseDetail = null;
                                         addResponse(req, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                             resolve("Success");
+                                        }).catch(function(e){
+                                            console.log(e);
                                         });
                                     }
+                                }).catch(function(e){
+                                    console.log(e);
                                 });
 
                             }
@@ -209,6 +217,8 @@ module.exports = function (listRequestPayload, response) {
                                     requestResponseDetail = requestResponseDetail;
                                     addResponse(req, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                         resolve("success");
+                                    }).catch(function(e){
+                                        console.log(e);
                                     });
                                 }
                             }
@@ -218,6 +228,8 @@ module.exports = function (listRequestPayload, response) {
                                 requestResponseDetail = requestResponseDetail.userResponses[j].requestDetails;
                                 addResponse(req, 0, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                     resolve("success");
+                                }).catch(function(e){
+                                    console.log(e);
                                 });
                             }
                         }

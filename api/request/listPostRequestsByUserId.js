@@ -7,35 +7,45 @@ module.exports = function (userid, response) {
     var dbTaskDone;
     //var MongoClient = require('mongodb').MongoClient;
 
-    userid = new ObjectID(userid);
-    var query = {postUserId: userid, hasParent: '0'};
-    Request.find(query).toArray(function (err, res) {
-        try {
-            if (err) throw err;
-            if (res.length > 0) {
-                addResponse(res, 0, 0, true, false, null).then(function () {
-                    dto.data = res;
+    try {
+        userid = new ObjectID(userid);
+        var query = {postUserId: userid, hasParent: '0'};
+        Request.find(query).toArray(function (err, res) {
+            try {
+                if (err) throw err;
+                if (res.length > 0) {
+                    addResponse(res, 0, 0, true, false, null).then(function () {
+                        dto.data = res;
+                        response.send(dto);
+                    }).catch(function (e) {
+                        console.log(e);
+                    });
+                }
+                else {
+                    dto.success = false;
+                    dto.error.push("no user post request found");
                     response.send(dto);
-                });
-            }
-            else {
+                }
+            } catch (e) {
                 dto.success = false;
-                dto.error.push("no user post request found");
+                dto.error.push("Some error occured!");
+                console.log(e.toString());
                 response.send(dto);
             }
-        } catch (e) {
-            dto.success = false;
-            dto.error.push(e.toString());
-            response.send(dto);
-        }
 
-    });
+        });
+    }catch(e){
+        dto.success = false;
+        dto.error.push("Some error occured!");
+        console.log(e.toString());
+        response.send(dto);
+    }
 
     function addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail) {
         return new Promise(function (resolve, reject) {
             if (!isRequestResponseDetail) {
                 dbTaskDone = 1;
-                if (err) throw err;
+                /*if (err) throw err;*/
                 if (res[i].userResponses.length != 0) {
                     var uid = new ObjectID(res[i].userResponses[j].userId);
                     var rid = new ObjectID(res[i].userResponses[j].requestId);
@@ -84,6 +94,8 @@ module.exports = function (userid, response) {
                             requestResponseDetail = null;
                             addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                 resolve();
+                            }).catch(function(e){
+                                console.log(e);
                             });
                         }
                     }
@@ -105,6 +117,8 @@ module.exports = function (userid, response) {
                                     requestResponseDetail = null;
                                     addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                         resolve();
+                                    }).catch(function(e){
+                                        console.log(e);
                                     });
                                 }
                             }
@@ -115,6 +129,8 @@ module.exports = function (userid, response) {
                                 requestResponseDetail = null;
                                 addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                     resolve();
+                                }).catch(function(e){
+                                    console.log(e);
                                 });
                             }
                         }
@@ -138,6 +154,8 @@ module.exports = function (userid, response) {
                                         requestResponseDetail = null;
                                         addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                             resolve();
+                                        }).catch(function (e) {
+                                            console.log(e);
                                         });
                                     }
                                 }
@@ -148,8 +166,12 @@ module.exports = function (userid, response) {
                                     requestResponseDetail = null;
                                     addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                         resolve();
-                                    });
+                                    }).catch(function (e) {
+                                        console.log(e);
+                                    });;
                                 }
+                            }).catch(function(e){
+                                console.log(e);
                             });
 
                         }
@@ -214,6 +236,8 @@ module.exports = function (userid, response) {
                                 requestResponseDetail = requestResponseDetail;
                                 addResponse(res, i, j, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                     resolve();
+                                }).catch(function(e){
+                                    console.log(e);
                                 });
                             }
                         }
@@ -223,6 +247,8 @@ module.exports = function (userid, response) {
                             requestResponseDetail = requestResponseDetail.userResponses[j].requestDetails;
                             addResponse(res, i, 0, userIdRequired, isRequestResponseDetail, requestResponseDetail).then(function () {
                                 resolve();
+                            }).catch(function(e){
+                                console.log(e);
                             });
                         }
                     }

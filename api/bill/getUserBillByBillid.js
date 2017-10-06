@@ -5,32 +5,53 @@ module.exports = function(billid, response){
 
     var dto = {success:true,error:[],status:200};
     var ObjectID = require('mongodb').ObjectID;
-    userBill = {};
 
+        //try {
 
+            userBill = {};
+            billid = new ObjectID(billid)
+            var query = {_id: billid};
 
-        billid = new ObjectID(billid)
+            UserBills.find(query).toArray(function (err, result) {
+               // try {
+                    if (err) throw err;
+                    //console.log(result);
+                    userBill = result[0];
+                   // userBill.packages = [];
+                    var billPackagesquery = {userBillId: billid};
+                    UserBillPackages.find(billPackagesquery).toArray(function (err, result) {
+                        try {
+                            if (err) throw err;
+                            console.log(result);
 
-        var query = { _id: billid };
-        UserBills.find(query).toArray(function(err, result) {
-            if (err) throw err;
-            //console.log(result);
-            userBill = result[0];
-            userBill.packages = [];
-            var billPackagesquery = { userBillId: billid };
-            UserBillPackages.find(billPackagesquery).toArray(function(err, result) {
-                if (err) throw err;
-                console.log(result);
-
-                getBillPackage(userBill,result,0).then(function(){
-                    dto.data= userBill;
+                            getBillPackage(userBill, result, 0).then(function () {
+                                dto.data = userBill;
+                                response.send(dto);
+                            }).catch(function(e){
+                                console.log(e);
+                            });
+                        }catch(e){
+                            dto.success = false;
+                            dto.error.push("Some error occured!");
+                            console.log(e.toString());
+                            response.send(dto);
+                        }
+                    });
+                /*} catch (e) {
+                    dto.success = false;
+                    dto.error.push("Some error occured!");
+                    console.log(e.toString());
                     response.send(dto);
-                });
+                }*/
+
+
             });
-
-
-
-        });
+/*        }catch(e){
+            dto.success = false;
+            dto.error.push("Some error occured!");
+            console.log(e.toString());
+            response.send(dto);
+        }*/
 
 
     function getBillPackage(userBill,res,i,db) {
@@ -46,6 +67,8 @@ module.exports = function(billid, response){
                 else{
                     getBillPackage(res,i++,db).then(function(){
                         resolve();
+                    }).catch(function(e){
+                        console.log(e);
                     });
                 }
 

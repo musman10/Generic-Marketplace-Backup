@@ -11,7 +11,8 @@ module.exports = function (response) {
             response.send(dto);
         } catch (e) {
             dto.success = false;
-            dto.error.push(e.toString());
+            dto.error.push("Some error occured!");
+            console.log(e.toString());
             response.send(dto);
         }
     });
