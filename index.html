@@ -7,15 +7,20 @@
     <title>Title</title>
     <link rel="icon" type="image/png" href="public/ico/favicon.ico"/>
 
-    <link href="build/style.css" rel="stylesheet">
+    <link href="build/main.css" rel="stylesheet">
+    <link href="build/forms.css" rel="stylesheet">
+    <link href="build/jquery.mCustomScrollbar.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Droid+Sans:400,700" rel="stylesheet">
-   <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
-    <link rel="stylesheet"; href="https://unpkg.com/ng-table@2.0.2/bundles/ng-table.min.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">-->
+    <script src="public/js/jquery.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Droid+Sans:400,700" rel="stylesheet">
+
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+     <link rel="stylesheet"; href="https://unpkg.com/ng-table@2.0.2/bundles/ng-table.min.css">
+     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">-->
 </head>
 <!--<body style="margin: 0px;background-color:white;height:90vh">-->
-<body style="background-color:white;height:auto;">
+<body >
 <!--
 <nav class="navbar">Tenant Name {{state}}</nav>
 -->
@@ -44,11 +49,69 @@
 <!-- Angular Material Library -->
 <script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
 <!--added for table-->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>-->
+<!--
 <script src="http://netdna.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js" type="text/javascript"></script>
+-->
 <script src="https://unpkg.com/ng-table@2.0.2/bundles/ng-table.min.js"></script>
 
-<script src="public/js/loadjs.min.js" type="text/javascript"></script>
+<!--<script src="public/js/loadjs.min.js" type="text/javascript"></script>
 <script src="public/js/t.js" id="B2B1489410821" async defer></script>
+<script src="public/js/jquery.mCustomScrollbar.js"></script>
+<script src="public/js/scroll.js"></script>-->
+<script>
+    $(document).ready(function() {
+
+        var $wrapper = $('.tab-wrapper'),
+                $allTabs = $wrapper.find('.tab-content > div'),
+                $tabMenu = $wrapper.find('.tab-menu li'),
+                $line = $('<div class="line"></div>').appendTo($tabMenu);
+
+        $allTabs.not(':first-of-type').hide();
+        $tabMenu.filter(':first-of-type').find(':first').width('100%')
+
+        $tabMenu.each(function(i) {
+            $(this).attr('data-tab', 'tab' + i);
+        });
+
+        $allTabs.each(function(i) {
+            $(this).attr('data-tab', 'tab' + i);
+        });
+
+        $tabMenu.on('click', function() {
+
+            var dataTab = $(this).data('tab'),
+                    $getWrapper = $(this).closest($wrapper);
+
+            $getWrapper.find($tabMenu).removeClass('active');
+            $(this).addClass('active');
+
+            $getWrapper.find('.line').width(0);
+            $(this).find($line).animate({
+                'width': '100%'
+            }, 'fast');
+            $getWrapper.find($allTabs).hide();
+            $getWrapper.find($allTabs).filter('[data-tab=' + dataTab + ']').show();
+        });
+
+    }); //end ready
+
+</script>
+<script>
+    (function($){
+        debugger;
+        /*$(window).on("load",function(){*/
+        $(document).ready(function() {
+
+            $(".content-scroll").mCustomScrollbar({
+                theme:"dark"
+            });
+
+            /* });*/
+        });
+    })(jQuery);
+</script>
+
 </body>
 </html>
