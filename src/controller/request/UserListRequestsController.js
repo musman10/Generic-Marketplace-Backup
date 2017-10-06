@@ -1,11 +1,11 @@
 angular.module('angularApp')
-    .controller('UserListRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListRequestsService','$mdDialog','$mdToast',  function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListRequestsService,$mdDialog,$mdToast) {
+    .controller('UserListRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListRequestsService','$mdDialog','$mdToast','viewRequestService', function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListRequestsService,$mdDialog,$mdToast,viewRequestService) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing',
             message3 : requestPostService.getPrivate()
         };
-
+        $scope.requestSelected = false;
         debugger;
         $scope.requests;
         $scope.requestConfigurations = app.tenant.requests;
@@ -33,6 +33,50 @@ angular.module('angularApp')
                 }
             }
         }
+        $scope.selectedRequestId = "";
+        $scope.selectedRequest = {};
+        $scope.selectTask = function(requestId){
+            debugger;
+            //requestId = "59d4aee2d7dfa42a20d98ce5";
+            //requestId = "59d4c5380faa2316303529ab";
+            requestId = "59c0fe7667b9b2042819722f";
+            $scope.selectedRequestId = requestId;
+            for(i=0;i<$scope.requests.length;i++){
+
+                if($scope.requests[i]._id == requestId){
+                    $scope.selectedRequest = $scope.requests[i];
+                    break;
+                }
+
+            }
+            //var requestId = $stateParams.requestId;
+            //viewRequestService.view(requestId).then(function(response){
+            //    console.log(response);
+            //    // $scope.result = response.data;
+            //    var information_to_print = response.data[0];
+            //    var information_to_print2 = response.data2[0];
+            //    debugger;
+            //    delete information_to_print._id;
+            //    delete information_to_print.postUserId;
+            //    information_to_print.postusername = information_to_print.username.username;
+            //    delete information_to_print.username;
+            //    delete information_to_print.user_response;
+            //    delete information_to_print.userResponses;
+            //    delete information_to_print.tenantId;
+            //    delete information_to_print.post_user_id;
+            //    information_to_print.tenantname = information_to_print2.tenantname.name;
+            //    $scope.result = information_to_print;
+            //
+            //    // $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
+            //});
+        }
+
+        $scope.viewResponse = function(){
+            debugger;
+            viewRequestService.viewResponse($scope.selectedRequestId).then(function(response){
+                $scope.responses = response.data;
+            });
+        };
 
         $scope.listRequestsByRequestTypes = function(requestTypes){
             debugger;
@@ -73,7 +117,7 @@ angular.module('angularApp')
                 '</md-dialog>'
             });
 
-            responseRequestConf = JSON.parse(responseRequestConf);
+            //responseRequestConf = JSON.parse(responseRequestConf);
             debugger;
             responseRequest = createObjectService.createFormObject(responseRequestConf);
             var formJSON = JSON.stringify(responseRequest);
@@ -129,6 +173,7 @@ angular.module('angularApp')
                                             .position(pinTo )
                                             .hideDelay(3000)
                                     );
+                                    $scope.selectedRequest.userResponded == true;
                                     //alert("your request is sent successfully");
                                 }
                                 else{
@@ -151,4 +196,6 @@ angular.module('angularApp')
 
             console.log(formJSON);
         }
+
+
     }]);

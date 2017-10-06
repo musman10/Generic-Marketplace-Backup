@@ -338,7 +338,7 @@
 
 
 
-            <a href="javascript:;" class="company-result-row  job-selected">
+            <a href="javascript:;" class="company-result-row  job-selected" ng-click="selectTask(123)">
 
 
 
@@ -351,8 +351,6 @@
 
 
                 </div>
-
-
 
 
                 <div class="company-result-right-box">
@@ -377,7 +375,6 @@
 
 
                 </div>
-
 
 
                 <div class="date-posted">
@@ -837,7 +834,7 @@
 
                 <div class="job-detail-right-head">
 
-                    Software / Sr. Software Developer
+                    {{selectedRequest.name}}
 
                 </div>
 
@@ -846,14 +843,31 @@
 
                 <div class="create-jobs-filter-btn">
 
-                    <button value="Search" class="apply-btn"> Apply Now</button>
+                    <!--<button value="Search" class="apply-btn"> Apply Now</button>-->
+                    <div ng-repeat="reqResponse in requestResponses">
+
+                        <div ng-if="reqResponse.request.name == selectedRequest.requestType && selectedRequest.userResponded == false">
+                            <!--<br>-->
+                            <div ng-repeat="response in reqResponse.responses" >
+                                <button value="Search" class="apply-btn" ng-click="respondRequest(selectedRequest,response)"> Apply Now</button>
+                                <!--<option ng-repeat="response in reqResponse.responses" value="{{response}}">{{response.name}}</option>-->
+                            </div>
+                        </div>
+
+                        <div ng-if="selectedRequest.userResponded == true">
+                            <button value="Search" class="apply-btn" disabled> Applied</button>
+                            <!--<div ng-repeat="response in r.userResponses">-->
+                                <!--<request-response response="response" request-responses="requestResponses" userid="userid"></request-response>-->
+                            <!--</div>-->
+                        </div>
+                    </div>
 
                 </div>
 
 
                 <div class="job-company-right-head">
 
-                    <div>FSD Solutions</div>
+                    <div>{{selectedRequest.postusername}}</div>
                     <span>Karachi</span>
 
                 </div>
@@ -867,104 +881,22 @@
 
             <div class="jobs-tab-detail-row mCustomScrollbar">
 
-
-                <!--<div class="tab-wrapper">-->
-
-                    <!--<ul class="tab-menu">-->
-                        <!--<li class="active">Job</li>-->
-                        <!--<li>Company</li>-->
-                        <!--<li>Review</li>-->
-                    <!--</ul>-->
-
-
-                    <!--<div class="tab-content">-->
-
-
-
-
-                        <!--<div>-->
-
-                            <!--<div class="tab-row">-->
-
-                                <!--<ul>-->
-                                    <!--<li>Responsible for performing design and development on one or more Project areas like Functional (Configuration/Scripting), Integration with other Application, Data Migration or Data Conversion etc.</li>-->
-                                    <!--<li>Responsible for providing effort estimation of design and development tasks. CRM Developer/ Software Developer contributes in documentation of Technical Design. Developer must be well versed with Development Standards.</li>-->
-                                    <!--<li>Responsible for exploring new technologies coming in CRM space for existing application(s) as well as new application(s) and plan training on them with CRM Manager/CRM Practice Manager based on Company’s strategic objectives.</li>-->
-                                    <!--<li>Good asp.net, Java, PHP experience (Has worked with web forms, understands the page lifecycle)</li>-->
-                                    <!--<li>Working with Caching, SQL, T-SQL, C# and ASP.Net</li>-->
-                                    <!--<li>Good jQuery experience (making Ajax requests with jQuery, working with JSON, manipulating the DOM, working with the callbacks, async versus sync)</li>-->
-                                    <!--<li>Good understanding of CSS (understands what types of selectors there are, can create their own classes)</li>-->
-                                    <!--<li>Strong experience with C# (understands OOP concepts, worked with design patterns)</li>-->
-                                    <!--<li>Strong SQL experience (can write stored procedures, functions, views and tables. Good with troubleshooting SQL performance issues)</li>-->
-                                    <!--<li>Work with a team of software developers to deliver products on time.</li>-->
-                                    <!--<li>Excellent knowledge and work experience on designing and developing complex software applications.</li>-->
-                                    <!--<li>Working understanding of Agile software engineering processes and methodologies.</li>-->
-                                    <!--<li>Interfacing with Business Analysts to effectively implement business requirements into technology enhancements and new features to improve the platform</li>-->
-                                    <!--<li>Experience with web based applications is preferred.</li>-->
-                                <!--</ul>-->
-
-                            <!--</div>-->
-
-
-
-
-                        <!--</div>-->
-
-
-
-
-                        <!--<div>-->
-
-                            <!--<div class="tab-row">-->
-
-                                <!--Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum!-->
-                            <!--</div>-->
-
-
-                        <!--</div>-->
-
-
-
-
-                        <!--<div>-->
-
-
-                            <!--<div class="tab-row">-->
-
-                                <!--Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum!-->
-                            <!--</div>-->
-
-
-
-                        <!--</div>-->
-
-
-
-
-
-
-
-
-
-                    <!--</div>-->
-                    <!--&lt;!&ndash; //tab-content &ndash;&gt;-->
-
-                <!--</div>-->
-
-                <md-content>
+                <md-content ng-if="!requestSelected">
                     <md-tabs md-dynamic-height md-border-bottom>
                         <md-tab label="one">
                             <md-content class="md-padding">
-                                <h1 class="md-display-2">Tab One</h1>
-                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla venenatis ante augue. Phasellus volutpat neque ac dui mattis vulputate. Etiam consequat aliquam cursus. In sodales pretium ultrices. Maecenas lectus est, sollicitudin consectetur felis nec, feugiat ultricies mi.</p>
+                                <p style="visibility: hidden">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla venenatis ante augue. Phasellus Nulla venenatis ante augue. Phasellus </p>
+                                <p>{{selectedRequest.details.description}}</p>
                             </md-content>
                         </md-tab>
-                        <md-tab label="two">
+                        <md-tab label="Response">
                             <md-content class="md-padding">
-                                <h1 class="md-display-2">Tab Two</h1>
-                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla venenatis ante augue. Phasellus volutpat neque ac dui mattis vulputate. Etiam consequat aliquam cursus. In sodales pretium ultrices. Maecenas lectus est, sollicitudin consectetur felis nec, feugiat ultricies mi. Aliquam erat volutpat. Nam placerat, tortor in ultrices porttitor, orci enim rutrum enim, vel tempor sapien arcu a tellus. Vivamus convallis sodales ante varius gravida. Curabitur a purus vel augue ultrices ultricies id a nisl. Nullam malesuada consequat diam, a facilisis tortor volutpat et. Sed urna dolor, aliquet vitae posuere vulputate, euismod ac lorem. Sed felis risus, pulvinar at interdum quis, vehicula sed odio. Phasellus in enim venenatis, iaculis tortor eu, bibendum ante. Donec ac tellus dictum neque volutpat blandit. Praesent efficitur faucibus risus, ac auctor purus porttitor vitae. Phasellus ornare dui nec orci posuere, nec luctus mauris semper.</p>
-                                <p>Morbi viverra, ante vel aliquet tincidunt, leo dolor pharetra quam, at semper massa orci nec magna. Donec posuere nec sapien sed laoreet. Etiam cursus nunc in condimentum facilisis. Etiam in tempor tortor. Vivamus faucibus egestas enim, at convallis diam pulvinar vel. Cras ac orci eget nisi maximus cursus. Nunc urna libero, viverra sit amet nisl at, hendrerit tempor turpis. Maecenas facilisis convallis mi vel tempor. Nullam vitae nunc leo. Cras sed nisl consectetur, rhoncus sapien sit amet, tempus sapien.</p>
-                                <p>Integer turpis erat, porttitor vitae mi faucibus, laoreet interdum tellus. Curabitur posuere molestie dictum. Morbi eget congue risus, quis rhoncus quam. Suspendisse vitae hendrerit erat, at posuere mi. Cras eu fermentum nunc. Sed id ante eu orci commodo volutpat non ac est. Praesent ligula diam, congue eu enim scelerisque, finibus commodo lectus.</p>
+                                <p style="visibility: hidden">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla venenatis ante augue. Phasellus Nulla venenatis ante augue. Phasellus
+                                </p>
+                                <h1>User Responses</h1>
+                                <div ng-repeat="response in selectedRequest.userResponses">
+                                    <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
+                                </div>
                             </md-content>
                         </md-tab>
                         <md-tab label="three">
@@ -976,8 +908,10 @@
                     </md-tabs>
                 </md-content>
 
-                <!-- //tab-wrapper -->
-
+                <!--&lt;!&ndash; //tab-wrapper &ndash;&gt;-->
+                <!--<md-content ng-if="requestSelected">-->
+                    <!--No Request Selected-->
+                <!--</md-content>-->
 
 
 
