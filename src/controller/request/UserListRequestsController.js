@@ -226,6 +226,4 @@ angular.module('angularApp')
 
             console.log(formJSON);
         }
-
-
     }]);

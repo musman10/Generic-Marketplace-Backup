@@ -1,5 +1,6 @@
-<!--<h1>My Requests</h1>-->
-<!--<h1>Requests</h1>-->
+<!--
+&lt;!&ndash;<h1>My Requests</h1>&ndash;&gt;
+&lt;!&ndash;<h1>Requests</h1>&ndash;&gt;
 <md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
     <h3 class="md-display-1">My Requests</h3>
 </md-toolbar>
@@ -12,28 +13,638 @@
             <ul>
                 <li class="titleName"><a href="/request/view/{{r._id}}">{{r.name}}</a></li>
                 <li class="titleValue"> {{r.datePosted}}</li>
-                <!--<li class="titleValue"> {{response.requestDetails.postUserDetails.userType}}</li>-->
+                &lt;!&ndash;<li class="titleValue"> {{response.requestDetails.postUserDetails.userType}}</li>&ndash;&gt;
                 <li></li>
             </ul>
         </summary>
         <div class="content">
             <div ng-repeat="reqResponse in requestResponses">
-<!--
+&lt;!&ndash;
                 <div ng-if="reqResponse.request.name == r.requestType && r.userResponded == false">
                     <br>
                     <select ng-model="response" ng-change="respondRequest(r,response)">
                         <option ng-repeat="response in reqResponse.responses" value="{{response}}">{{response.name}}</option>
                     </select>
                 </div>
--->
-                <!--<div ng-if="r.userResponded == true">-->
+&ndash;&gt;
+                &lt;!&ndash;<div ng-if="r.userResponded == true">&ndash;&gt;
                     <div ng-repeat="response in r.userResponses">
                         <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
                     </div>
-                <!--</div>-->
+                &lt;!&ndash;</div>&ndash;&gt;
             </div>
         </div>
     </details>
 </div>
 
+</div>-->
+
+
+<!--<h1>Requests</h1>-->
+<!--
+<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
+    <h3 class="md-display-1">Requests</h3>
+</md-toolbar>
+
+<div style="padding:10px">
+<div ng-repeat="r in requests">
+<details>
+    <summary>
+        <ul>
+            <li class="titleName"><a href="/request/view/{{r._id}}">{{r.name}}</a></li>
+            <li class="titleValue"> {{r.datePosted}}</li>
+            &lt;!&ndash;<li class="titleValue"> {{response.requestDetails.postUserDetails.userType}}</li>&ndash;&gt;
+            <li></li>
+        </ul>
+    </summary>
+    <div class="content">
+        <div ng-repeat="reqResponse in requestResponses">
+
+            <div ng-if="reqResponse.request.name == r.requestType && r.userResponded == false">
+                <br>
+                <select ng-model="response" ng-change="respondRequest(r,response)">
+                    <option ng-repeat="response in reqResponse.responses" value="{{response}}">{{response.name}}</option>
+                </select>
+            </div>
+
+            <div ng-if="r.userResponded == true">
+                <div ng-repeat="response in r.userResponses">
+                    <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
+                </div>
+            </div>
+        </div>
+    </div>
+</details>
 </div>
+</div>-->
+
+<!--
+
+<header>
+    <nav>
+        <div class="row fixed-top middle-xs header  header-companies">
+            <div class="header-burger hidden-lg">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="header-logo">
+                <a href="companies.html">
+                    <img src="../public/images/logo.svg" alt="Side Logo" class="side-logo-blue">
+                    <img src=".../images/logo-white.svg" alt="Side Logo" class="side-logo-white">
+                </a>
+            </div>
+            <div class="header-navigation end-xs">
+                <ul>
+                    <li class="hidden-xs hidden-md">
+                        <div class="header-link" id="tasks">
+                            Tasks
+                            <i id="tasks-icon" class="side-arrow-bottom icons"></i>
+
+                            <div class="header-tasks hidden-xs hidden-md">
+                                <div class="row center-xs">
+                                    <a href="tasks.html#office
+" class="header-tasks-item">
+                                        <h3>
+                                            <i class="side-office icons green"></i> npDemoOffice
+                                        </h3>
+                                        <ul>
+                                            <li>Admin Assistant</li>
+                                            <li>Customer Support</li>
+                                            <li>Online Research...</li>
+                                        </ul>
+                                    </a>
+                                    <a href="tasks.html#logistic
+" class="header-tasks-item">
+                                        <h3>
+                                            <i class="side-logistic icons pink"></i> npDemoLogistics
+                                        </h3>
+                                        <ul>
+                                            <li>Packing and Order Prep</li>
+                                            <li>Handling</li>
+                                            <li>Inventory...</li>
+                                        </ul>
+                                    </a>
+                                    <a href="tasks.html#sales
+" class="header-tasks-item">
+                                        <h3>
+                                            <i class="side-sales-rep icons orange"></i> npDemoSales Rep
+                                        </h3>
+                                        <ul>
+                                            <li>Business Development</li>
+                                            <li>Sales Assistant</li>
+                                            <li>Product Demo...</li>
+                                        </ul>
+                                    </a>
+                                    <a href="tasks.html#event
+" class="header-tasks-item">
+                                        <h3>
+                                            <i class="side-event icons yellow"></i> npDemoEvent
+                                        </h3>
+                                        <ul>
+                                            <li>Event Hosts</li>
+                                            <li>Waiting Staff</li>
+                                            <li>Event Coordinator...</li>
+                                        </ul>
+                                    </a>
+                                </div>
+                                <div class="row center-xs middle-xs header-cta">
+                                    <a href="tasks.html">
+                                        Show more tasks
+                                        <i class="icons side-arrow-2-left"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </li>
+                    <li class="hidden-xs hidden-md">
+                        <a class="header-link" href="pricing.html">
+                            Pricing
+                        </a>
+                    </li>
+                    <li class="hidden-xs hidden-md">
+                        <a class="header-link" href="stories.html">
+                            Use cases
+                        </a>
+                    </li>
+                    <li class="hidden-xs hidden-md">
+                        <a class="header-link" href="https://help.side.co/hc/en-gb">
+                            Help Center
+                        </a>
+                    </li>
+                    <li class="hidden-xs">
+                        <a class="header-link" href="signin.html">
+                            Sign in
+                        </a>
+                    </li>
+                    <li class="hidden-xs">
+                        <a href="https://team.side.co/en/signup" class="btn btn-lg btn-primary" id="companyOnboardingHeader">
+                            Company Signup
+                        </a>
+                    </li>
+                    <li class="hidden-xs">
+                        <a href="../en.html" class="btn btn-lg btn-green">
+                            Work as a npDemo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="header-sidebar-overlay"></div>
+            <div id="sidebar-swipe" class="swipe-aera"></div>
+            <div class="hidden-lg header-sidebar">
+                <ul>
+                    <li>
+                        <div class="header-logo">
+                            <a href="../index.html">
+                                <img src="images/logo.svg" alt="Side Logo">
+                            </a>
+                        </div>
+                    </li>
+                    <li>
+                        <a class="header-link" href="tasks.html">
+                            Tasks
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="pricing.html">
+                            Pricing
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="stories.html">
+                            Use cases
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="https://help.side.co/hc/en-gb">
+                            Help Center
+                        </a>
+                    </li>
+                    <li>
+                        <a class="header-link" href="signin.html">
+                            Sign in
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://team.side.co/en/signup" class="btn btn-primary white" id="companyOnboardingHeader">
+                            Company Signup
+                        </a>
+                    </li>
+                    <li>
+                        <a href="../en.html" class="btn btn-green white">
+                            Work as a npDemo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+-->
+
+
+
+
+
+<div class="full-width white-bg hide-on-phone">
+
+
+
+    <div class="full-width-container margin-bot-30">
+
+        <div class="top-search-fields">
+
+            <input type="text" placeholder="Job Title, Keywords, or Company" class="search-job-field">
+
+            <input type="text" placeholder="Job Title, Keywords, or Company" class="search-job-location">
+
+
+            <select class="jobs-dropdown">
+                <option value="volvo">Volvo</option>
+                <option value="saab">Saab</option>
+                <option value="mercedes">Mercedes</option>
+                <option value="audi">Audi</option>
+            </select>
+
+            <div class="jobs-filter-create-btn">
+
+                <button value="Search"> Search </button>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+
+
+
+
+
+
+
+</div>
+
+
+
+<div class="full-width-container white-bg hide-on-phone">
+
+
+
+
+    <div class="job-search-filter-row">
+
+        <select class="jobs-filter-dropdown">
+            <option value="volvo">Job Type</option>
+            <option value="saab">Saab</option>
+            <option value="mercedes">Mercedes</option>
+            <option value="audi">Audi</option>
+        </select>
+
+
+
+        <select class="jobs-filter-dropdown">
+            <option value="volvo">Date Posted</option>
+            <option value="saab">Saab</option>
+            <option value="mercedes">Mercedes</option>
+            <option value="audi">Audi</option>
+        </select>
+
+
+        <select class="jobs-filter-dropdown">
+            <option value="volvo">Salary Range</option>
+            <option value="saab">Saab</option>
+            <option value="mercedes">Mercedes</option>
+            <option value="audi">Audi</option>
+        </select>
+
+
+        <select class="jobs-filter-dropdown">
+            <option value="volvo">Distance</option>
+            <option value="saab">Saab</option>
+            <option value="mercedes">Mercedes</option>
+            <option value="audi">Audi</option>
+        </select>
+
+
+
+        <select class="jobs-filter-dropdown">
+            <option value="volvo">More</option>
+            <option value="saab">Saab</option>
+            <option value="mercedes">Mercedes</option>
+            <option value="audi">Audi</option>
+        </select>
+
+
+
+
+        <div class="create-jobs-filter-btn">
+
+            <!--<div layout="row" ng-cloak style="height: 300px">
+                <style>
+                    .edgePadding {
+                        padding-left: 25px;
+                        padding-right: 25px;
+                    }
+
+                </style>
+                <div layout="column" layout-align="center start" layout-padding flex>
+
+
+                    <div class="dialog-demo-content" layout="column" layout-align="center center" style="width:100%">
+
+                        <md-button class="md-primary md-raised edgePadding" ng-click="openOffscreen()" >
+                            Open From Top Left - Close Slide Down
+                        </md-button>
+                    </div>
+
+                </div>
+
+                <div layout="column" layout-align="center center"
+                     style="background-color: #f2f2f2" class="md-padding">
+                    <span id="right">right</span>
+                </div>
+            </div>-->
+
+            <button ng-controller="dialogController" value="Search" ng-click="showAdvanced($event)"> Create Job Alert </button>
+            <!--<md-button class="md-primary md-raised edgePadding" ng-click="openOffscreen()" >
+                Open From Top Left - Close Slide Down
+            </md-button>-->
+
+        </div>
+
+
+
+
+
+
+    </div>
+
+
+</div>
+
+
+
+<div class="full-width white-bg hide-on-large">
+
+
+    <input type="text" placeholder="Jobs Search" class="search-job-field-mobile">
+
+
+
+</div>
+
+
+<div class="full-width-container-nopadding white-bg">
+
+    <div class="search-two-column-row">
+
+        <div  class="search-result-left-col  mCustomScrollbar" style="overflow:scroll;">
+
+
+
+            <div ng-repeat="r in requests">
+
+                <a href="/request/view/{{r._id}}" class="company-result-row  ">
+
+
+
+                    <div class="company-result-left-box">
+
+                        <div class="company-left-col-logo">
+                            <img src="../public/images/companies/fsd-solutions-squarelogo-1505378201511.png">
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+                    <div class="company-result-right-box">
+                        <div class="company-left-job-title">
+
+                            {{r.name}}
+
+                        </div>
+
+
+                        <div class="company-left-title">
+
+                            {{r.postUserDetails.name}}
+
+                        </div>
+
+                        <div class="company-left-city">
+
+                            {{r.location}}
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <div class="date-posted">
+
+
+                        {{r.datePosted}}
+
+
+                    </div>
+
+
+
+
+
+
+
+
+                </a>
+            </div>
+
+
+
+            <div class="blank-height-50">
+
+
+            </div>
+
+        </div>
+
+
+
+
+
+        <div class="search-result-description-right-col   " style="overflow:scroll;">
+
+
+            <div class="right-detail-job-row">
+
+
+                <div class="job-detail-right-head">
+
+                    Software / Sr. Software Developer
+
+                </div>
+
+
+
+
+               <!-- <div class="create-jobs-filter-btn">
+
+                    <button value="Search" class="apply-btn"> Apply Now</button>
+
+                </div>-->
+
+
+                <div class="job-company-right-head">
+
+                    <div>FSD Solutions</div>
+                    <span>Karachi</span>
+
+                </div>
+
+
+            </div>
+
+
+
+
+
+            <div class="jobs-tab-detail-row mCustomScrollbar">
+
+
+                <div class="tab-wrapper">
+
+                    <ul class="tab-menu">
+                        <li class="active">Job</li>
+                        <li>Company</li>
+                        <li>Review</li>
+                    </ul>
+
+
+                    <div class="tab-content">
+
+
+
+
+                        <div>
+
+                            <div class="tab-row">
+
+                                <ul>
+                                    <li>Responsible for performing design and development on one or more Project areas like Functional (Configuration/Scripting), Integration with other Application, Data Migration or Data Conversion etc.</li>
+                                    <li>Responsible for providing effort estimation of design and development tasks. CRM Developer/ Software Developer contributes in documentation of Technical Design. Developer must be well versed with Development Standards.</li>
+                                    <li>Responsible for exploring new technologies coming in CRM space for existing application(s) as well as new application(s) and plan training on them with CRM Manager/CRM Practice Manager based on Company’s strategic objectives.</li>
+                                    <li>Good asp.net, Java, PHP experience (Has worked with web forms, understands the page lifecycle)</li>
+                                    <li>Working with Caching, SQL, T-SQL, C# and ASP.Net</li>
+                                    <li>Good jQuery experience (making Ajax requests with jQuery, working with JSON, manipulating the DOM, working with the callbacks, async versus sync)</li>
+                                    <li>Good understanding of CSS (understands what types of selectors there are, can create their own classes)</li>
+                                    <li>Strong experience with C# (understands OOP concepts, worked with design patterns)</li>
+                                    <li>Strong SQL experience (can write stored procedures, functions, views and tables. Good with troubleshooting SQL performance issues)</li>
+                                    <li>Work with a team of software developers to deliver products on time.</li>
+                                    <li>Excellent knowledge and work experience on designing and developing complex software applications.</li>
+                                    <li>Working understanding of Agile software engineering processes and methodologies.</li>
+                                    <li>Interfacing with Business Analysts to effectively implement business requirements into technology enhancements and new features to improve the platform</li>
+                                    <li>Experience with web based applications is preferred.</li>
+                                </ul>
+
+                            </div>
+
+
+
+
+                        </div>
+
+
+
+
+                        <div>
+
+                            <div class="tab-row">
+
+                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum!
+                            </div>
+
+
+                        </div>
+
+
+
+
+                        <div>
+
+
+                            <div class="tab-row">
+
+                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum!
+                            </div>
+
+
+
+                        </div>
+
+
+
+
+
+
+
+
+
+                    </div>
+                    <!-- //tab-content -->
+
+                </div>
+
+
+
+                <!-- //tab-wrapper -->
+
+
+
+
+
+
+
+
+            </div>
+
+
+
+            <div class="blank-height-50">
+
+
+            </div>
+
+            <div class="blank-height-50">
+
+
+            </div>
+
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+</div>
+
+
+
+
