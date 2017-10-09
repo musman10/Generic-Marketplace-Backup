@@ -18,17 +18,49 @@ module.exports = function(userid,response){
         userid = new ObjectID(userid);
         var query = { postUserId: userid, hasParent: '0' };
 
-        db.collection("Request").find(query).toArray(function(err, res) {
-            if (err) throw err;
-            console.log("1 document inserted");
+        db.collection('Request', function (err, Request) {
+            Request.find(query, function (err, cursor) {
+                var join = new Join(db).on({
+                    field: 'postUserId',
+                    to: '_id',
+                    from: 'User',
+                    as: 'postUserDetails'
+                });
+                console.log("hello");
+                join.toArray(cursor, function (err, joinedDocs) {
+                    // handle array of joined documents here
+                    if (err) throw err;
+                    if (joinedDocs.length == 0) {
+                        db.close();
+                        dto.data = {};
+                        response.send(dto);
+                    }
+                    else {
+                        res = joinedDocs;
+                        addResponse(res, 0, 0, true, false, null, db).then(function () {
 
-            addResponse(res,0,0,true,false,null,db).then(function(){
-                db.close();
-                dto.data = res;
-                response.send(dto);
+                            db.close();
+                            dto.data = res;
+                            response.send(dto);
+                        });
+                    }
+                });
+
             });
-
         });
+
+
+        //db.collection("Request").find(query).toArray(function(err, res) {
+        //    if (err) throw err;
+        //    console.log("1 document inserted");
+        //
+        //    addResponse(res,0,0,true,false,null,db).then(function(){
+        //        db.close();
+        //        dto.data = res;
+        //        response.send(dto);
+        //    });
+        //
+        //});
 
         function addResponse(res,i,j,userIdRequired,isRequestResponseDetail,requestResponseDetail,db) {
             return new Promise(function (resolve, reject) {

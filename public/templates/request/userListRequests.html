@@ -958,7 +958,7 @@
 
                 <div class="job-company-right-head">
 
-                    <div>{{selectedRequest.postusername}}</div>
+                    <div>{{selectedRequest.postUserDetails.name}}</div>
                     <span>Karachi</span>
 
                 </div>
@@ -974,10 +974,10 @@
 
                 <md-content ng-if="!requestSelected">
                     <md-tabs md-dynamic-height md-border-bottom>
-                        <md-tab label="one">
+                        <md-tab label="Details">
                             <md-content class="md-padding">
                                 <p style="visibility: hidden">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla venenatis ante augue. Phasellus Nulla venenatis ante augue. Phasellus </p>
-                                <p>{{selectedRequest.details.description}}</p>
+                                <p>{{selectedRequest.description}}</p>
                             </md-content>
                         </md-tab>
                         <md-tab label="Response">
@@ -990,12 +990,12 @@
                                 </div>
                             </md-content>
                         </md-tab>
-                        <md-tab label="three">
-                            <md-content class="md-padding">
-                                <h1 class="md-display-2">Tab Three</h1>
-                                <p>Integer turpis erat, porttitor vitae mi faucibus, laoreet interdum tellus. Curabitur posuere molestie dictum. Morbi eget congue risus, quis rhoncus quam. Suspendisse vitae hendrerit erat, at posuere mi. Cras eu fermentum nunc. Sed id ante eu orci commodo volutpat non ac est. Praesent ligula diam, congue eu enim scelerisque, finibus commodo lectus.</p>
-                            </md-content>
-                        </md-tab>
+                        <!--<md-tab label="three">-->
+                            <!--<md-content class="md-padding">-->
+                                <!--<h1 class="md-display-2">Tab Three</h1>-->
+                                <!--<p>Integer turpis erat, porttitor vitae mi faucibus, laoreet interdum tellus. Curabitur posuere molestie dictum. Morbi eget congue risus, quis rhoncus quam. Suspendisse vitae hendrerit erat, at posuere mi. Cras eu fermentum nunc. Sed id ante eu orci commodo volutpat non ac est. Praesent ligula diam, congue eu enim scelerisque, finibus commodo lectus.</p>-->
+                            <!--</md-content>-->
+                        <!--</md-tab>-->
                     </md-tabs>
                 </md-content>
 
