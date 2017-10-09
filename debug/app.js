@@ -79085,22 +79085,6 @@ angular.module('angularApp')
         $scope.appType = app.appType;
     }]);
 /**
- * Created by semianchuk on 08.10.16.
- */
-angular.module('angularApp')
-    .factory('mainFactory', [ function () {
-
-        var thisIsPrivate = "mainFactory";
-        
-        function getPrivate() {
-            return thisIsPrivate;
-        }
-
-        return {
-            getPrivate: getPrivate
-        };
-    }]);
-/**
  * Created by semianchuk on 11.10.16.
  */
 angular.module('angularApp')
@@ -79116,6 +79100,22 @@ angular.module('angularApp')
                     getPrivate: getPrivate
                 };
             }
+        };
+    }]);
+/**
+ * Created by semianchuk on 08.10.16.
+ */
+angular.module('angularApp')
+    .factory('mainFactory', [ function () {
+
+        var thisIsPrivate = "mainFactory";
+        
+        function getPrivate() {
+            return thisIsPrivate;
+        }
+
+        return {
+            getPrivate: getPrivate
         };
     }]);
 /**
@@ -79639,6 +79639,7 @@ angular.module('angularApp')
             }
 
             viewPackagesService.insertUserPackges(userPackage).then(function(response){
+                debugger;
                 for(i=0; i<response.insertedData.length; i++){
                     userPackageIds[i] = response.insertedData[i]._id;
                 }
@@ -79648,6 +79649,7 @@ angular.module('angularApp')
                     "tenantId" : $scope.tenantId
                 };
                 viewPackagesService.insertUserBills(userBills).then(function(response){
+                    debugger;
                     userBillId =  response.insertedData[0]._id;
 
                     for(i = 0; i< userPackageIds.length; i++){
@@ -79767,11 +79769,12 @@ angular.module('angularApp')
         }
 
         $scope.update = function(){
-            debugger;
+
             var updatedUser = createObjectService.createFormObject($scope.userConf);
             updatedUser.tenantId = app.tenant._id;
             updatedUser._id = app.loginUser._id;
             updatedUser.dateCreated = new Date(app.loginUser.dateCreated);
+            updatedUser.userType = app.loginUser.userType;
             viewMyProfileService.updateUserProfile(updatedUser).then(function(response){
                 console.log(response);
                 if(response.success == true){
@@ -80905,7 +80908,7 @@ angular.module('angularApp')
                 if(skipPropertyName == true)
                     properties[i].list = "";
 
-                if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
+                if(properties[i] && (properties[i].name != undefined || properties[i].name != null || properties[i].name != "")){
                     if(properties[i].list == "true") {
 
                         if(properties[i].subProperties.length != 0) {
@@ -81124,6 +81127,7 @@ angular.module('angularApp')
 
         this.updateUserProfile = function(updatedUser){
 
+            console.log('INside update service');
             var deferred = $q.defer();
             $http.post(app.baseUrl + "api/user/updateUser" , updatedUser )
                 .then(function(response) {
@@ -81779,45 +81783,6 @@ angular.module('angularApp')
             }
         };
     }]);
-angular.module('angularApp')
-.directive('propertyInput', function () {
-    return {
-        restrict : "E",
-        require: ['^form'],
-        templateUrl : "src/common/directives/propertyInput/propertyInputTemplate.html",
-        scope: {
-            property: '='
-        },
-        controller:"PropertyInputController",
-        link: function(scope, element, attrs, formCtrl) {
-            console.log(formCtrl);
-            scope.form = formCtrl[0];
-        }
-    };
-});
-angular.module('angularApp')
-    .controller('PropertyInputController', [ '$scope', function ($scope) {
-        $scope.description = {
-            message1  : 'My first Angular app',
-            message2 : 'developing for testing'
-        };
-        debugger;
-        if($scope.property.type == 'dateTime'){
-            $scope.property.value = new Date($scope.property.value);
-        }
-
-        $scope.addPropertyInList = function(mainProperty){
-            var property = JSON.stringify(mainProperty);
-            property = JSON.parse(property);
-            property.propertiesList = [];
-            property.id = property.id + "-" + mainProperty.propertiesList.length;
-            mainProperty.propertiesList.push(property);
-        };
-
-        $scope.errorMessage = "form.username.$error";
-
-        //alert($scope.property.name);
-    }]);
 /**
  * Created by asd on 9/6/2017.
  */
@@ -81866,6 +81831,45 @@ debugger;
 
 
 
+    }]);
+angular.module('angularApp')
+.directive('propertyInput', function () {
+    return {
+        restrict : "E",
+        require: ['^form'],
+        templateUrl : "src/common/directives/propertyInput/propertyInputTemplate.html",
+        scope: {
+            property: '='
+        },
+        controller:"PropertyInputController",
+        link: function(scope, element, attrs, formCtrl) {
+            console.log(formCtrl);
+            scope.form = formCtrl[0];
+        }
+    };
+});
+angular.module('angularApp')
+    .controller('PropertyInputController', [ '$scope', function ($scope) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+        debugger;
+        if($scope.property.type == 'dateTime'){
+            $scope.property.value = new Date($scope.property.value);
+        }
+
+        $scope.addPropertyInList = function(mainProperty){
+            var property = JSON.stringify(mainProperty);
+            property = JSON.parse(property);
+            property.propertiesList = [];
+            property.id = property.id + "-" + mainProperty.propertiesList.length;
+            mainProperty.propertiesList.push(property);
+        };
+
+        $scope.errorMessage = "form.username.$error";
+
+        //alert($scope.property.name);
     }]);
 angular.module('angularApp')
     .directive('requestResponse', function () {

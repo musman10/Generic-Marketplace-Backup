@@ -3,7 +3,6 @@
  */
 
 var ObjectID = require('mongodb').ObjectID;
-var mongo = require('mongodb');
 var User = require('../../repository/user.js');
 
 module.exports = function (updatedUser, response) {
@@ -26,8 +25,10 @@ module.exports = function (updatedUser, response) {
         updatedUser.dateLastModified = new Date();
         updatedUser.tenantId = new ObjectID(updatedUser.tenantId);
         updatedUser.dateCreated = new Date(updatedUser.dateCreated);
-        updatedUser.userType = app.loginUser.userType;
+        //updatedUser.userType = updatedUser.userType;
         var newvalues = updatedUser;
+        console.log("update user ", updatedUser);
+        console.log("going to update user ", myquery, " /n new value ", newvalues);
         User.updateOne(myquery, newvalues, function (err, res) {
             try {
                 if (err) throw err;

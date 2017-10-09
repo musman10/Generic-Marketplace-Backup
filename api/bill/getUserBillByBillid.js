@@ -54,7 +54,7 @@ module.exports = function(billid, response){
         }*/
 
 
-    function getBillPackage(userBill,res,i,db) {
+    function getBillPackage(userBill,res,i) {
         return new Promise(function (resolve, reject) {
             var packageQuery = { _id: res[i].userPackageId };
             UserPackages.find(packageQuery).toArray(function(err, result) {
@@ -65,7 +65,7 @@ module.exports = function(billid, response){
                     resolve();
                 }
                 else{
-                    getBillPackage(res,i++,db).then(function(){
+                    getBillPackage(res,i++).then(function(){
                         resolve();
                     }).catch(function(e){
                         console.log(e);

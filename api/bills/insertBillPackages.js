@@ -6,10 +6,10 @@ module.exports = function (userBillPackages, response) {
 
     try {
         for (i = 0; i < userBillPackages.length; i++) {
-            userBillPackages[i].tenantId = new ObjectID(userBillPackages.tenantId);
-            userBillPackages[i].userId = new ObjectID(userBillPackages.userId);
-            userBillPackages[i].userPackageId = new ObjectID(userBillPackages._id);
-            userBillPackages[i].userBillId = new ObjectID(userBillPackages.userBillId);
+            userBillPackages[i].tenantId = new ObjectID(userBillPackages[i].tenantId);
+            userBillPackages[i].userId = new ObjectID(userBillPackages[i].userId);
+            userBillPackages[i].userPackageId = new ObjectID(userBillPackages[i].userPackageId);
+            userBillPackages[i].userBillId = new ObjectID(userBillPackages[i].userBillId);
         }
 
         UserBillPackages.insertMany(userBillPackages, function (err, res) {

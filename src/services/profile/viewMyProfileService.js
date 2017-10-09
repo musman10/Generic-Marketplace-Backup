@@ -13,6 +13,7 @@ angular.module('angularApp')
 
         this.updateUserProfile = function(updatedUser){
 
+            console.log('INside update service');
             var deferred = $q.defer();
             $http.post(app.baseUrl + "api/user/updateUser" , updatedUser )
                 .then(function(response) {

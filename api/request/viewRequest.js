@@ -7,7 +7,7 @@ module.exports = function (reqData, response) {
 
     try {
 
-        id = new ObjectID(reqData.requestId)
+        var id = new ObjectID(reqData.requestId)
         var query = {
             _id: id
         };
@@ -53,7 +53,6 @@ module.exports = function (reqData, response) {
                 if (err) throw err;
                 //console.log("Tenant Id is :"+tenantId);
                 console.log(joinedDocs);
-                db.close();
                 dto.data2 = joinedDocs;
                 response.send(dto);
             } catch (e) {

@@ -94,6 +94,7 @@ angular.module('angularApp')
             }
 
             viewPackagesService.insertUserPackges(userPackage).then(function(response){
+                debugger;
                 for(i=0; i<response.insertedData.length; i++){
                     userPackageIds[i] = response.insertedData[i]._id;
                 }
@@ -103,6 +104,7 @@ angular.module('angularApp')
                     "tenantId" : $scope.tenantId
                 };
                 viewPackagesService.insertUserBills(userBills).then(function(response){
+                    debugger;
                     userBillId =  response.insertedData[0]._id;
 
                     for(i = 0; i< userPackageIds.length; i++){

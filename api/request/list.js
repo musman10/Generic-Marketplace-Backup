@@ -9,38 +9,31 @@ module.exports = function (tenantId, response) {
     //responsePayLoad.response.requestId = new ObjectID(responsePayLoad.response.requestId);
 
     var ObjectID = require('mongodb').ObjectID;
-  /*  var queryRequestId = new ObjectID(responsePayLoad.requestId);
-    var queryWhereClause = {_id: queryRequestId};
-    var queryUpdatedValues = {$push: {userResponses: responsePayLoad.response}, $set: {dateLastModified: new Date()}};*/
+    //var queryRequestId = new ObjectID(responsePayLoad.requestId);
+    //var queryWhereClause = {_id: queryRequestId};
+    //var queryUpdatedValues = {$push: {userResponses: responsePayLoad.response}, $set: {dateLastModified: new Date()}};
 
-    try {
-        tenantId = new ObjectID(tenantId);
-        //var query = { tenantId: tenantId };
-        var query = {$and: [{tenantId: tenantId}, {hasParent: "0"}]};
-        var cursor = Request.find(query);
-        var joinQuery = {
-            field: 'postUserId', // <- field in request doc
-            to: '_id',         // <- field in user doc. treated as ObjectID automatically.
-            from: 'User',  // <- collection name for user doc
-            as: 'requestdetails'
-        };
-        var join = Request.joinOn(joinQuery);
-        join.toArray(cursor, function (err, joinedDocs) {
-            // handle array of joined documents here
-            if (err) throw err;
-            //console.log("Tenant Id is :"+tenantId);
-            console.log(joinedDocs);
 
-            dto.data = joinedDocs;
-            response.send(dto);
-        });
-    }catch(e){
+    tenantId = new ObjectID(tenantId);
+    //var query = { tenantId: tenantId };
+    var query = {$and: [{tenantId: tenantId}, {hasParent: "0"}]};
+    var cursor = Request.find(query);
+    var joinQuery =  {
+        field: 'postUserId', // <- field in request doc
+        to: '_id',         // <- field in user doc. treated as ObjectID automatically.
+        from: 'User',  // <- collection name for user doc
+        as: 'requestdetails'
+    };
+    var join = Request.joinOn(joinQuery);
+    join.toArray(cursor, function (err, joinedDocs) {
+        // handle array of joined documents here
+        if (err) throw err;
+        //console.log("Tenant Id is :"+tenantId);
+        console.log(joinedDocs);
 
-        dto.success = false;
-        dto.error.push("Some error occured!");
-        console.log(e.toString());
+        dto.data = joinedDocs;
         response.send(dto);
-    }
+    });
 
 
 /*

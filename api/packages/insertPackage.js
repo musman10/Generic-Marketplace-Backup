@@ -6,9 +6,9 @@ module.exports = function(userPackage , response){
 
     try {
         for (i = 0; i < userPackage.length; i++) {
-            userPackage[i].tenantId = new ObjectID(userPackage.tenantId);
-            userPackage[i].userId = new ObjectID(userPackage.userId);
-            userPackage[i].packageId = new ObjectID(userPackage._id);
+            userPackage[i].tenantId = new ObjectID(userPackage[i].tenantId);
+            userPackage[i].userId = new ObjectID(userPackage[i].userId);
+            userPackage[i].packageId = new ObjectID(userPackage[i]._id);
             userPackage[i].datePurchased = new Date();
             userPackage[i].dateExpiryUserPackage = new Date(userPackage[i].dateExpiryUserPackage);
         }

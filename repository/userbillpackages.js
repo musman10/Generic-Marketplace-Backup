@@ -22,5 +22,7 @@ UserBillPackages.prototype.insert = function(query, next){
 UserBillPackages.prototype.updateOne = function(query, update, next){
     Generic.updateOne('UserBillPackages', query, update, next);
 }
-
+UserBillPackages.prototype.insertMany = function(query, update, next){
+    Generic.insertMany('UserBillPackages', query, update, next);
+}
 module.exports = new UserBillPackages();

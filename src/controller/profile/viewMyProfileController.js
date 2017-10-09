@@ -79,11 +79,12 @@ angular.module('angularApp')
         }
 
         $scope.update = function(){
-            debugger;
+
             var updatedUser = createObjectService.createFormObject($scope.userConf);
             updatedUser.tenantId = app.tenant._id;
             updatedUser._id = app.loginUser._id;
             updatedUser.dateCreated = new Date(app.loginUser.dateCreated);
+            updatedUser.userType = app.loginUser.userType;
             viewMyProfileService.updateUserProfile(updatedUser).then(function(response){
                 console.log(response);
                 if(response.success == true){

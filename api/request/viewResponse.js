@@ -167,7 +167,7 @@ module.exports = function (listRequestPayload, response) {
                 else {
 
                     dbTaskDone = 1;
-                    if (err) throw err;
+
                     if (requestResponseDetail.userResponses.length != 0) {
                         var uid = new ObjectID(requestResponseDetail.userResponses[j].userId);
                         var rid = new ObjectID(requestResponseDetail.userResponses[j].requestId);

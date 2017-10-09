@@ -30,7 +30,7 @@ angular.module('angularApp')
                 if(skipPropertyName == true)
                     properties[i].list = "";
 
-                if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
+                if(properties[i] && (properties[i].name != undefined || properties[i].name != null || properties[i].name != "")){
                     if(properties[i].list == "true") {
 
                         if(properties[i].subProperties.length != 0) {

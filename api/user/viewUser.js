@@ -1,7 +1,7 @@
+var User = require('../../repository/user');
 module.exports = function (userData, response) {
 
     var dto = {success: true, error: [], status: 200};
-    var Join = require('mongo-join').Join;
     var ObjectID = require('mongodb').ObjectID;
 
     try {

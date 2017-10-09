@@ -16,6 +16,7 @@ module.exports = function (listRequestPayload, response) {
         queryList.push(queryExpression);
     }
     var query = {$or: queryList};
+    console.log(query);
 
     Request.find(query).toArray(function (err, res) {
         try {
@@ -23,8 +24,10 @@ module.exports = function (listRequestPayload, response) {
             console.log("1 document inserted");
 
             if (res.length > 0) {
+                console.log('res > 0');
                 addResponse(res, 0, 0, true, false, null).then(function () {
                     dto.data = res;
+                    console.log('res ye', res);
                     response.send(dto);
                 }).catch(function (e) {
                     console.log(e);
@@ -83,7 +86,7 @@ module.exports = function (listRequestPayload, response) {
                         as: 'postUserDetails'
                     };
                     console.log("hello");
-                    var joint = Request.joinOn(joinQuery);
+                    var join = Request.joinOn(joinQuery);
                     join.toArray(cursor, function (err, joinedDocs) {
                         // handle array of joined documents here
                         if (err) throw err;

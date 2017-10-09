@@ -3,24 +3,27 @@
  */
 var Generic = require('./generic');
 
-var UserBill = function(){
+var UserBills = function(){
 
 }
 
-UserBill.prototype.findOne = function(query, next) {
-    Generic.findOne('UserBill', query, next);
+UserBills.prototype.findOne = function(query, next) {
+    Generic.findOne('UserBills', query, next);
 }
-UserBill.prototype.find = function(query){
-    return Generic.find('UserBill', query);
+UserBills.prototype.find = function(query){
+    return Generic.find('UserBills', query);
 }
-UserBill.prototype.joinOn = function(query){
+UserBills.prototype.joinOn = function(query){
     return Generic.joinOn(query);
 }
-UserBill.prototype.insert = function(query, next){
-    Generic.insert('UserBill', query, next);
+UserBills.prototype.insert = function(query, next){
+    Generic.insert('UserBills', query, next);
 }
-UserBill.prototype.updateOne = function(query, update, next){
-    Generic.updateOne('UserBill', query, update, next);
+UserBills.prototype.updateOne = function(query, update, next){
+    Generic.updateOne('UserBills', query, update, next);
+}
+UserBills.prototype.insertOne = function(query, next){
+    Generic.insertOne('UserBills', query, next);
 }
 
-module.exports = new UserBill();
+module.exports = new UserBills();
