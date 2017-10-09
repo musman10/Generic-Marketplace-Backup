@@ -1,5 +1,11 @@
-<md-dialog aria-label="Mango (Fruit)">
+<md-dialog aria-label="Post a Job" style="height: 100%; width:100%">
+
+    <!--
+        <trix-editor angular-trix ng-model="foo"></trix-editor>
+    -->
+<!--
     <form ng-cloak>
+-->
       <!--  <md-toolbar>
         <div class="md-toolbar-tools">
             <h2>Mango (Fruit)</h2>
@@ -42,26 +48,144 @@
         </md-dialog-actions>-->
 
 
-        <select ng-model="postRequestType" ng-change="loadPostRequestForm(postRequestType)">
+       <!-- <select ng-model="postRequestType" ng-change="loadPostRequestForm(postRequestType)">
             <option ng-repeat="postRequestType in postRequestTypes" value="{{postRequestType}}">{{postRequestType}}</option>
-        </select>
+        </select>-->
 
-        <h2>{{requestConf.name}}</h2>
+      <!--  <h2>{{requestConf.name}}</h2>
 
-        <md-card style="margin:0px;padding:10px">
+        <md-card style="padding:10px; margin:90px;">
 
-            <form name="form">
+            <form name="form" style="text-align: center;">
                 <div ng-repeat="p in requestConf.properties">
                     <property-input property="p"></property-input>
                 </div>
 
             </form>
 
-            <!--{{userConf.properties}}-->
+            &lt;!&ndash;{{userConf.properties}}&ndash;&gt;
         </md-card>
 
-        <md-button class="md-primary md-raised" ng-click="post()" ng-disabled="form.$invalid || requestType == ''" style="margin-left:0px">Post</md-button>
+        <md-button class="md-primary md-raised" ng-click="post()" ng-disabled="form.$invalid || requestType == ''">Post</md-button>-->
 
+
+<!--
+    </form>
+-->
+
+
+<!--
+<md-card style="margin-left:50px; margin-right:50px;">
+-->
+
+    <h1 class="main-h1" style="text-align: center">Post a Job</h1>
+    <!--<p class="gray-text">
+
+        Please fill out all the fields
+
+    </p>-->
+
+    <form style="text-align: center; padding: 50px">
+
+        <div class="form-row">
+
+            <div class="group">
+                <input type="text" required="" ng-model="requestPost.name">
+                <span class="highlight"></span>
+                <span class="bar"></span>
+                <label>Job Title</label>
+            </div>
+
+        </div>
+
+
+        <div class="form-row">
+
+            <div class="group">
+                <input type="text" required="" ng-model="requestPost.location">
+                <span class="highlight"></span>
+                <span class="bar"></span>
+                <label>Location</label>
+            </div>
+
+        </div>
+
+
+        <div class="form-row">
+
+            <div class="group">
+                <trix-editor angular-trix ng-model="requestPost.description"></trix-editor>
+                <!--<input type="textbox" required="" ng-model="requestPost.description">-->
+                <span class="highlight"></span>
+                <span class="bar"></span>
+                <label>Job Description </label>
+            </div>
+
+        </div>
+
+        <div class="form-row">
+
+            <div class="group">
+                <select ng-model="requestPost.taskType">
+                    <option disbaled>Choose Job Type</option>
+                    <option value="Full Time">Full Time</option>
+                    <option value="Part Time">Part Time</option>
+                </select>
+            </div>
+
+        </div>
+
+
+        <div class="form-row">
+
+            <div class="group">
+                <select ng-model="requestPost.experience">
+                    <option disbaled>Minimum Experience</option>
+                    <option value="0 to 1 years">0 to 1 years</option>
+                    <option value="2 to 5 years">2 to 5 years</option>
+                    <option value="6 to 10 years">6 to 10 years</option>
+                    <option value="More than 10 years">More than 10 years</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="form-row">
+
+            <div class="group">
+                <input type="text" required="" ng-model="requestPost.salary">
+                <span class="highlight"></span>
+                <span class="bar"></span>
+                <label>Salary (in USD)</label>
+            </div>
+
+        </div>
+
+        <div class="form-row">
+
+            <div class="group">
+                <input type="text" required="" ng-model="requestPost.qualification">
+                <span class="highlight"></span>
+                <span class="bar"></span>
+                <label>Qualification</label>
+            </div>
+
+        </div>
+
+
+
+
+        <div class="submit-button-row">
+
+            <input type="button" name="" value="Post" class="submit-form-btn" ng-click="post()">
+
+        </div>
 
     </form>
+
+
+
+<!--
+</md-card>
+-->
 </md-dialog>

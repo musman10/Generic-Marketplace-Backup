@@ -41,17 +41,34 @@ angular.module('angularApp')
 
             $scope.dialogtest = "test dialog";
 
-            $scope.requestType = "";
-            $scope.requestConf;
+            /* Post request code*/
+            $scope.requestType = "Task";
+            $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
 
-            $scope.postRequestTypes = mainService.getRequestConfsByUserType(app.loginUser.userType);
+            $scope.requestPost = {};
+            $scope.requestPost.name= "";
+            $scope.requestPost.location= "";
+            $scope.requestPost.description= "";
+            $scope.requestPost.taskType= "Choose Job Type";
+            $scope.requestPost.experience= "Minimum Experience";
+            $scope.requestPost.qualification= "";
+            $scope.requestPost.salary= "";
 
-            $scope.loadPostRequestForm = function(postRequestType){
-                $scope.requestType = postRequestType;
+            $scope.requestPost.postUserId = app.loginUser._id;
+            $scope.requestPost.userResponses = [];
+            $scope.requestPost.requestType = $scope.requestType ;
+            $scope.requestPost.hasParent = $scope.requestConf.hasParent;
+
+
+            //$scope.postRequestTypes = mainService.getRequestConfsByUserType(app.loginUser.userType);
+
+            /*$scope.loadPostRequestForm = function(){
+                //$scope.requestType = postRequestType;
+                $scope.requestType = "Task";
                 debugger;
                 $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
             };
-
+            $scope.loadPostRequestForm();*/
             $scope.post = function(){
                 var loader = $mdDialog;
              /*   loader.show({
@@ -67,7 +84,9 @@ angular.module('angularApp')
                     '</md-dialog>'
                 });*/
 
-                $scope.request = createObjectService.createFormObject($scope.requestConf);
+
+
+                /*$scope.request = createObjectService.createFormObject($scope.requestConf);
                 var formJSON = JSON.stringify($scope.request);
                 formJSON = formJSON.substring(0, formJSON.length - 1);
                 formJSON = formJSON + ",";
@@ -76,10 +95,10 @@ angular.module('angularApp')
                 formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '",';
                 formJSON = formJSON + '"hasParent":' + '"' + $scope.requestConf.hasParent + '"';
                 formJSON = formJSON + '}';
-                $scope.request = JSON.parse(formJSON);
-                requestPostService.postRequest($scope.request).then(function(response){
+                $scope.request = JSON.parse(formJSON);*/
+                debugger;
+                requestPostService.postRequest($scope.requestPost).then(function(response){
                     $mdDialog.hide();
-                    debugger;
                     //loader.hide();
                     var str = JSON.stringify(response);
                     console.log(str);
@@ -114,7 +133,7 @@ angular.module('angularApp')
                         alert(response.error[0]);
                     }
                 });
-                console.log(formJSON);
+               // console.log(formJSON);
             };
 
 
