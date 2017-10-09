@@ -1,4 +1,4 @@
-<md-dialog aria-label="Post a Job" style="height: 100%; width:100%">
+<md-dialog aria-label="Post a Job" style="height: 100%; width:100%;" >
 
     <!--
         <trix-editor angular-trix ng-model="foo"></trix-editor>
@@ -77,6 +77,8 @@
 <!--
 <md-card style="margin-left:50px; margin-right:50px;">
 -->
+    <div class="contact-form">
+
 
     <h1 class="main-h1" style="text-align: center">Post a Job</h1>
     <!--<p class="gray-text">
@@ -85,7 +87,7 @@
 
     </p>-->
 
-    <form style="text-align: center; padding: 50px">
+    <form style="">
 
         <div class="form-row">
 
@@ -114,11 +116,11 @@
         <div class="form-row">
 
             <div class="group">
-                <trix-editor angular-trix ng-model="requestPost.description"></trix-editor>
+                <trix-editor class="trix-content" angular-trix ng-model="requestPost.description" placeholder="Job Description"></trix-editor>
                 <!--<input type="textbox" required="" ng-model="requestPost.description">-->
                 <span class="highlight"></span>
                 <span class="bar"></span>
-                <label>Job Description </label>
+                <label> </label>
             </div>
 
         </div>
@@ -183,7 +185,7 @@
 
     </form>
 
-
+</div>
 
 <!--
 </md-card>
