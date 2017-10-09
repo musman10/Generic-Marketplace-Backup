@@ -27,6 +27,21 @@ angular.module('angularApp')
             }
         }
 
+        $scope.selectedRequestId = "";
+        $scope.selectedRequest = {};
+        $scope.selectTask = function(requestId){
+            debugger;
+            $scope.selectedRequestId = requestId;
+            for(i=0;i<$scope.requests.length;i++){
+
+                if($scope.requests[i]._id == requestId){
+                    $scope.selectedRequest = $scope.requests[i];
+                    break;
+                }
+
+            }
+        }
+
 
         $scope.listRequestsByUserId = function(userId){
             debugger;

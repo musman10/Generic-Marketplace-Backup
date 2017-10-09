@@ -409,7 +409,7 @@
 
             <div ng-repeat="r in requests">
 
-                <a href="/request/view/{{r._id}}" class="company-result-row  ">
+                <a class="company-result-row  " ng-click="selectTask(r._id)">
 
 
 
@@ -490,7 +490,7 @@
 
                 <div class="job-detail-right-head">
 
-                    Software / Sr. Software Developer
+                    {{selectedRequest.name}}
 
                 </div>
 
@@ -506,7 +506,7 @@
 
                 <div class="job-company-right-head">
 
-                    <div>FSD Solutions</div>
+                    <div>{{selectedRequest.postUserDetails.name}}</div>
                     <span>Karachi</span>
 
                 </div>
@@ -520,94 +520,37 @@
 
             <div class="jobs-tab-detail-row mCustomScrollbar">
 
+                <md-content ng-if="!requestSelected">
+                    <md-tabs md-dynamic-height md-border-bottom>
+                        <md-tab label="one">
+                            <md-content class="md-padding">
+                                <p style="visibility: hidden">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla venenatis ante augue. Phasellus Nulla venenatis ante augue. Phasellus </p>
+                                <p>{{selectedRequest.details.description}}</p>
+                            </md-content>
+                        </md-tab>
+                        <md-tab label="Response">
+                            <md-content class="md-padding">
+                                <p style="visibility: hidden">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla venenatis ante augue. Phasellus Nulla venenatis ante augue. Phasellus
+                                </p>
+                                <h1>User Responses</h1>
+                                <div ng-repeat="response in selectedRequest.userResponses">
+                                    <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
+                                </div>
+                            </md-content>
+                        </md-tab>
+                        <md-tab label="three">
+                            <md-content class="md-padding">
+                                <h1 class="md-display-2">Tab Three</h1>
+                                <p>Integer turpis erat, porttitor vitae mi faucibus, laoreet interdum tellus. Curabitur posuere molestie dictum. Morbi eget congue risus, quis rhoncus quam. Suspendisse vitae hendrerit erat, at posuere mi. Cras eu fermentum nunc. Sed id ante eu orci commodo volutpat non ac est. Praesent ligula diam, congue eu enim scelerisque, finibus commodo lectus.</p>
+                            </md-content>
+                        </md-tab>
+                    </md-tabs>
+                </md-content>
 
-                <div class="tab-wrapper">
-
-                    <ul class="tab-menu">
-                        <li class="active">Job</li>
-                        <li>Company</li>
-                        <li>Review</li>
-                    </ul>
-
-
-                    <div class="tab-content">
-
-
-
-
-                        <div>
-
-                            <div class="tab-row">
-
-                                <ul>
-                                    <li>Responsible for performing design and development on one or more Project areas like Functional (Configuration/Scripting), Integration with other Application, Data Migration or Data Conversion etc.</li>
-                                    <li>Responsible for providing effort estimation of design and development tasks. CRM Developer/ Software Developer contributes in documentation of Technical Design. Developer must be well versed with Development Standards.</li>
-                                    <li>Responsible for exploring new technologies coming in CRM space for existing application(s) as well as new application(s) and plan training on them with CRM Manager/CRM Practice Manager based on Company’s strategic objectives.</li>
-                                    <li>Good asp.net, Java, PHP experience (Has worked with web forms, understands the page lifecycle)</li>
-                                    <li>Working with Caching, SQL, T-SQL, C# and ASP.Net</li>
-                                    <li>Good jQuery experience (making Ajax requests with jQuery, working with JSON, manipulating the DOM, working with the callbacks, async versus sync)</li>
-                                    <li>Good understanding of CSS (understands what types of selectors there are, can create their own classes)</li>
-                                    <li>Strong experience with C# (understands OOP concepts, worked with design patterns)</li>
-                                    <li>Strong SQL experience (can write stored procedures, functions, views and tables. Good with troubleshooting SQL performance issues)</li>
-                                    <li>Work with a team of software developers to deliver products on time.</li>
-                                    <li>Excellent knowledge and work experience on designing and developing complex software applications.</li>
-                                    <li>Working understanding of Agile software engineering processes and methodologies.</li>
-                                    <li>Interfacing with Business Analysts to effectively implement business requirements into technology enhancements and new features to improve the platform</li>
-                                    <li>Experience with web based applications is preferred.</li>
-                                </ul>
-
-                            </div>
-
-
-
-
-                        </div>
-
-
-
-
-                        <div>
-
-                            <div class="tab-row">
-
-                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum!
-                            </div>
-
-
-                        </div>
-
-
-
-
-                        <div>
-
-
-                            <div class="tab-row">
-
-                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum! Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis exercitationem minima quisquam ex earum sapiente, debitis ipsum quidem optio rerum!
-                            </div>
-
-
-
-                        </div>
-
-
-
-
-
-
-
-
-
-                    </div>
-                    <!-- //tab-content -->
-
-                </div>
-
-
-
-                <!-- //tab-wrapper -->
-
+                <!--&lt;!&ndash; //tab-wrapper &ndash;&gt;-->
+                <!--<md-content ng-if="requestSelected">-->
+                <!--No Request Selected-->
+                <!--</md-content>-->
 
 
 
