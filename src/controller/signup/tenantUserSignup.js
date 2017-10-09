@@ -15,7 +15,7 @@ angular.module('angularApp')
         $scope.user.fullName = "";
         $scope.user.password = "";
         $scope.user.phoneNumber = "";
-        $scope.user.companyName = "";
+        $scope.user.name = "";
         $scope.user.countryName = "";
         $scope.user.source = "";
         $scope.user.numberOfEmployees = "";
@@ -24,8 +24,8 @@ angular.module('angularApp')
 
     }
     else if($scope.userType == "Sider"){
-        $scope.user.firstName = "";
-        $scope.user.lastName = "";
+        $scope.user.name = "";
+        //$scope.user.lastName = "";
         $scope.user.gender = "I am a";
         $scope.user.email = "";
         $scope.user.phoneNumber = "";
