@@ -1,86 +1,73 @@
-<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
-    <h3 class="md-display-1">View User</h3>
-</md-toolbar>
-<div ng-cloak>
-    <md-content>
-        <md-tabs md-dynamic-height md-border-bottom>
-            <md-tab label="USER DETAILS">
-                <md-content class="md-padding">
-                    <form name="form">
-                        <table class="table">
+<style>
 
-                            <tr ng-repeat="(key, value) in result" property-display="row" property="value" data="key">
-                                <!--<tr ng-repeat="l in list" class="row" name="test">-->
-                                <!--<property-display property="key" data="value"></property-display>-->
-                                <!--</tr>-->
-                            </tr>
+    tr.spaceUnder>td {
+        padding-bottom: 1.5em;
+    }
 
-                        </table>
-                    </form>
-                </md-content>
-            </md-tab>
-            <md-tab label="REQUEST DETAILS">
-              <!--  <li ng-if="postRequestPermission">
-                    <a href="/user/list/post/request">
-                        <i class="sidebar-icon md-drafts"></i>
-                        My Requests
-                    </a>
-                </li>-->
-                <div ng-repeat="r in requests">
-                    <details>
-                        <summary>
-                            <ul>
-                                <li class="titleName"><a href="/request/view/{{r._id}}">{{r.name}}</a></li>
-                                <li class="titleValue"> {{r.datePosted}}</li>
-                                <!--<li class="titleValue"> {{response.requestDetails.postUserDetails.userType}}</li>-->
-                                <li></li>
-                            </ul>
-                        </summary>
-                        <div class="content">
-                            <div ng-repeat="reqResponse in requestResponses">
-                                <!--
-                                                <div ng-if="reqResponse.request.name == r.requestType && r.userResponded == false">
-                                                    <br>
-                                                    <select ng-model="response" ng-change="respondRequest(r,response)">
-                                                        <option ng-repeat="response in reqResponse.responses" value="{{response}}">{{response.name}}</option>
-                                                    </select>
-                                                </div>
-                                -->
-                                <!--<div ng-if="r.userResponded == true">-->
-                                <div ng-repeat="response in r.userResponses">
-                                    <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
-                                </div>
-                                <!--</div>-->
-                            </div>
-                        </div>
-                    </details>
-                </div>
-              <!--  <md-content class="md-padding">
-                    <h1>User Responses</h1>
-                    <div ng-repeat="response in responses[0].userResponses">
-                        <request-response-expansion response="response"></request-response-expansion>
-                    </div>
-                </md-content>-->
-            </md-tab>
-            <md-tab label="ACTIVITY LOGS">
-                <md-content class="md-padding">
-                    COMING SOON
-                </md-content>
-            </md-tab>
-        </md-tabs>
-    </md-content>
+</style>
+
+
+<div class="full-width-container-nopadding white-bg ng-scope" style="margin-top:30px;">
+
+    <div style="margin:30px">
+
+        <div class="search-result-left-col  mCustomScrollbar" >
+<!--<div style=" margin-bottom: 30px; text-align: center">
+    <span style="font-size: 30px;font-weight: bolder; ">Profile</span>
+</div>-->
+
+            <h1 class="main-h1" >Profile</h1>
+
+
+                                <form name="form">
+
+                                    <div class="row">
+
+                                    <div class="col-md-4" >
+                                        <img style="height:200px; width:200px;" src="../public/images/avatar.png">
+                                    </div>
+
+                                    <div class="col-md-8" >
+
+                                    <table class="table" style="width:100%">
+
+                                        <tr ng-repeat="(key, value) in result" property-display="row" property="value" data="key" class="spaceUnder">
+                                            <!--<tr ng-repeat="l in list" class="row" name="test">-->
+                                            <!--<property-display property="key" data="value"></property-display>-->
+                                            <!--</tr>-->
+                                        </tr>
+
+                                    </table>
+                                    </div>
+                                    </div>
+                                </form>
+
+
+
+
+            <!--
+            <table class="table table-striped table-bordered table-hover" show-filter="true">
+                <tr ng-repeat="(key, value) in result">
+                    <property-display property="value" data="key"></property-display>
+                    {{key}}
+                  &lt;!&ndash;  <td data-title="'Name'" filter="{ reqname: 'text'}" sortable="'reqname'">
+                       {{key}}
+                    </td>
+                    <td data-title="'Posted By'" filter="{username:'text'}" sortable="'username'">
+                        {{value}}
+                    </td>&ndash;&gt;
+                </tr>
+            </table>-->
+
+
+
+
+
+    </div>
+
+
+
+    </div>
+
+
 </div>
-
-<!--
-<table class="table table-striped table-bordered table-hover" show-filter="true">
-    <tr ng-repeat="(key, value) in result">
-        <property-display property="value" data="key"></property-display>
-        {{key}}
-      &lt;!&ndash;  <td data-title="'Name'" filter="{ reqname: 'text'}" sortable="'reqname'">
-           {{key}}
-        </td>
-        <td data-title="'Posted By'" filter="{username:'text'}" sortable="'username'">
-            {{value}}
-        </td>&ndash;&gt;
-    </tr>
-</table>-->

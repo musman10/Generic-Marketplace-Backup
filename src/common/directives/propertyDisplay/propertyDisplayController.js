@@ -7,11 +7,17 @@ angular.module('angularApp')
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
-debugger;
+        debugger;
 
-        $scope.isArray=function(type){
-           if( angular.isArray(type))
-               return true;
+        $scope.isArray=function(type) {
+            if (angular.isArray(type)) {
+            $scope.columns = type.length;
+            $scope.lastColumnWidth = 100 - [($scope.columns - 1) * 20];
+            $scope.columnWidth = (100 - $scope.lastColumnWidth)/($scope.columns - 1);
+                $scope.lastColumnWidth = $scope.lastColumnWidth.toString() + "%;";
+                $scope.columnWidth = $scope.columnWidth.toString() + "%;";
+            return true;
+            }
             else
                return false;
         }
@@ -23,6 +29,6 @@ debugger;
                 return false;
         }
 
-
+        /**/
 
     }]);

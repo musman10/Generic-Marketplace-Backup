@@ -4,6 +4,7 @@ angular.module('angularApp')
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
+        $scope.userID = app.loginUser._id;
         $scope.appType = app.appType;
         if($scope.appType == "admin") {
             $scope.headTitle = "Generic Marketplace";

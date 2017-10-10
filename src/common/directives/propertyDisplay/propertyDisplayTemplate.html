@@ -52,7 +52,7 @@
 
 {{keyRequired}}
 <td  style="width: 20%; border:0;" ng-if="data != null">
-    {{data}}
+   <span style="font-size:20px; font-weight: bold"> {{data}} </span>
 </td>
 <!--<td  colspan="2">-->
 
@@ -63,10 +63,12 @@
     <div ng-if="isObject(property)">
         <div ng-if="isArray(property)">
             <div ng-if="property.length != 0">
-            <table style="background-color: transparent;" class="table " ng-if="isObject(property[0])">
+            <table style="background-color: transparent; width: 100%" class="table " ng-if="isObject(property[0])">
                 <thead>
-                    <tr ng-repeat="p in property track by $index" ng-if="$index == 0">
-                        <th style="width: 20px; padding:10px" ng-repeat="(keyIn, valueIn) in p" property-display="row" data="keyIn">
+                    <tr ng-repeat="p in property track by $index" ng-if="$index == 0" style="text-align: left">
+                        <th style="{{'width:'+ columnWidth + 'padding-bottom:20px; text-align:left; '}}" ng-repeat="(keyIn, valueIn) in p" property-display="row" data="keyIn" ng-if="$index!=columns-1">
+                        </th>
+                        <th style="{{'width:'+ lastColumnWidth +  'text-align:left;'}}" ng-repeat="(keyIn, valueIn) in p" property-display="row" data="keyIn" ng-if="$index==columns-1">
                         </th>
                     </tr>
                 </thead>
@@ -78,8 +80,8 @@
                         <!--<br>-->
                 </tr>
                 </tbody>
-            </table>
-                <table style="background-color: transparent;" class="table " ng-if="!isObject(property[0])">
+            </table >
+                <table style="background-color: transparent; width: 100%    " class="table " ng-if="!isObject(property[0])">
                     <tbody>
                     <tr ng-repeat="p in property" property-display="row" property="p">
 
@@ -90,7 +92,7 @@
         </div>
         <!--</div>-->
         <div ng-if="!(isArray(property))">
-            <table style="background-color: transparent;" class="table">
+            <table style="background-color: transparent; width: 100%" class="table">
             <!--<div ng-repeat="p in property">-->
             <tr ng-repeat="(keyIn, valueIn) in property" property-display="row" property="valueIn" data="keyIn">
             </tr>
