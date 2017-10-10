@@ -977,7 +977,8 @@
                         <md-tab label="Details">
                             <md-content class="md-padding">
                                 <p style="visibility: hidden">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla venenatis ante augue. Phasellus Nulla venenatis ante augue. Phasellus </p>
-                                <p>{{selectedRequest.description}}</p>
+                               <!-- <p>{{selectedRequest.description}}</p>-->
+<div ng-bind-html="selectedRequest.description"></div>
                             </md-content>
                         </md-tab>
                         <md-tab label="Response">
