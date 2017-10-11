@@ -21,16 +21,29 @@ module.exports = function(request,response){
     request.dateLastModified = date;
 
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-
-        db.collection("Request").insertOne(request, function(err, res) {
+        try {
             if (err) throw err;
-            console.log("1 document inserted");
+            db.collection("Request").insertOne(request, function (err, res) {
+                try {
+                    if (err) throw err;
+                    console.log("1 document inserted");
+                    db.close();
+                    dto = {success: true, error: [], status: 200};
+                    dto.data = res;
+                    response.send(dto);
+                }catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+            });
+        }catch(e){
             db.close();
-            dto = {success:true,error:[],status:200};
-            dto.data = res;
+            dto.success = false;
+            dto.error.push(e.toString());
             response.send(dto);
-        });
+        }
     });
 
 }

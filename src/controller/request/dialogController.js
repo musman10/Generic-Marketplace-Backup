@@ -40,9 +40,15 @@ angular.module('angularApp')
             };
 
             $scope.dialogtest = "test dialog";
-
+debugger;
             /* Post request code*/
-            $scope.requestType = "Task";
+            //$scope.requestType = "Recruitment";
+            for(i=0; i<app.tenant.requests.length; i++){
+              if(app.tenant.requests[i].hasParent == 0){
+                  $scope.requestType = app.tenant.requests[i].name;
+                  break;
+              }
+            }
             $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
 
             $scope.requestPost = {};

@@ -25,7 +25,9 @@
     "gulp-uglify": "^2.1.2",
     "ng-table": "^3.0.1",
     "path": "*",
-    "path-exists": "*"
+    "path-exists": "*",
+    "promise" : "8.0.1",
+    "mongo-join" : "1.0.0"
   },
   "devDependencies": {
     "gulp-debug": "^3.1.0"

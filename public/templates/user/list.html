@@ -12,6 +12,15 @@
             <td data-title="'Name'" filter="{ username: 'text'}" sortable="'username'">
                 <a href=/user/view/{{user._id}}>{{user.name}}</a>
             </td>
+            <td data-title="'Type'" filter="{ userType: 'text'}" sortable="'userType'">
+                {{user.userType}}
+            </td>
+            <td data-title="'Creation Date'" filter="{ dateCreated: 'text'}" sortable="'dateCreated'">
+                {{user.dateCreated}}
+            </td>
+            <td data-title="'Modification Date'" filter="{ dateLastModified: 'text'}" sortable="'dateLastModified'">
+                {{user.dateLastModified}}
+            </td>
 
         </tr>
     </table>

@@ -17,6 +17,7 @@ module.exports = function(loginUser,response){
     var user = "";
 
     MongoClient.connect(url, function(err, db) {
+        try {
         if (err) throw err;
         console.log("Mongo");
         if(loginUser.isAdmin == true){
@@ -44,46 +45,66 @@ module.exports = function(loginUser,response){
         }
 
         //check exists
-        db.collection("User").findOne(queryExist, function(err, result) {
 
-            if (err) throw err;
-            console.log(result);
-            if(result == null){
-                dto.success = false;
-                dto.error.push("User name password does not exist");
-                response.send(dto);
-            }
-            else{
-                //
-                db.collection("User").findOne(query, function (err, result) {
-
+            db.collection("User").findOne(queryExist, function (err, result) {
+                try {
                     if (err) throw err;
                     console.log(result);
                     if (result == null) {
                         dto.success = false;
-                        dto.error.push("User name password does not match");
+                        dto.error.push("User name password does not exist");
                         response.send(dto);
                     }
                     else {
-                        dto.data = result;
-                        response.send(dto);
+                        //
+                        db.collection("User").findOne(query, function (err, result) {
+                            try {
+                                if (err) throw err;
+                                console.log(result);
+                                if (result == null) {
+                                    dto.success = false;
+                                    dto.error.push("User name password does not match");
+                                    response.send(dto);
+                                }
+                                else {
+                                    dto.data = result;
+                                    response.send(dto);
+                                }
+                                user = result;
+                                    // dto.users = result;
+                                db.close();
+                                    //return dto;
+                                    // res.send(dto);
+                            }catch(e){
+                                db.close();
+                                dto.success = false;
+                                dto.error.push(e.toString());
+                                response.send(dto);
+                            }
+                        });
+
+                        //
+                        //dto.data = result;
+                        //response.send(dto);
                     }
                     user = result;
                     // dto.users = result;
                     db.close();
                     //return dto;
                     // res.send(dto);
-                });
-                //
-                //dto.data = result;
-                //response.send(dto);
-            }
-            user = result;
-            // dto.users = result;
+                }catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+            });
+        } catch(e){
             db.close();
-            //return dto;
-            // res.send(dto);
-        });
+            dto.success = false;
+            dto.error.push(e.toString());
+            response.send(dto);
+        }
 
     });
 

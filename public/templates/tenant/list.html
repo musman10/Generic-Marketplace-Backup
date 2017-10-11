@@ -12,8 +12,11 @@
             <td data-title="'Name'" filter="{ name: 'text'}" sortable="'name'">
                 <a href=tenant/view/{{tenant._id}}>{{tenant.name}}</a>
             </td>
-            <td data-title="'Publish Date'" filter="{ publishdate: 'text'}" sortable="'publishdate'">
-                01/01/2017
+            <td data-title="'Creation Date'" filter="{ dateCreated: 'text'}" sortable="'dateCreated'">
+                {{tenant.dateCreated}}
+            </td>
+            <td data-title="'Modification Date'" filter="{ dateLastModified: 'text'}" sortable="'dateLastModified'">
+                {{tenant.dateLastModified}}
             </td>
             <td data-title="'Status'" filter="{ status: 'text'}" sortable="'status'">
                 Active

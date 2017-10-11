@@ -9,18 +9,33 @@ module.exports = function(tenantId,response){
 
 
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
+        try {
 
-        tenantId = new ObjectID(tenantId)
-
-        var query = { tenantId: tenantId };
-        db.collection("User").find(query).toArray(function(err, result) {
             if (err) throw err;
-            console.log(result);
+
+            tenantId = new ObjectID(tenantId)
+
+            var query = {tenantId: tenantId};
+            db.collection("User").find(query).toArray(function (err, result) {
+                try {
+                    if (err) throw err;
+                    console.log(result);
+                    db.close();
+                    dto.data = result;
+                    response.send(dto);
+                }catch(e){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(e.toString());
+                    response.send(dto);
+                }
+            });
+        }catch(e){
             db.close();
-            dto.data= result;
+            dto.success = false;
+            dto.error.push(e.toString());
             response.send(dto);
-        });
+        }
     });
 
 }

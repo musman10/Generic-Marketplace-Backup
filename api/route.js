@@ -24,6 +24,12 @@ router.get('/tenant/:tenantName', function(req, res, next) {
   service(req.params.tenantName,res);
 });
 
+/* Tenant service */
+router.get('/tenant/tenantId/:tenantId', function(req, res, next) {
+  var service = require("./tenant/get");
+  service(req.params.tenantId,res);
+});
+
 /* Tenant list service */
 router.get('/tenant/get/list', function(req, res, next) {
   var service = require("./tenant/list");
@@ -51,6 +57,36 @@ router.post('/request/view', function(req, res, next) {
 /* User view service */
 router.post('/user/view', function(req, res, next) {
   var service = require("./user/viewUser");
+  service(req.body , res);
+});
+
+/* Packages view service */
+router.post('/packages/view', function(req, res, next) {
+  var service = require("./packages/viewPackages");
+  service(req.body , res);
+});
+
+/* Packages user packages insert service */
+router.post('/packages/userPackages/insert', function(req, res, next) {
+  var service = require("./packages/insertPackage");
+  service(req.body , res);
+});
+
+/* User bills insert service */
+router.post('/bills/userBills/insert', function(req, res, next) {
+  var service = require("./bills/insertBill");
+  service(req.body , res);
+});
+
+/* User bill Packages insert service */
+router.post('/bills/userBillPackages/insert', function(req, res, next) {
+  var service = require("./bills/insertBillPackages");
+  service(req.body , res);
+});
+
+/* Payment insert service */
+router.post('/payment/insert', function(req, res, next) {
+  var service = require("./payment/insertPayment");
   service(req.body , res);
 });
 
@@ -88,6 +124,12 @@ router.post('/request/response', function(req, res, next) {
   service(req.body,res);
 });
 
+/* create user service */
+router.post('/user/create/:tenantId', function(req, res, next) {
+  var service = require("./user/createUser");
+  service(req.body,res);
+});
+
 /* get user list service */
 router.get('/user/list/:tenantId', function(req, res, next) {
   var service = require("./user/list");
@@ -106,9 +148,26 @@ router.post('/request/update/addResponse', function(req, res, next) {
   service(req.body,res);
 });
 
+  /* User Bill List By Userid service */
+router.get('/bill/getUserBillList/ByUserId/:userid', function(req, res, next) {
+  var service = require("./bill/getUserBillListByUserid");
+  service(req.params.userid,res);
+});
+
+/* User Bill By Billid service */
+router.get('/bill/getUserBill/ByBillId/:billid', function(req, res, next) {
+  var service = require("./bill/getUserBillByBillid");
+  service(req.params.billid,res);
+});
+
 /* DB Create service */
 router.get('/db/create', function(req, res, next) {
   var service = require("./db/create");
   service(res);
+});
+
+router.get('*',function(req, res, next){
+    var service = require("./requestNotFound");
+    service(res);
 });
 module.exports = router;

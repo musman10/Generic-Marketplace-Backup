@@ -46,8 +46,17 @@ app.use('/',function(req,res){
         }
     };
     */
+    str = JSON.stringify(fullUrl(req));
+    console.log(str);
+    var urlParts =  str.split("/");
+    if(urlParts[3].length == 0)
     res.sendFile(__dirname + '/index.html');
+  else
+      res.sendFile(__dirname + '/pageNotFound.html');
     //console.log(url.protocol + "--" + url.host + "--" + url.pathname);
+});
+app.get('/*', function(req, res) {
+  res.send('page not found');
 });
 /*
 app.get('/', function (req, res) {

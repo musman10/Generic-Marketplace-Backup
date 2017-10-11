@@ -13,56 +13,111 @@ module.exports = function(listRequestPayload,response){
     //var MongoClient = require('mongodb').MongoClient;
 
     MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-        var queryList = [];
-        var queryExpression = {
-            requestType:''
-        };
-        for(i=0;i<listRequestPayload.requestTypes.length;i++){
-            queryExpression.requestType = listRequestPayload.requestTypes[i];
-            queryList.push(queryExpression);
-        }
-        var query = { $or: queryList };
-
-        /*db.collection("Request").find(query).toArray(function(err, res) {
+        try {
             if (err) throw err;
-            console.log("1 document inserted");
-            console.log(res);
-            console.log("res");*/
-        db.collection('Request', function (err, Request) {
-            Request.find(query, function (err, cursor) {
-                var join = new Join(db).on({
-                    field: 'postUserId',
-                    to: '_id',
-                    from: 'User',
-                    as: 'postUserDetails'
-                });
-                console.log("hello");
-                join.toArray(cursor, function (err, joinedDocs) {
-                    // handle array of joined documents here
-                    if (err) throw err;
-                    if (joinedDocs.length == 0) {
+            var queryList = [];
+            var queryExpression = {
+                requestType: ''
+            };
+            for (i = 0; i < listRequestPayload.requestTypes.length; i++) {
+                queryExpression.requestType = listRequestPayload.requestTypes[i];
+                queryList.push(queryExpression);
+            }
+            var query = {$or: queryList};
+
+            /*db.collection("Request").find(query).toArray(function(err, res) {
+             if (err) throw err;
+             console.log("1 document inserted");
+             console.log(res);
+             console.log("res");*/
+            db.collection('Request', function (err, Request) {
+                Request.find(query, function (err, cursor) {
+                    try {
+                        var join = new Join(db).on({
+                            field: 'postUserId',
+                            to: '_id',
+                            from: 'User',
+                            as: 'postUserDetails'
+                        });
+                        console.log("hello");
+                        join.toArray(cursor, function (err, joinedDocs) {
+                            // handle array of joined documents here
+                            if (err) throw err;
+                            if (joinedDocs.length == 0) {
+                                db.close();
+                                dto.data = {};
+                                response.send(dto);
+                            }
+                            else {
+                                res = joinedDocs;
+                                addResponse(res, 0, 0, true, false, null, db).then(function () {
+
+                                    db.close();
+                                    dto.data = res;
+                                    response.send(dto);
+                                });
+                            }
+                        });
+                    } catch(err){
                         db.close();
-                        dto.data = {};
+                        dto.success = false;
+                        dto.error.push(err.toString());
                         response.send(dto);
                     }
-                    else{
-                        res = joinedDocs;
-                        addResponse(res,0,0,true,false,null,db).then(function(){
+                });
 
+
+            });
+        } catch(e){
+            db.close();
+            dto.success = false;
+            dto.error.push(e.toString());
+            response.send(dto);
+        }
+       /* try {
+            if (err) throw err;
+            var queryList = [];
+            var queryExpression = {
+                requestType: ''
+            };
+            for (i = 0; i < listRequestPayload.requestTypes.length; i++) {
+                queryExpression.requestType = listRequestPayload.requestTypes[i];
+                queryList.push(queryExpression);
+            }
+            var query = {$or: queryList};
+
+            db.collection("Request").find(query).toArray(function (err, res) {
+                try {
+                    if (err) throw err;
+                    console.log("1 document inserted");
+
+                    if (res.length > 0) {
+                        addResponse(res, 0, 0, true, false, null, db).then(function () {
                             db.close();
                             dto.data = res;
                             response.send(dto);
                         });
                     }
-                });
-
+                    else {
+                        db.close();
+                        dto.success = false;
+                        dto.error.push("request type requests not found");
+                        response.send(dto);
+                    }
+                }
+                catch(err){
+                    db.close();
+                    dto.success = false;
+                    dto.error.push(err.toString());
+                    response.send(dto);
+                }
             });
-
-
-
-
-        });
+        }catch(e){
+            db.close();
+            dto.success = false;
+            dto.error.push(e.toString());
+            response.send(dto);
+        }*/
 
         function addResponse(res,i,j,userIdRequired,isRequestResponseDetail,requestResponseDetail,db) {
             return new Promise(function (resolve, reject) {

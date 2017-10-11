@@ -1,0 +1,15 @@
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1">{{tenantName}}</h3>
+</md-toolbar>
+<div>
+    <md-card style="margin: auto; text-align: center; width: 50%;">
+    <md-input-container>
+        <md-select ng-model="userConf" placeholder="Select a User Type">
+            <md-option ng-value="userConf.name" ng-repeat="userConf in userConfList">{{userConf.name}}</md-option>
+        </md-select>
+    </md-input-container><br>
+    <!--<button ng-click="signup('company')">company</button>-->
+    <md-button aria-label="FAB" ng-click="signup(userConf)">SignUp</md-button>
+    </md-card>
+
+</div>
