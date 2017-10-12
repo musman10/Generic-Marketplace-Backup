@@ -1,26 +1,89 @@
-<md-toolbar class="md-toolbar-tools" style="margin:0px;width:100%;padding:20px;background-color:#66ccff;border-bottom: solid;border-bottom-width: 3px;border-bottom-color: #d3d3d3">
-    <h3 class="md-display-1">User Bills</h3>
-</md-toolbar>
-<div>
+<div class="full-width-container-nopadding white-bg ng-scope" style="margin-top:30px;">
 
-    <table ng-table="BillTable" class="table table-striped table-bordered table-hover" show-filter="true">
-        <tr ng-repeat="bill in $data">
-            <td data-title="'No. '" >
-                {{ $index + 1 }}
-            </td>
-            <td data-title="'Invoice Number'" filter="{ invoiceNumber: 'text'}" sortable="'invoiceNumber'">
-                <a href=/bill/view/{{bill._id}}>{{bill.invoiceNumber}}</a>
-            </td>
-            <td data-title="'Date'" filter="{dateCreated:'text'}" sortable="'dateCreated'">
-                {{bill.dateCreated}}
-            </td>
-            <td data-title="'Amount'" filter="{amount:'text'}" sortable="'amount'">
-                {{bill.amount}}
-            </td>
-            <td data-title="'Payment Status'" filter="{paymentStatus:'text'}" sortable="'paymentStatus'">
-                {{bill.paymentStatus}}
-            </td>
-        </tr>
-    </table>
+    <div style="margin:30px">
+
+        <div class="search-result-left-col  mCustomScrollbar" >
+            <!--<div style=" margin-bottom: 30px; text-align: center">
+                <span style="font-size: 30px;font-weight: bolder; ">Profile</span>
+            </div>-->
+
+            <h1 class="main-h1" >Bills</h1>
+
+
+            <!--<form name="form">-->
+
+                <!--<div class="row">-->
+
+                    <!--<div class="col-md-4" >-->
+                        <!--<img style="height:200px; width:200px;" src="../public/images/avatar.png">-->
+                    <!--</div>-->
+
+                    <!--<div class="col-md-8" >-->
+
+                        <!--<table class="table" style="width:100%">-->
+
+                            <!--<tr ng-repeat="(key, value) in result" property-display="row" property="value" data="key" class="spaceUnder">-->
+                                <!--&lt;!&ndash;<tr ng-repeat="l in list" class="row" name="test">&ndash;&gt;-->
+                                <!--&lt;!&ndash;<property-display property="key" data="value"></property-display>&ndash;&gt;-->
+                                <!--&lt;!&ndash;</tr>&ndash;&gt;-->
+                            <!--</tr>-->
+
+                        <!--</table>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</form>-->
+
+            <table ng-table="BillTable" class="table table-striped table-bordered table-hover" show-filter="true">
+                <tr ng-repeat="bill in $data">
+                    <td data-title="'No. '" >
+                        {{ $index + 1 }}
+                    </td>
+                    <td data-title="'Invoice Number'" filter="{ invoiceNumber: 'text'}" sortable="'invoiceNumber'">
+                        <a href=/bill/view/{{bill._id}}>{{bill.invoiceNumber}}</a>
+                    </td>
+                    <td data-title="'Date'" filter="{dateCreated:'text'}" sortable="'dateCreated'">
+                        {{bill.dateCreated}}
+                    </td>
+                    <td data-title="'Amount'" filter="{amount:'text'}" sortable="'amount'">
+                        {{bill.amount}}
+                    </td>
+                    <td data-title="'Payment Status'" filter="{paymentStatus:'text'}" sortable="'paymentStatus'">
+                        {{bill.paymentStatus}}
+                    </td>
+                </tr>
+            </table>
+
+
+
+
+        </div>
+
+
+
+    </div>
+
 
 </div>
+<!--<div>-->
+
+    <!--<table ng-table="BillTable" class="table table-striped table-bordered table-hover" show-filter="true">-->
+        <!--<tr ng-repeat="bill in $data">-->
+            <!--<td data-title="'No. '" >-->
+                <!--{{ $index + 1 }}-->
+            <!--</td>-->
+            <!--<td data-title="'Invoice Number'" filter="{ invoiceNumber: 'text'}" sortable="'invoiceNumber'">-->
+                <!--<a href=/bill/view/{{bill._id}}>{{bill.invoiceNumber}}</a>-->
+            <!--</td>-->
+            <!--<td data-title="'Date'" filter="{dateCreated:'text'}" sortable="'dateCreated'">-->
+                <!--{{bill.dateCreated}}-->
+            <!--</td>-->
+            <!--<td data-title="'Amount'" filter="{amount:'text'}" sortable="'amount'">-->
+                <!--{{bill.amount}}-->
+            <!--</td>-->
+            <!--<td data-title="'Payment Status'" filter="{paymentStatus:'text'}" sortable="'paymentStatus'">-->
+                <!--{{bill.paymentStatus}}-->
+            <!--</td>-->
+        <!--</tr>-->
+    <!--</table>-->
+
+<!--</div>-->
