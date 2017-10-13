@@ -146,6 +146,12 @@ angular.module('angularApp')
                 templateUrl : 'public/templates/index/index.html',
                 controller  : 'IndexController',
             })
+            .state('ForgotPassword', {
+                url         : '/forgotPassword/tenantForgotPassword',
+                templateUrl : 'public/templates/forgotPassword/tenantForgotPassword.html',
+                controller  : 'TenantForgotPasswordController',
+                parent:'MasterLayout'
+            })
 }]);
 
     var app = {

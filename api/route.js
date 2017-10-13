@@ -170,4 +170,26 @@ router.get('*',function(req, res, next){
     var service = require("./requestNotFound");
     service(res);
 });
+
+router.post('/email/resetPassword', function(req, res, next) {
+  var service = require("./email/resetPassword");
+  service(req.body , res);
+});
+
+router.post('/email/forgotPasswordUpdateEmail', function(req, res, next) {
+  var service = require("./email/forgotPasswordUpdateEmail");
+  service(req.body , res);
+});
+
+router.post('/email/forgotPasswordInsertEmail', function(req, res, next) {
+  var service = require("./email/forgotPasswordInsertEmail");
+  service(req.body , res);
+});
+
+router.post('/user/getUser', function(req, res, next) {
+  var service = require("./user/getUser");
+  service(req.body , res);
+});
+
+
 module.exports = router;

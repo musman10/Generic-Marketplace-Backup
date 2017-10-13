@@ -19,41 +19,69 @@ var app = express().use(express.static(
     path.join(__dirname, '')
 ))
 
+// view engine setup
+app.set('views', path.join(__dirname, 'reesetpassword'));
+app.set('view engine', 'ejs');
+
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
 app.use('/api/', api_routes);
-app.use('/',function(req,res){
-    //var url = fullUrl(req);
-    /*
-    str = JSON.stringify(fullUrl(req));
-    console.log(req.protocol);
-    console.log(req.get('host'));
-    var tenant = {
-        name:'rozee',
-        users:[],
-        properties:[],
-        requests:[]
-    };
-    tenant = JSON.stringify(tenant);
-    var options = {
-        headers: {
-            'x-timestamp': Date.now(),
-            'x-sent': true,
-            'name': 'MattDionis',
-            'origin':'stackoverflow',
-            'tenantConfiguration':tenant
-        }
-    };
-    */
+app.use('/',function(req,res) {
     str = JSON.stringify(fullUrl(req));
     console.log(str);
-    var urlParts =  str.split("/");
-    if(urlParts[3].length == 0)
-    res.sendFile(__dirname + '/index.html');
-  else
+    var urlParts = str.split("/");
+    if (urlParts[3].length == 0) {
+        res.sendFile(__dirname + '/index.html');
+    }
+
+    else if(urlParts[3]=="resetpassword"){
+
+        var Url="";
+        for(var i=0;i<3;i++){
+            if(i == 0) {
+                Url = Url + urlParts[i];
+            }
+            else{
+                Url = Url +'/'+ urlParts[i];
+            }
+            }
+
+        var baseUrl="";
+        for(i=0;i<Url.length;i++){
+            if(i!=0){
+                baseUrl=baseUrl+Url[i];
+            }
+        }
+        console.log("BaseUrl: "+baseUrl);
+
+        var urlPartsWithSlash="";
+        for(i=4;i<urlParts.length;i++){
+            if(i==4){
+                urlPartsWithSlash=urlPartsWithSlash+urlParts[i];
+            }
+            else {
+                urlPartsWithSlash = urlPartsWithSlash + "/" + urlParts[i];
+            }
+
+        }
+
+        var correctUserId="";
+        for(i=0;i<urlPartsWithSlash.length;i++){
+            if(i<urlPartsWithSlash.length-1){
+                correctUserId=correctUserId+urlPartsWithSlash[i];
+            }
+        }
+
+        var service = require("./resetpassword/resetPassword");
+        service(correctUserId,baseUrl,res);
+
+
+    }
+    else{
       res.sendFile(__dirname + '/pageNotFound.html');
-    //console.log(url.protocol + "--" + url.host + "--" + url.pathname);
+    }
+
 });
 app.get('/*', function(req, res) {
   res.send('page not found');
