@@ -144,7 +144,7 @@ angular.module('angularApp')
 }]);
 
     var app = {
-        baseUrl:'',
+        baseUrl:'http://localhost:3000',
         tenant:{},
         tenantUsers:[],
         tenantRequests:[],

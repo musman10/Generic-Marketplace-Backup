@@ -17,7 +17,7 @@ angular.module('angularApp')
             var reqData = {
                 requestId: requestId
             };
-            $http.post(app.baseUrl + "api/request/view" , reqData)
+            $http.post(app.baseUrl + "/request/view" , reqData)
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);
@@ -33,7 +33,7 @@ angular.module('angularApp')
             var listRequestPayload = {
                 requestId:requestId
             };
-            $http.post(app.baseUrl + "api/request/response/",listRequestPayload)
+            $http.post(app.baseUrl + "/request/response/",listRequestPayload)
                 .then(function(response) {
                     str = JSON.stringify(response);
                     console.log(str);

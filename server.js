@@ -4,7 +4,6 @@
 var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
-var api_routes = require('./api/route');
 var url = require('url');
 
 function fullUrl(req) {
@@ -22,7 +21,6 @@ var app = express().use(express.static(
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
-app.use('/api/', api_routes);
 app.use('/',function(req,res){
     //var url = fullUrl(req);
     /*

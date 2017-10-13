@@ -9,7 +9,7 @@ angular.module('angularApp')
         this.getTenantList = function(){
             //return "List Tenant Service executed!";
             var deferred = $q.defer();
-            $http.get(app.baseUrl + "api/tenant/get/list")
+            $http.get(app.baseUrl + "/tenant/get/list")
                 .then(function(response) {
                     str = JSON.stringify(response);
                     return deferred.resolve(response.data);

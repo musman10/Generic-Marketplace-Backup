@@ -12,7 +12,7 @@ angular.module('angularApp')
         
         this.getUsers = function(){
             var deferred = $q.defer();
-            $http.get("http://localhost:8080/api/users")
+            $http.get(app.baseUrl + "/users")
             .then(function(response) {
                 str = JSON.stringify(response);
                 console.log(str);
@@ -22,8 +22,9 @@ angular.module('angularApp')
         }
 
         this.getTenantConfiguration = function(tenantName,url){
+            debugger;
             var deferred = $q.defer();
-            $http.get("http://" + url + ":8080/api/tenant/" + tenantName)
+            $http.get(app.baseUrl + "/tenant/" + tenantName)
             .then(function(response) {
                 //str = JSON.stringify(response.data.tenant[0]);
                 //console.log(str);
@@ -87,6 +88,7 @@ angular.module('angularApp')
         }
 
         this.getRequestConfByRequestType = function(requestType){
+            debugger;
             for(i=0;i<app.tenant.requests.length;i++){
                 if(app.tenant.requests[i].name == requestType)
                     return app.tenant.requests[i];

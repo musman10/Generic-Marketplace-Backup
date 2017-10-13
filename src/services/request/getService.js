@@ -12,7 +12,7 @@ angular.module('angularApp')
 
         this.getRequestByName = function(requestName){
             var deferred = $q.defer();
-            $http.get(app.baseUrl + "api/request/getByName/" + requestName)
+            $http.get(app.baseUrl + "/request/getByName/" + requestName)
                 .then(function(response) {
                     str = JSON.stringify(response);
                     console.log(str);

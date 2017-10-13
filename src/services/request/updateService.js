@@ -16,7 +16,7 @@ angular.module('angularApp')
                 requestId: requestId,
                 response:response
             }
-            $http.post(app.baseUrl + "api/request/update/addResponse",addResponsePayLoad)
+            $http.post(app.baseUrl + "/request/update/addResponse",addResponsePayLoad)
                 .then(function(response) {
                     str = JSON.stringify(response);
                     console.log(str);

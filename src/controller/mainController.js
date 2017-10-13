@@ -12,7 +12,7 @@ angular.module('angularApp')
         if(hostArr.length == 3){
             var tenantName = hostArr[1];
             mainService.getTenantConfiguration(tenantName,$scope.url).then(function(tenant){
-                app.baseUrl = "http://" + $scope.url + ":8080/";
+                // app.baseUrl = "http://" + $scope.url + ":3000";
                 app.tenant = tenant;
                 app.appType = 'tenant';
                 //str = JSON.stringify(app);
@@ -23,7 +23,7 @@ angular.module('angularApp')
         }
         else{
             var tenantName = hostArr[0];
-            app.baseUrl = "http://" + $scope.url + ":8080/";
+            // app.baseUrl = "http://" + $scope.url + ":3000";
             app.appType = 'admin';
             $state.go('AdminLogin');
         }

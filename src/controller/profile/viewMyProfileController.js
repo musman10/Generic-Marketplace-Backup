@@ -13,7 +13,7 @@ angular.module('angularApp')
         $scope.insertPropertyValue = function(property,name,loginUserProperty){
 
             if(property.list == 'true') {
-                if (property.subProperties.length == 0) {
+                if (loginUserProperty[name] && property.subProperties.length == 0) {
                     for (j = 0; j < loginUserProperty[name].length; j++) {
                         var tempConf = JSON.stringify(property);
                         tempConf = JSON.parse(tempConf);
@@ -84,6 +84,7 @@ angular.module('angularApp')
             updatedUser.tenantId = app.tenant._id;
             updatedUser._id = app.loginUser._id;
             updatedUser.dateCreated = new Date(app.loginUser.dateCreated);
+            updatedUser.userType = app.loginUser.userType;
             viewMyProfileService.updateUserProfile(updatedUser).then(function(response){
                 console.log(response);
                 if(response.success == true){

@@ -79057,7 +79057,7 @@ angular.module('angularApp')
         if(hostArr.length == 3){
             var tenantName = hostArr[1];
             mainService.getTenantConfiguration(tenantName,$scope.url).then(function(tenant){
-                // app.baseUrl = "http://" + $scope.url + ":3000";
+                app.baseUrl = "http://" + $scope.url + ":8080/";
                 app.tenant = tenant;
                 app.appType = 'tenant';
                 //str = JSON.stringify(app);
@@ -79068,7 +79068,7 @@ angular.module('angularApp')
         }
         else{
             var tenantName = hostArr[0];
-            // app.baseUrl = "http://" + $scope.url + ":3000";
+            app.baseUrl = "http://" + $scope.url + ":8080/";
             app.appType = 'admin';
             $state.go('AdminLogin');
         }
@@ -79117,6 +79117,144 @@ angular.module('angularApp')
                 };
             }
         };
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('mainService', ['$http','$q','app', function ($http,$q,app) {
+
+        var thisIsPrivate = "mainService";
+        
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+        
+        this.getUsers = function(){
+            var deferred = $q.defer();
+            $http.get("http://localhost:8080/users")
+            .then(function(response) {
+                str = JSON.stringify(response);
+                console.log(str);
+                return deferred.resolve(response.data);
+            });
+            return deferred.promise;
+        }
+
+        this.getTenantConfiguration = function(tenantName,url){
+            var deferred = $q.defer();
+            $http.get("http://" + url + ":8080/tenant/" + tenantName)
+            .then(function(response) {
+                //str = JSON.stringify(response.data.tenant[0]);
+                //console.log(str);
+                return deferred.resolve(response.data.tenant[0]);
+            });
+            return deferred.promise;
+        }
+
+        this.createTenantUserObjects = function(){
+            var userJson = "";
+            for(iter=0;iter<app.tenant.users.length;iter++){
+                userJson = this.createTenantUserJson(app.tenant.users[iter]);
+                app.tenantUsers.push(JSON.parse(userJson));
+                var userTemp = JSON.parse(userJson);
+                //str = JSON.stringify(userTemp);
+                //console.log(str);
+            }
+        }
+
+        this.createTenantUserJson = function(userConf){
+            var userJson = "{";  
+            
+            for(i=0;i<userConf.properties.length;i++){
+                
+                if(userConf.properties[i].name != undefined || userConf.properties[i].name != null || userConf.properties[i].name != ""){
+                    if(userConf.properties[i].list == "true")
+                        userJson = userJson + '"' + userConf.properties[i].name + '":[],';
+                    else if(userConf.properties[i].subProperties.length != 0){
+                        userJson = userJson + '"' + userConf.properties[i].name + '":{},';
+                    }
+                    else {
+                        //alert(userConf.properties[i].name);
+                        userJson = userJson + '"' + userConf.properties[i].name + '":"",';
+                        //alert(userJson);
+                    }
+                } 
+            }
+            
+            userJson = userJson + '"_id":"",' +
+                                  '"id":"",' +
+                                  '"userTypeName":"'+ userConf.name +'"';
+
+            userJson = userJson + "}";
+            //alert(userJson);
+            return userJson;
+        }
+
+        this.getUserObjectByUserType = function(userType){
+            for(i=0;i<app.tenantUsers.length;i++){
+                if(app.tenantUsers[i].userTypeName == userType){
+                    return app.tenantUsers[i];
+                }
+            }
+        }
+
+        this.getUserConfByUserType = function(userType){
+            for(i=0;i<app.tenant.users.length;i++){
+                if(app.tenant.users[i].name == userType)
+                    return app.tenant.users[i];
+            }
+        }
+
+        this.getRequestConfByRequestType = function(requestType){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].name == requestType)
+                    return app.tenant.requests[i];
+            }
+        }
+
+        this.checkPostRequestPermission = function(){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].hasParent == 0){
+                    for(j=0;j<app.tenant.requests[i].postUsers.length;j++){
+                        if(app.tenant.requests[i].postUsers[j].name == app.loginUser.userType)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        this.checkViewRequestPermission = function(){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].hasParent == 0){
+                    for(j=0;j<app.tenant.requests[i].viewUsers.length;j++){
+                        if(app.tenant.requests[i].viewUsers[j].name == app.loginUser.userType)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        this.getRequestConfsByUserType = function(userType){
+            postRequestTypes = [];
+            for(i=0;i<app.tenant.users.length;i++){
+                if(app.tenant.users[i].name == userType){
+                    for(k=0;k<app.tenant.requests.length;k++){
+                        if(app.tenant.requests[k].hasParent == 0){
+                            for(j=0;j<app.tenant.requests[k].postUsers.length;j++){
+                                if(app.tenant.requests[k].postUsers[j].name == userType)
+                                    postRequestTypes.push(app.tenant.requests[k].name);
+                            }
+                        }
+                    }
+                    return postRequestTypes;
+                }
+            }
+            return postRequestTypes;
+        }
+
     }]);
 /**
  * Created by semianchuk on 08.10.16.
@@ -79264,7 +79402,7 @@ angular.module('angularApp')
 }]);
 
     var app = {
-        baseUrl:'http://localhost:3000',
+        baseUrl:'localhost:3000',
         tenant:{},
         tenantUsers:[],
         tenantRequests:[],
@@ -79273,146 +79411,6 @@ angular.module('angularApp')
 
     angular.module('angularApp').value('app', app);
 
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-    .service('mainService', ['$http','$q','app', function ($http,$q,app) {
-
-        var thisIsPrivate = "mainService";
-        
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-        
-        this.getUsers = function(){
-            var deferred = $q.defer();
-            $http.get(app.baseUrl + "/users")
-            .then(function(response) {
-                str = JSON.stringify(response);
-                console.log(str);
-                return deferred.resolve(response.data);
-            });
-            return deferred.promise;
-        }
-
-        this.getTenantConfiguration = function(tenantName,url){
-            debugger;
-            var deferred = $q.defer();
-            $http.get(app.baseUrl + "/tenant/" + tenantName)
-            .then(function(response) {
-                //str = JSON.stringify(response.data.tenant[0]);
-                //console.log(str);
-                return deferred.resolve(response.data.tenant[0]);
-            });
-            return deferred.promise;
-        }
-
-        this.createTenantUserObjects = function(){
-            var userJson = "";
-            for(iter=0;iter<app.tenant.users.length;iter++){
-                userJson = this.createTenantUserJson(app.tenant.users[iter]);
-                app.tenantUsers.push(JSON.parse(userJson));
-                var userTemp = JSON.parse(userJson);
-                //str = JSON.stringify(userTemp);
-                //console.log(str);
-            }
-        }
-
-        this.createTenantUserJson = function(userConf){
-            var userJson = "{";  
-            
-            for(i=0;i<userConf.properties.length;i++){
-                
-                if(userConf.properties[i].name != undefined || userConf.properties[i].name != null || userConf.properties[i].name != ""){
-                    if(userConf.properties[i].list == "true")
-                        userJson = userJson + '"' + userConf.properties[i].name + '":[],';
-                    else if(userConf.properties[i].subProperties.length != 0){
-                        userJson = userJson + '"' + userConf.properties[i].name + '":{},';
-                    }
-                    else {
-                        //alert(userConf.properties[i].name);
-                        userJson = userJson + '"' + userConf.properties[i].name + '":"",';
-                        //alert(userJson);
-                    }
-                } 
-            }
-            
-            userJson = userJson + '"_id":"",' +
-                                  '"id":"",' +
-                                  '"userTypeName":"'+ userConf.name +'"';
-
-            userJson = userJson + "}";
-            //alert(userJson);
-            return userJson;
-        }
-
-        this.getUserObjectByUserType = function(userType){
-            for(i=0;i<app.tenantUsers.length;i++){
-                if(app.tenantUsers[i].userTypeName == userType){
-                    return app.tenantUsers[i];
-                }
-            }
-        }
-
-        this.getUserConfByUserType = function(userType){
-            for(i=0;i<app.tenant.users.length;i++){
-                if(app.tenant.users[i].name == userType)
-                    return app.tenant.users[i];
-            }
-        }
-
-        this.getRequestConfByRequestType = function(requestType){
-            debugger;
-            for(i=0;i<app.tenant.requests.length;i++){
-                if(app.tenant.requests[i].name == requestType)
-                    return app.tenant.requests[i];
-            }
-        }
-
-        this.checkPostRequestPermission = function(){
-            for(i=0;i<app.tenant.requests.length;i++){
-                if(app.tenant.requests[i].hasParent == 0){
-                    for(j=0;j<app.tenant.requests[i].postUsers.length;j++){
-                        if(app.tenant.requests[i].postUsers[j].name == app.loginUser.userType)
-                            return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        this.checkViewRequestPermission = function(){
-            for(i=0;i<app.tenant.requests.length;i++){
-                if(app.tenant.requests[i].hasParent == 0){
-                    for(j=0;j<app.tenant.requests[i].viewUsers.length;j++){
-                        if(app.tenant.requests[i].viewUsers[j].name == app.loginUser.userType)
-                            return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        this.getRequestConfsByUserType = function(userType){
-            postRequestTypes = [];
-            for(i=0;i<app.tenant.users.length;i++){
-                if(app.tenant.users[i].name == userType){
-                    for(k=0;k<app.tenant.requests.length;k++){
-                        if(app.tenant.requests[k].hasParent == 0){
-                            for(j=0;j<app.tenant.requests[k].postUsers.length;j++){
-                                if(app.tenant.requests[k].postUsers[j].name == userType)
-                                    postRequestTypes.push(app.tenant.requests[k].name);
-                            }
-                        }
-                    }
-                    return postRequestTypes;
-                }
-            }
-            return postRequestTypes;
-        }
-
-    }]);
 angular.module('angularApp')
 .controller('AdminController', [ '$scope','$state','adminService',  function ($scope,$state,adminService) {
     $scope.description = {
@@ -79703,7 +79701,7 @@ angular.module('angularApp')
         $scope.insertPropertyValue = function(property,name,loginUserProperty){
 
             if(property.list == 'true') {
-                if (loginUserProperty[name] && property.subProperties.length == 0) {
+                if (property.subProperties.length == 0) {
                     for (j = 0; j < loginUserProperty[name].length; j++) {
                         var tempConf = JSON.stringify(property);
                         tempConf = JSON.parse(tempConf);
@@ -79774,7 +79772,6 @@ angular.module('angularApp')
             updatedUser.tenantId = app.tenant._id;
             updatedUser._id = app.loginUser._id;
             updatedUser.dateCreated = new Date(app.loginUser.dateCreated);
-            updatedUser.userType = app.loginUser.userType;
             viewMyProfileService.updateUserProfile(updatedUser).then(function(response){
                 console.log(response);
                 if(response.success == true){
@@ -80853,33 +80850,6 @@ angular.module('angularApp')
  * Created by Usman Irfan.
  */
 angular.module('angularApp')
-    .service('tennatUserListBillsService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "adminService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-
-        this.login = function(){
-            return true;
-        }
-
-        this.getUserBills = function(userid){
-            var deferred = $q.defer();
-            $http.get(app.baseUrl + "/bill/getUserBillList/ByUserId/" + userid)
-                .then(function(response) {
-                    str = JSON.stringify(response);
-                    console.log(str);
-                    return deferred.resolve(response.data);
-                });
-            return deferred.promise;
-        }
-    }]);
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
     .service('createObjectService', ['$http','$q', function ($http,$q) {
 
         var thisIsPrivate = "createObjectService";
@@ -80908,7 +80878,7 @@ angular.module('angularApp')
                 if(skipPropertyName == true)
                     properties[i].list = "";
 
-                if(properties[i] && (properties[i].name != undefined || properties[i].name != null || properties[i].name != "")){
+                if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
                     if(properties[i].list == "true") {
 
                         if(properties[i].subProperties.length != 0) {
@@ -80958,72 +80928,29 @@ angular.module('angularApp')
  * Created by Usman Irfan.
  */
 angular.module('angularApp')
-.service('adminLoginService', ['$http','$q', function ($http,$q) {
+    .service('tennatUserListBillsService', ['$http','$q', function ($http,$q) {
 
-    var thisIsPrivate = "adminLoginService";
-    
-    this.getPrivate = function() {
-        return thisIsPrivate;
-    };
+        var thisIsPrivate = "adminService";
 
-   /* this.login = function(){
-        return true;
-    }*/
-    this.getUserInformation = function(username , password){
-
-        var deferred = $q.defer();
-        var login_data = {
-            isAdmin : true,
-            username : username,
-            password : password
+        this.getPrivate = function() {
+            return thisIsPrivate;
         };
-        console.log(app.baseUrl + "/user/loginUser" );
-        $http.post(app.baseUrl + "/user/loginUser" , login_data )
-            .then(function(response) {
-                debugger;
-                str = JSON.stringify(response);
-                console.log(str);
-                return deferred.resolve(response.data);
-            });
-        return deferred.promise;
 
-    }
+        this.login = function(){
+            return true;
+        }
 
-}]);
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-.service('tenantLoginService', ['$http','$q', function ($http,$q) {
-
-    var thisIsPrivate = "tenantLoginService";
-
-    this.getPrivate = function() {
-        return thisIsPrivate;
-    };
-
-    this.getUserInformation = function(tenant_id, username , password){
-
-        var deferred = $q.defer();
-        var login_data = {
-            isAdmin : false,
-            tenant_id : tenant_id,
-            username : username,
-            password : password
-        };
-        $http.post(app.baseUrl + "/user/loginUser" , login_data )
-            .then(function(response) {
-                debugger;
-                str = JSON.stringify(response);
-                console.log(str);
-                return deferred.resolve(response.data);
-            });
-        return deferred.promise;
-
-    }
-
-}]);
-
+        this.getUserBills = function(userid){
+            var deferred = $q.defer();
+            $http.get(app.baseUrl + "/bill/getUserBillList/ByUserId/" + userid)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+    }]);
 /**
  * Created by asd on 9/6/2017.
  */
@@ -81201,7 +81128,6 @@ angular.module('angularApp')
         this.postRequest = function(request){
             var deferred = $q.defer();
             request.tenantId = app.tenant._id;
-            debugger;
             $http.post(app.baseUrl + "/request/post",request)
                 .then(function(response) {
                     str = JSON.stringify(response);
@@ -81450,109 +81376,6 @@ angular.module('angularApp')
     }
 }]);
 
-angular.module('angularApp')
-    .service('getService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "getService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-
-        this.getTenantConf=function(tenantId){
-            var deferred = $q.defer();
-            //user.tenantId = tenantId;
-            /*tenantId = "";*/
-                $http.get(app.baseUrl + "/tenant/tenantId/"+tenantId)
-                .then(function(response) {
-                     debugger;
-                    str = JSON.stringify(response);
-                    console.log(str);
-                    return deferred.resolve(response.data);
-            });
-            return deferred.promise;
-        }
-
-    }]);
-angular.module('angularApp')
-    .service('tenantListService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "tenantListService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-        this.getTenantList = function(){
-            //return "List Tenant Service executed!";
-            var deferred = $q.defer();
-            $http.get(app.baseUrl + "/tenant/get/list")
-                .then(function(response) {
-                    str = JSON.stringify(response);
-                    return deferred.resolve(response.data);
-                });
-            return deferred.promise;
-
-        }
-
-
-}]);
-
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-.service('tenantRegisterService', ['$http','$q', function ($http,$q) {
-
-    var thisIsPrivate = "tenantRegisterService";
-    
-    this.getPrivate = function() {
-        return thisIsPrivate;
-    };
-
-    this.register = function(tenant,baseUrl){
-        
-        var deferred = $q.defer();
-        $http.post(app.baseUrl + "/tenant/register",tenant)
-        .then(function(response) {
-            str = JSON.stringify(response);
-            console.log(str);
-            return deferred.resolve(response.data);
-        });
-        return deferred.promise;
-    };
-
-}]);
-angular.module('angularApp')
-    .service('tenantViewService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "tenantViewService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-
-    }]);
-angular.module('angularApp')
-    .service('toastService', ['$http','$q','$mdToast', function ($http,$q,$mdToast) {
-
-        var thisIsPrivate = "userViewService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-
-        this.showToast = function(message,toastPosition){
-            debugger;
-            var pinTo = toastPosition;
-            $mdToast.show(
-                $mdToast.simple()
-                    .textContent('Tenant Created Successfully!')
-                    .position(pinTo )
-                    .hideDelay(3000)
-            );
-        }
-
-    }]);
 /**
  * Created by Usman Irfan.
  */
@@ -81688,6 +81511,228 @@ angular.module('angularApp')
         }
 
     }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+.service('adminLoginService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "adminLoginService";
+    
+    this.getPrivate = function() {
+        return thisIsPrivate;
+    };
+
+   /* this.login = function(){
+        return true;
+    }*/
+    this.getUserInformation = function(username , password){
+
+        var deferred = $q.defer();
+        var login_data = {
+            isAdmin : true,
+            username : username,
+            password : password
+        };
+        console.log(app.baseUrl + "/user/loginUser" );
+        $http.post(app.baseUrl + "/user/loginUser" , login_data )
+            .then(function(response) {
+                debugger;
+                str = JSON.stringify(response);
+                console.log(str);
+                return deferred.resolve(response.data);
+            });
+        return deferred.promise;
+
+    }
+
+}]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+.service('tenantLoginService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "tenantLoginService";
+
+    this.getPrivate = function() {
+        return thisIsPrivate;
+    };
+
+    this.getUserInformation = function(tenant_id, username , password){
+
+        var deferred = $q.defer();
+        var login_data = {
+            isAdmin : false,
+            tenant_id : tenant_id,
+            username : username,
+            password : password
+        };
+        $http.post(app.baseUrl + "/user/loginUser" , login_data )
+            .then(function(response) {
+                debugger;
+                str = JSON.stringify(response);
+                console.log(str);
+                return deferred.resolve(response.data);
+            });
+        return deferred.promise;
+
+    }
+
+}]);
+
+angular.module('angularApp')
+    .service('getService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "getService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.getTenantConf=function(tenantId){
+            var deferred = $q.defer();
+            //user.tenantId = tenantId;
+            /*tenantId = "";*/
+                $http.get(app.baseUrl + "/tenant/tenantId/"+tenantId)
+                .then(function(response) {
+                     debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+            });
+            return deferred.promise;
+        }
+
+    }]);
+angular.module('angularApp')
+    .service('tenantListService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "tenantListService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+        this.getTenantList = function(){
+            //return "List Tenant Service executed!";
+            var deferred = $q.defer();
+            $http.get(app.baseUrl + "/tenant/get/list")
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+
+}]);
+
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+.service('tenantRegisterService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "tenantRegisterService";
+    
+    this.getPrivate = function() {
+        return thisIsPrivate;
+    };
+
+    this.register = function(tenant,baseUrl){
+        
+        var deferred = $q.defer();
+        $http.post(app.baseUrl + "/tenant/register",tenant)
+        .then(function(response) {
+            str = JSON.stringify(response);
+            console.log(str);
+            return deferred.resolve(response.data);
+        });
+        return deferred.promise;
+    };
+
+}]);
+angular.module('angularApp')
+    .service('tenantViewService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "tenantViewService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+    }]);
+angular.module('angularApp')
+    .service('toastService', ['$http','$q','$mdToast', function ($http,$q,$mdToast) {
+
+        var thisIsPrivate = "userViewService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.showToast = function(message,toastPosition){
+            debugger;
+            var pinTo = toastPosition;
+            $mdToast.show(
+                $mdToast.simple()
+                    .textContent('Tenant Created Successfully!')
+                    .position(pinTo )
+                    .hideDelay(3000)
+            );
+        }
+
+    }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+angular.module('angularApp')
+    .directive('propertyDisplay', function () {
+        return {
+            restrict : "A",
+            templateUrl : "src/common/directives/propertyDisplay/propertyDisplayTemplate.html",
+            /*scope: {
+                property: '=',
+                data: '='
+            },*/
+            scope: {
+                row : '=propertyDisplay',
+                property : '=',
+                data: '=',
+                keyRequired: '@'
+            },
+            controller:"PropertyDisplayController"
+        };
+    });
+/**
+ * Created by asd on 9/6/2017.
+ */
+angular.module('angularApp')
+    .controller('PropertyDisplayController', [ '$scope','NgTableParams','$filter', function ($scope,NgTableParams,$filter) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+debugger;
+
+        $scope.isArray=function(type){
+           if( angular.isArray(type))
+               return true;
+            else
+               return false;
+        }
+
+        $scope.isObject=function(type){
+            if( angular.isObject(type))
+                return true;
+            else
+                return false;
+        }
+
+
+
+    }]);
 angular.module('angularApp')
     .directive('propertyConfiguration', function () {
         return {
@@ -81783,55 +81828,6 @@ angular.module('angularApp')
                     $scope.properties.splice(i,1);
             }
         };
-    }]);
-/**
- * Created by asd on 9/6/2017.
- */
-angular.module('angularApp')
-    .directive('propertyDisplay', function () {
-        return {
-            restrict : "A",
-            templateUrl : "src/common/directives/propertyDisplay/propertyDisplayTemplate.html",
-            /*scope: {
-                property: '=',
-                data: '='
-            },*/
-            scope: {
-                row : '=propertyDisplay',
-                property : '=',
-                data: '=',
-                keyRequired: '@'
-            },
-            controller:"PropertyDisplayController"
-        };
-    });
-/**
- * Created by asd on 9/6/2017.
- */
-angular.module('angularApp')
-    .controller('PropertyDisplayController', [ '$scope','NgTableParams','$filter', function ($scope,NgTableParams,$filter) {
-        $scope.description = {
-            message1  : 'My first Angular app',
-            message2 : 'developing for testing'
-        };
-debugger;
-
-        $scope.isArray=function(type){
-           if( angular.isArray(type))
-               return true;
-            else
-               return false;
-        }
-
-        $scope.isObject=function(type){
-            if( angular.isObject(type))
-                return true;
-            else
-                return false;
-        }
-
-
-
     }]);
 angular.module('angularApp')
     .directive('requestResponse', function () {

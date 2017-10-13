@@ -13,7 +13,7 @@ angular.module('angularApp')
         this.listPostRequestsByUserId = function(userid){
             var deferred = $q.defer();
 
-            $http.get(app.baseUrl + "api/user/post/request/list/userid/" + userid)
+            $http.get(app.baseUrl + "/user/post/request/list/userid/" + userid)
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);

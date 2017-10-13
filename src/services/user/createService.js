@@ -75,7 +75,7 @@ angular.module('angularApp')
 
         this.signup = function(user,app){
             var deferred = $q.defer();
-            $http.post(app.baseUrl + "api/user/signup",user)
+            $http.post(app.baseUrl + "/user/signup",user)
                 .then(function(response) {
                     str = JSON.stringify(response);
                     console.log(str);
