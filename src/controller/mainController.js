@@ -8,25 +8,25 @@ angular.module('angularApp')
         $scope.url = $scope.location.host();
         $scope.state = $state.current;
         var hostArr = $scope.url.split(".");
-        console.log(hostArr);
-        if(hostArr.length == 3){
-            var tenantName = hostArr[1];
-            mainService.getTenantConfiguration(tenantName,$scope.url).then(function(tenant){
-                // app.baseUrl = "http://" + $scope.url + ":3000";
-                app.tenant = tenant;
-                app.appType = 'tenant';
-                //str = JSON.stringify(app);
-                //console.log(str);
-                mainService.createTenantUserObjects();
-                $state.go('TenantLogin');    
-            });
-        }
-        else{
+        //console.log(hostArr);
+        //if(hostArr.length == 3){
+        //    var tenantName = hostArr[1];
+        //    mainService.getTenantConfiguration(tenantName,$scope.url).then(function(tenant){
+        //        // app.baseUrl = "http://" + $scope.url + ":3000";
+        //        app.tenant = tenant;
+        //        app.appType = 'tenant';
+        //        //str = JSON.stringify(app);
+        //        //console.log(str);
+        //        mainService.createTenantUserObjects();
+        //        $state.go('TenantLogin');
+        //    });
+        //}
+        //else{
             var tenantName = hostArr[0];
-            // app.baseUrl = "http://" + $scope.url + ":3000";
+            app.baseUrl = "http://" + $scope.url + ":3000";
             app.appType = 'admin';
             $state.go('AdminLogin');
-        }
+        //}
 
         $scope.getFactory  = mainFactory.getPrivate();
         $scope.getService  = mainService.getPrivate();
