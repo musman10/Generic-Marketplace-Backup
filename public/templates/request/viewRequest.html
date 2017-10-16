@@ -22,8 +22,10 @@
             <md-tab label="RESPONSES DETAILS" ng-click="viewResponse()">
                 <md-content class="md-padding">
                     <h1>User Responses</h1>
-                    <div ng-repeat="response in responses[0].userResponses">
-                        <request-response-expansion response="response"></request-response-expansion>
+                    <div ng-repeat="response in responses">
+                        <div ng-repeat="res in response.userResponses">
+                        <request-response-expansion response="res"></request-response-expansion>
+                        </div>
                     </div>
                 </md-content>
             </md-tab>

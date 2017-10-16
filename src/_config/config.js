@@ -126,15 +126,15 @@ angular.module('angularApp')
                 controller  : 'TennatUserListBillsController',
                 parent:'MasterLayout'
             })
-	    .state('TenantUserCreation', {
-                url         : '/user/create/:tenantId',
-                templateUrl : 'public/templates/user/create.html',
-                controller  : 'CreateController',
-                parent:'MasterLayout',
-                params:{
-                    userType:''
-                }
-            })
+	    //.state('TenantUserCreation', {
+         //       url         : '/user/create/:tenantId',
+         //       templateUrl : 'public/templates/user/create.html',
+         //       controller  : 'CreateController',
+         //       parent:'MasterLayout',
+         //       params:{
+         //           userType:''
+         //       }
+         //   })
             .state('ViewPackages', {
                 url         : '/packages/view',
                 templateUrl : 'public/templates/packages/viewPackages.html',
