@@ -34,24 +34,7 @@ angular.module('angularApp')
                 controller  : 'TenantUserHomeController',
                 parent:'MasterLayout'
             })
-            .state('AdminLogin', {
-                url         : '/admin/login',
-                templateUrl : 'public/templates/login/adminLogin.html',
-                controller  : 'AdminLoginController',
-            })
-            .state('AdminHome', {
-                url         : '/admin/home',
-                templateUrl : 'public/templates/admin/home.html',
-                controller  : 'AdminController',
-                parent:'MasterLayout'
-            })
-            .state('RegisterTenant', {
-                url         : '/tenant/register',
-                templateUrl : 'public/templates/tenant/register.html',
-                controller  : 'TenantRegisterController',
-                parent:'MasterLayout'
-            })
- 	        .state('ViewMyProfile', {
+            .state('ViewMyProfile', {
                 url         : '/profile/viewmyprofile',
                 templateUrl : 'public/templates/profile/viewMyProfile.html',
                 controller  : 'viewMyProfileController',
@@ -63,30 +46,12 @@ angular.module('angularApp')
                 controller  : 'viewRequestController',
                 parent:'MasterLayout'
             })
-            .state('ListTenant', {
-                url         : '/tenant/list',
-                templateUrl : 'public/templates/tenant/list.html',
-                controller  : 'TenantListController',
-                parent:'MasterLayout'
-            })
-            .state('ViewTenant', {
-                url         : '/tenant/view/:tenantId',
-                templateUrl : 'public/templates/tenant/view.html',
-                controller  : 'TenantViewController',
-                parent:'MasterLayout'
-            })
             .state('ListRequest', {
                 url         : '/request/list/:tenantId',
                 templateUrl : 'public/templates/request/list.html',
                 controller  : 'RequestListController',
                 parent:'MasterLayout'
             })
-           /* .state('ViewRequest', {
-                url         : '/request/view/:requestId',
-                templateUrl : 'public/templates/request/view.html',
-                controller  : 'RequestViewController',
-                parent:'MasterLayout'
-            })*/
             .state('ListUser', {
                 url         : '/user/list/byTenantId/:tenantId',
                 templateUrl : 'public/templates/user/list.html',
@@ -120,21 +85,12 @@ angular.module('angularApp')
                 controller  : 'UserListPostRequestsController',
                 parent:'MasterLayout'
             })
-	    .state('TennatUserListBills', {
+	        .state('TennatUserListBills', {
                 url         : '/bill/userBills',
                 templateUrl : 'public/templates/bill/tennatUserListBills.html',
                 controller  : 'TennatUserListBillsController',
                 parent:'MasterLayout'
             })
-	    //.state('TenantUserCreation', {
-         //       url         : '/user/create/:tenantId',
-         //       templateUrl : 'public/templates/user/create.html',
-         //       controller  : 'CreateController',
-         //       parent:'MasterLayout',
-         //       params:{
-         //           userType:''
-         //       }
-         //   })
             .state('ViewPackages', {
                 url         : '/packages/view',
                 templateUrl : 'public/templates/packages/viewPackages.html',
