@@ -16,7 +16,7 @@ angular.module('angularApp')
         $scope.totalPrice = 0;
         $scope.totalRequests = 0;
         $scope.checkboxes = [];
-        userPackage = [];
+        $scope.userPackages = [];
         userPackageObject = {};
         userPackageIds = [];
         userBillPackgesObject = {};
@@ -74,6 +74,7 @@ angular.module('angularApp')
             console.log(paymentInformation);
             for(i=0; i<$scope.userPackage.length; i++){
                 debugger;
+                var userPackageObject = {};
                 userPackageObject.userId = app.loginUser._id;
                 userPackageObject.name = $scope.userPackage[i].name;
                 userPackageObject.dateLastModified = $scope.userPackage[i].dateLastModified;
@@ -88,10 +89,10 @@ angular.module('angularApp')
                 userPackageObject.dateLastRenewed = "";
                 userPackageObject.dateExpiryUserPackage = dateOfExpiryUserPackage($scope.userPackage[i].days);
                 userPackageObject.packageRenewedList = [];
-                userPackage.push(userPackageObject);
+                $scope.userPackages.push(userPackageObject);
             }
 
-            viewPackagesService.insertUserPackges(userPackage).then(function(response){
+            viewPackagesService.insertUserPackges($scope.userPackages).then(function(response){
                 for(i=0; i<response.insertedData.length; i++){
                     userPackageIds[i] = response.insertedData[i]._id;
                 }
