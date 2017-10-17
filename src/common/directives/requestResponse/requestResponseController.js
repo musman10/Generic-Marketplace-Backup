@@ -1,5 +1,5 @@
 angular.module('angularApp')
-    .controller('RequestResponseController', [ '$scope','requestPostService','requestGetService','requestUpdateService','createObjectService', function ($scope,requestPostService,requestGetService,requestUpdateService,createObjectService) {
+    .controller('RequestResponseController', [ '$scope','createObjectService', function ($scope,createObjectService) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing'

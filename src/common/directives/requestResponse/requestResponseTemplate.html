@@ -57,7 +57,7 @@
         <!--</div>-->
     <!--</div>-->
     <div class="content">
-    <div ng-repeat="reqResponse in requestResponses">
+    <div ng-if="requestResponses.length != 0" ng-repeat="reqResponse in requestResponses">
 
         <!--<div ng-if="reqResponse.request.name == response.requestDetails.requestType && response.requestDetails.userResponded == false">-->
             <!--&lt;!&ndash;<br>&ndash;&gt;-->
@@ -78,5 +78,27 @@
             </div>
         </div>
     </div>
+
+        <div ng-if="requestResponses.length == 0">
+
+            <!--<div ng-if="reqResponse.request.name == response.requestDetails.requestType && response.requestDetails.userResponded == false">-->
+            <!--&lt;!&ndash;<br>&ndash;&gt;-->
+            <!--<select ng-model="res" ng-change="respondRequest(response,res)">-->
+            <!--<option ng-repeat="res in reqResponse.responses" value="{{res}}">{{res.name}}</option>-->
+            <!--</select>-->
+            <!--</div>-->
+
+            <div ng-if="response.requestDetails.userResponded == true">
+                <div ng-repeat="response in response.requestDetails.userResponses">
+                    <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
+                </div>
+            </div>
+
+            <div ng-if="response.requestDetails.userResponded == false && reqResponse.request.name != response.requestDetails.requestType">
+                <div ng-repeat="response in response.requestDetails.userResponses">
+                    <request-response response="response" request-responses="requestResponses" userid="userid"></request-response>
+                </div>
+            </div>
+        </div>
         </div>
 </details>
