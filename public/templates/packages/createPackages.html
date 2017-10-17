@@ -1,0 +1,62 @@
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1"></h3>
+</md-toolbar>
+
+<div style="padding-top: 20px;">
+    <md-card style="margin: auto; text-align: center; width: 50%;">
+        <h1>Create New Package</h1>
+        <label></label>
+        <form name="myForm">
+
+            <md-input-container>
+                <label>Name</label>
+                <input type="text" ng-model="packageName"  required/>
+                <div ng-messages="myForm.packageName.$error" ng-show="myForm.packageName.$touched && myForm.packageName.$invalid">
+                    <div ng-message="required">This is required!</div>
+                </div>
+            </md-input-container><br>
+            <md-input-container>
+                <label>Price</label>
+                <input type="text" ng-model="packagePrice"  required/>
+                <div ng-messages="myForm.packagePrice.$error" ng-show="myForm.packagePrice.$touched && myForm.packagePrice.$invalid">
+                    <div ng-message="required">This is required!</div>
+                </div>
+            </md-input-container><br>
+            <md-input-container>
+                <label>Description</label>
+                <input type="text" ng-model="packageDescription"  required/>
+                <div ng-messages="myForm.packageDescription.$error" ng-show="myForm.packageDescription.$touched && myForm.packageDescription.$invalid">
+                    <div ng-message="required">This is required!</div>
+                </div>
+            </md-input-container><br>
+            <md-input-container>
+                <label>Valid For</label>
+                <input type="text" ng-model="packageDays"  required/>
+                <div ng-messages="myForm.packageDays.$error" ng-show="myForm.packageDays.$touched && myForm.packageDays.$invalid">
+                    <div ng-message="required">This is required!</div>
+                </div>
+            </md-input-container><br>
+            <md-input-container>
+                <label>No.of Requests Allowed</label>
+                <input type="text" ng-model="packageRequests"  required/>
+                <div ng-messages="myForm.packageRequests.$error" ng-show="myForm.packageRequests.$touched && myForm.packageRequests.$invalid">
+                    <div ng-message="required">This is required!</div>
+                </div>
+            </md-input-container><br>
+
+            <!--<md-input-container>
+                <select ng-model="requestType" ng-change="loadPostRequestForm(postRequestType)">
+                    <option ng-repeat="requestType in requestTypes" value="{{requestType}}">{{requestType}}</option>
+                </select>
+            </md-input-container><br>-->
+
+            <md-button class="md-raised md-primary" aria-label="FAB" ng-click="createPackage()" ng-disabled="myForm.$invalid">Create Package</md-button>
+        </form>
+
+
+        <span ng-show="SubmissionError">{{SubmissionErrorMessage}} </span>
+
+    </md-card>
+</div>
+
+

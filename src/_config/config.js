@@ -86,6 +86,13 @@ angular.module('angularApp')
                 controller  : 'ViewPackagesController',
                 parent:'MasterLayout'
             })
+            .state('CreatePackages', {
+                url         : '/packages/createPackages/:tenantId',
+                templateUrl : 'public/templates/packages/createPackages.html',
+                controller  : 'CreatePackageController',
+                parent:'MasterLayout'
+            })
+
 }]);
 
     var app = {
