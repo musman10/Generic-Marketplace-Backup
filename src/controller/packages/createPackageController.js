@@ -8,9 +8,23 @@ angular.module('angularApp')
 
         debugger;
 
-        $scope.createPackage = function(){
+        /*$scope.selectOption()=function(){
+            $scope.myOption
+        }*/
+        $scope.getTenantRequestTypes=function(){
 
-            createPackageService.createPackage($scope.packageName,$scope.packagePrice,$scope.packageDescription,$scope.packageDays,$scope.packageRequests,$stateParams.tenantId).then(function(response){
+            createPackageService.getTenantRequestTypes($stateParams.tenantId).then(function(response){
+                if(response.success == true){
+                    debugger;
+                    console.log(response.tenantRequestTypes);
+                    $scope.requestTypes = response.tenantRequestTypes;
+                }
+            });
+        };
+        $scope.getTenantRequestTypes();
+
+        $scope.createPackage = function(){
+            createPackageService.createPackage($scope.packageName,$scope.packagePrice,$scope.packageDescription,$scope.packageDays,$scope.packageRequests, $scope.requestType,$stateParams.tenantId).then(function(response){
                 console.log(response);
                 if(response.success == true){
                     debugger;

@@ -30,7 +30,7 @@
                 </div>
             </md-input-container><br>
             <md-input-container>
-                <label>Valid For</label>
+                <label>No. of Days</label>
                 <input type="text" ng-model="packageDays"  required/>
                 <div ng-messages="myForm.packageDays.$error" ng-show="myForm.packageDays.$touched && myForm.packageDays.$invalid">
                     <div ng-message="required">This is required!</div>
@@ -44,11 +44,12 @@
                 </div>
             </md-input-container><br>
 
-            <!--<md-input-container>
-                <select ng-model="requestType" ng-change="loadPostRequestForm(postRequestType)">
+            <label>Request Type</label>
+            <md-input-container>
+                <select ng-model="requestType" >
                     <option ng-repeat="requestType in requestTypes" value="{{requestType}}">{{requestType}}</option>
                 </select>
-            </md-input-container><br>-->
+            </md-input-container><br>
 
             <md-button class="md-raised md-primary" aria-label="FAB" ng-click="createPackage()" ng-disabled="myForm.$invalid">Create Package</md-button>
         </form>
