@@ -1,0 +1,21 @@
+<md-toolbar class="md-toolbar-tools" style="margin:-10px;width:107%;padding:10px; padding-left: 100px;">
+    <h3 class="md-display-1">Packages</h3>
+</md-toolbar>
+
+<div ng-cloak><br>
+    <div ng-repeat="p in packages track by $index">
+        <br>
+        <details>
+            <md-content class="md-padding">
+            <div>
+                <div class="content">
+                    Name:<p>{{p.name}}</p>
+                    Description: <p>{{p.description}}</p>
+                    For: <p>{{p.days}}</p>
+                    Number of Rquests Allowed: <p>{{p.numberOfRequests}}</p>
+                </div>
+            </div>
+        </md-content>
+    </details>
+    </div>
+</div>

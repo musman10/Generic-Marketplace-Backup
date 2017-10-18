@@ -92,6 +92,12 @@ angular.module('angularApp')
                 controller  : 'CreatePackageController',
                 parent:'MasterLayout'
             })
+            .state('ListPackages', {
+                url         : '/packages/listPackages/:tenantId',
+                templateUrl : 'public/templates/packages/listPackages.html',
+                controller  : 'ListPackagesController',
+                parent:'MasterLayout'
+            })
 
 }]);
 

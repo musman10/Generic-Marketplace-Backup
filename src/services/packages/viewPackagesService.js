@@ -86,4 +86,4 @@ angular.module('angularApp')
 
         }
 
-        }]);
+    }]);
