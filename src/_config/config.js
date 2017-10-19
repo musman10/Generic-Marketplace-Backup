@@ -97,6 +97,12 @@ angular.module('angularApp')
                 controller  : 'ViewPackagesController',
                 parent:'MasterLayout'
             })
+            .state('ForgotPassword', {
+                url         : '/forgotPassword/tenantForgotPassword',
+                templateUrl : 'public/templates/forgotPassword/tenantForgotPassword.html',
+                controller  : 'TenantForgotPasswordController',
+                parent:'MasterLayout'
+            })
 }]);
 
     var app = {
