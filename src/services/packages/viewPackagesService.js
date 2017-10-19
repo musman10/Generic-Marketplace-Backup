@@ -17,7 +17,7 @@ angular.module('angularApp')
             var packageData = {
                 tenantId: tenantId
             };
-            $http.post(app.baseUrl + "api/packages/view", packageData )
+            $http.post(app.apiUrl + "/packages/view", packageData )
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);
@@ -32,7 +32,7 @@ angular.module('angularApp')
         this.insertUserPackges = function(userPackage){
 
             var deferred = $q.defer();
-            $http.post(app.baseUrl + "api/packages/userpackages/insert", userPackage )
+            $http.post(app.apiUrl + "/packages/userpackages/insert", userPackage )
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);
@@ -46,7 +46,7 @@ angular.module('angularApp')
         this.insertUserBills = function(userBills){
 
             var deferred = $q.defer();
-            $http.post(app.baseUrl + "api/bills/userbills/insert", userBills )
+            $http.post(app.apiUrl + "/bills/userbills/insert", userBills )
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);
@@ -61,7 +61,7 @@ angular.module('angularApp')
         this.insertUserBillPackages = function(userBillPackages){
 
             var deferred = $q.defer();
-            $http.post(app.baseUrl + "api/bills/userbillpackages/insert", userBillPackages )
+            $http.post(app.apiUrl + "/bills/userbillpackages/insert", userBillPackages )
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);
@@ -75,7 +75,7 @@ angular.module('angularApp')
         this.insertPayment = function(payment) {
 
             var deferred = $q.defer();
-            $http.post(app.baseUrl + "api/payment/insert", payment)
+            $http.post(app.apiUrl + "/payment/insert", payment)
                 .then(function (response) {
                     debugger;
                     str = JSON.stringify(response);

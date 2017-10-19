@@ -4,8 +4,9 @@
 var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
-var api_routes = require('./api/route');
+// var api_routes = require('./api/route');
 var url = require('url');
+var http = require('http');
 
 function fullUrl(req) {
   return url.format({
@@ -26,7 +27,7 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
-app.use('/api/', api_routes);
+// app.use('/api/', api_routes);
 app.use('/',function(req,res) {
     str = JSON.stringify(fullUrl(req));
     console.log(str);
@@ -73,8 +74,23 @@ app.use('/',function(req,res) {
             }
         }
 
-        var service = require("./resetpassword/resetPassword");
-        service(correctUserId,baseUrl,res);
+        var options = {
+            host: 'localhost',
+            port: 3000,
+            path: '/resetpassword/' + '?encryptedUserId=' + correctUserId + '&baseUrl=' + encodeURIComponent(baseUrl),
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        http.request(options, function(res) {
+            console.log('STATUS: ' + res.statusCode);
+
+        }).end();
+
+        // var service = require("./resetpassword/resetPassword");
+        // service(correctUserId,baseUrl,res);
 
 
     }

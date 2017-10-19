@@ -8,7 +8,7 @@ angular.module('angularApp')
         };
         this.getUserList = function(tenantID){
             var deferred = $q.defer();
-            $http.get(app.baseUrl + "api/user/list/"+tenantID)
+            $http.get(app.apiUrl + "/user/list/"+tenantID)
                 .then(function(response) {
                     str = JSON.stringify(response);
                     return deferred.resolve(response.data);

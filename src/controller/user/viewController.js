@@ -5,6 +5,8 @@ angular.module('angularApp')
         };
 
         var userId = $stateParams.userId;
+        $scope.requestResponses = [];
+
         userViewService.view(userId).then(function(response){
             console.log(response);
             // $scope.result = response.data;

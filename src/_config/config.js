@@ -156,6 +156,7 @@ angular.module('angularApp')
 
     var app = {
         baseUrl:'',
+        apiUrl:'http://localhost:3000',
         tenant:{},
         tenantUsers:[],
         tenantRequests:[],

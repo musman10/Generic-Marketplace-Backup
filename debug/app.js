@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.6.5
+ * @license AngularJS v1.6.6
  * (c) 2010-2017 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -106,7 +106,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.6.5/' +
+    message += '\nhttp://errors.angularjs.org/1.6.6/' +
       (module ? module + '/' : '') + code;
 
     for (i = 0, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -2784,11 +2784,11 @@ function toDebugString(obj, maxDepth) {
 var version = {
   // These placeholder strings will be replaced by grunt's `build` task.
   // They need to be double- or single-quoted.
-  full: '1.6.5',
+  full: '1.6.6',
   major: 1,
   minor: 6,
-  dot: 5,
-  codeName: 'toffee-salinization'
+  dot: 6,
+  codeName: 'interdimensional-cable'
 };
 
 
@@ -2934,7 +2934,7 @@ function publishExternalAPI(angular) {
       });
     }
   ])
-  .info({ angularVersion: '1.6.5' });
+  .info({ angularVersion: '1.6.6' });
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -8496,6 +8496,31 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
     return preAssignBindingsEnabled;
   };
 
+  /**
+   * @ngdoc method
+   * @name  $compileProvider#strictComponentBindingsEnabled
+   *
+   * @param {boolean=} enabled update the strictComponentBindingsEnabled state if provided, otherwise just return the
+   * current strictComponentBindingsEnabled state
+   * @returns {*} current value if used as getter or itself (chaining) if used as setter
+   *
+   * @kind function
+   *
+   * @description
+   * Call this method to enable/disable strict component bindings check. If enabled, the compiler will enforce that
+   * for all bindings of a component that are not set as optional with `?`, an attribute needs to be provided
+   * on the component's HTML tag.
+   *
+   * The default value is false.
+   */
+  var strictComponentBindingsEnabled = false;
+  this.strictComponentBindingsEnabled = function(enabled) {
+    if (isDefined(enabled)) {
+      strictComponentBindingsEnabled = enabled;
+      return this;
+    }
+    return strictComponentBindingsEnabled;
+  };
 
   var TTL = 10;
   /**
@@ -10523,12 +10548,20 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       }
     }
 
+    function strictBindingsCheck(attrName, directiveName) {
+      if (strictComponentBindingsEnabled) {
+        throw $compileMinErr('missingattr',
+          'Attribute \'{0}\' of \'{1}\' is non-optional and must be set!',
+          attrName, directiveName);
+      }
+    }
 
     // Set up $watches for isolate scope and controller bindings.
     function initializeDirectiveBindings(scope, attrs, destination, bindings, directive) {
       var removeWatchCollection = [];
       var initialChanges = {};
       var changes;
+
       forEach(bindings, function initializeBinding(definition, scopeName) {
         var attrName = definition.attrName,
         optional = definition.optional,
@@ -10540,7 +10573,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
           case '@':
             if (!optional && !hasOwnProperty.call(attrs, attrName)) {
+              strictBindingsCheck(attrName, directive.name);
               destination[scopeName] = attrs[attrName] = undefined;
+
             }
             removeWatch = attrs.$observe(attrName, function(value) {
               if (isString(value) || isBoolean(value)) {
@@ -10567,6 +10602,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           case '=':
             if (!hasOwnProperty.call(attrs, attrName)) {
               if (optional) break;
+              strictBindingsCheck(attrName, directive.name);
               attrs[attrName] = undefined;
             }
             if (optional && !attrs[attrName]) break;
@@ -10611,6 +10647,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           case '<':
             if (!hasOwnProperty.call(attrs, attrName)) {
               if (optional) break;
+              strictBindingsCheck(attrName, directive.name);
               attrs[attrName] = undefined;
             }
             if (optional && !attrs[attrName]) break;
@@ -10636,6 +10673,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '&':
+            if (!optional && !hasOwnProperty.call(attrs, attrName)) {
+              strictBindingsCheck(attrName, directive.name);
+            }
             // Don't assign Object.prototype method to scope
             parentGet = attrs.hasOwnProperty(attrName) ? $parse(attrs[attrName]) : noop;
 
@@ -11168,7 +11208,7 @@ function $HttpParamSerializerProvider() {
       if (!params) return '';
       var parts = [];
       forEachSorted(params, function(value, key) {
-        if (value === null || isUndefined(value)) return;
+        if (value === null || isUndefined(value) || isFunction(value)) return;
         if (isArray(value)) {
           forEach(value, function(v) {
             parts.push(encodeUriQuery(key)  + '=' + encodeUriQuery(serializeValue(v)));
@@ -11264,10 +11304,15 @@ function defaultHttpResponseTransform(data, headers) {
 
     if (tempData) {
       var contentType = headers('Content-Type');
-      if ((contentType && (contentType.indexOf(APPLICATION_JSON) === 0)) || isJsonLike(tempData)) {
+      var hasJsonContentType = contentType && (contentType.indexOf(APPLICATION_JSON) === 0);
+
+      if (hasJsonContentType || isJsonLike(tempData)) {
         try {
           data = fromJson(tempData);
         } catch (e) {
+          if (!hasJsonContentType) {
+            return data;
+          }
           throw $httpMinErr('baddata', 'Data must be a valid JSON object. Received: "{0}". ' +
           'Parse error: "{1}"', data, e);
         }
@@ -11580,6 +11625,7 @@ function $HttpProvider() {
      *   - **headers** – `{function([headerName])}` – Header getter function.
      *   - **config** – `{Object}` – The configuration object that was used to generate the request.
      *   - **statusText** – `{string}` – HTTP status text of the response.
+     *   - **xhrStatus** – `{string}` – Status of the XMLHttpRequest (`complete`, `error`, `timeout` or `abort`).
      *
      * A response status code between 200 and 299 is considered a success status and will result in
      * the success callback being called. Any response status code outside of that range is
@@ -12421,9 +12467,9 @@ function $HttpProvider() {
           } else {
             // serving from cache
             if (isArray(cachedResp)) {
-              resolvePromise(cachedResp[1], cachedResp[0], shallowCopy(cachedResp[2]), cachedResp[3]);
+              resolvePromise(cachedResp[1], cachedResp[0], shallowCopy(cachedResp[2]), cachedResp[3], cachedResp[4]);
             } else {
-              resolvePromise(cachedResp, 200, {}, 'OK');
+              resolvePromise(cachedResp, 200, {}, 'OK', 'complete');
             }
           }
         } else {
@@ -12480,10 +12526,10 @@ function $HttpProvider() {
        *  - resolves the raw $http promise
        *  - calls $apply
        */
-      function done(status, response, headersString, statusText) {
+      function done(status, response, headersString, statusText, xhrStatus) {
         if (cache) {
           if (isSuccess(status)) {
-            cache.put(url, [status, response, parseHeaders(headersString), statusText]);
+            cache.put(url, [status, response, parseHeaders(headersString), statusText, xhrStatus]);
           } else {
             // remove promise from the cache
             cache.remove(url);
@@ -12491,7 +12537,7 @@ function $HttpProvider() {
         }
 
         function resolveHttpPromise() {
-          resolvePromise(response, status, headersString, statusText);
+          resolvePromise(response, status, headersString, statusText, xhrStatus);
         }
 
         if (useApplyAsync) {
@@ -12506,7 +12552,7 @@ function $HttpProvider() {
       /**
        * Resolves the raw $http promise.
        */
-      function resolvePromise(response, status, headers, statusText) {
+      function resolvePromise(response, status, headers, statusText, xhrStatus) {
         //status: HTTP response status code, 0, -1 (aborted by timeout / promise)
         status = status >= -1 ? status : 0;
 
@@ -12515,12 +12561,13 @@ function $HttpProvider() {
           status: status,
           headers: headersGetter(headers),
           config: config,
-          statusText: statusText
+          statusText: statusText,
+          xhrStatus: xhrStatus
         });
       }
 
       function resolvePromiseWithResult(result) {
-        resolvePromise(result.data, result.status, shallowCopy(result.headers()), result.statusText);
+        resolvePromise(result.data, result.status, shallowCopy(result.headers()), result.statusText, result.xhrStatus);
       }
 
       function removePendingReq() {
@@ -12621,7 +12668,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       var jsonpDone = jsonpReq(url, callbackPath, function(status, text) {
         // jsonpReq only ever sets status to 200 (OK), 404 (ERROR) or -1 (WAITING)
         var response = (status === 200) && callbacks.getResponse(callbackPath);
-        completeRequest(callback, status, response, '', text);
+        completeRequest(callback, status, response, '', text, 'complete');
         callbacks.removeCallback(callbackPath);
       });
     } else {
@@ -12656,18 +12703,29 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
             status,
             response,
             xhr.getAllResponseHeaders(),
-            statusText);
+            statusText,
+            'complete');
       };
 
       var requestError = function() {
         // The response is always empty
         // See https://xhr.spec.whatwg.org/#request-error-steps and https://fetch.spec.whatwg.org/#concept-network-error
-        completeRequest(callback, -1, null, null, '');
+        completeRequest(callback, -1, null, null, '', 'error');
+      };
+
+      var requestAborted = function() {
+        completeRequest(callback, -1, null, null, '', 'abort');
+      };
+
+      var requestTimeout = function() {
+        // The response is always empty
+        // See https://xhr.spec.whatwg.org/#request-error-steps and https://fetch.spec.whatwg.org/#concept-network-error
+        completeRequest(callback, -1, null, null, '', 'timeout');
       };
 
       xhr.onerror = requestError;
-      xhr.onabort = requestError;
-      xhr.ontimeout = requestError;
+      xhr.onabort = requestAborted;
+      xhr.ontimeout = requestTimeout;
 
       forEach(eventHandlers, function(value, key) {
           xhr.addEventListener(key, value);
@@ -12717,14 +12775,14 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       }
     }
 
-    function completeRequest(callback, status, response, headersString, statusText) {
+    function completeRequest(callback, status, response, headersString, statusText, xhrStatus) {
       // cancel timeout and subsequent timeout promise resolution
       if (isDefined(timeoutId)) {
         $browserDefer.cancel(timeoutId);
       }
       jsonpDone = xhr = null;
 
-      callback(status, response, headersString, statusText);
+      callback(status, response, headersString, statusText, xhrStatus);
     }
   };
 
@@ -15350,7 +15408,7 @@ function findConstantAndWatchExpressions(ast, $filter, parentIsPure) {
       findConstantAndWatchExpressions(ast.property, $filter, astIsPure);
     }
     ast.constant = ast.object.constant && (!ast.computed || ast.property.constant);
-    ast.toWatch = [ast];
+    ast.toWatch = ast.constant ? [] : [ast];
     break;
   case AST.CallExpression:
     isStatelessFilter = ast.filter ? isStateless($filter, ast.callee.name) : false;
@@ -15359,9 +15417,7 @@ function findConstantAndWatchExpressions(ast, $filter, parentIsPure) {
     forEach(ast.arguments, function(expr) {
       findConstantAndWatchExpressions(expr, $filter, astIsPure);
       allConstants = allConstants && expr.constant;
-      if (!expr.constant) {
-        argsToWatch.push.apply(argsToWatch, expr.toWatch);
-      }
+      argsToWatch.push.apply(argsToWatch, expr.toWatch);
     });
     ast.constant = allConstants;
     ast.toWatch = isStatelessFilter ? argsToWatch : [ast];
@@ -15378,9 +15434,7 @@ function findConstantAndWatchExpressions(ast, $filter, parentIsPure) {
     forEach(ast.elements, function(expr) {
       findConstantAndWatchExpressions(expr, $filter, astIsPure);
       allConstants = allConstants && expr.constant;
-      if (!expr.constant) {
-        argsToWatch.push.apply(argsToWatch, expr.toWatch);
-      }
+      argsToWatch.push.apply(argsToWatch, expr.toWatch);
     });
     ast.constant = allConstants;
     ast.toWatch = argsToWatch;
@@ -15390,17 +15444,14 @@ function findConstantAndWatchExpressions(ast, $filter, parentIsPure) {
     argsToWatch = [];
     forEach(ast.properties, function(property) {
       findConstantAndWatchExpressions(property.value, $filter, astIsPure);
-      allConstants = allConstants && property.value.constant && !property.computed;
-      if (!property.value.constant) {
-        argsToWatch.push.apply(argsToWatch, property.value.toWatch);
-      }
+      allConstants = allConstants && property.value.constant;
+      argsToWatch.push.apply(argsToWatch, property.value.toWatch);
       if (property.computed) {
-        findConstantAndWatchExpressions(property.key, $filter, astIsPure);
-        if (!property.key.constant) {
-          argsToWatch.push.apply(argsToWatch, property.key.toWatch);
-        }
+        //`{[key]: value}` implicitly does `key.toString()` which may be non-pure
+        findConstantAndWatchExpressions(property.key, $filter, /*parentIsPure=*/false);
+        allConstants = allConstants && property.key.constant;
+        argsToWatch.push.apply(argsToWatch, property.key.toWatch);
       }
-
     });
     ast.constant = allConstants;
     ast.toWatch = argsToWatch;
@@ -22996,15 +23047,20 @@ var htmlAnchorDirective = valueFn({
  *
  * ## A note about browser compatibility
  *
- * Edge, Firefox, and Internet Explorer do not support the `details` element, it is
+ * Internet Explorer and Edge do not support the `details` element, it is
  * recommended to use {@link ng.ngShow} and {@link ng.ngHide} instead.
  *
  * @example
      <example name="ng-open">
        <file name="index.html">
-         <label>Check me check multiple: <input type="checkbox" ng-model="open"></label><br/>
+         <label>Toggle details: <input type="checkbox" ng-model="open"></label><br/>
          <details id="details" ng-open="open">
-            <summary>Show/Hide me</summary>
+            <summary>List</summary>
+            <ul>
+              <li>Apple</li>
+              <li>Orange</li>
+              <li>Durian</li>
+            </ul>
          </details>
        </file>
        <file name="protractor.js" type="protractor">
@@ -31112,7 +31168,9 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  *     more than one tracking expression value resolve to the same key. (This would mean that two distinct objects are
  *     mapped to the same DOM element, which is not possible.)
  *
- *     Note that the tracking expression must come last, after any filters, and the alias expression.
+ *     <div class="alert alert-warning">
+ *       <strong>Note:</strong> the `track by` expression must come last - after any filters, and the alias expression.
+ *     </div>
  *
  *     For example: `item in items` is equivalent to `item in items track by $id(item)`. This implies that the DOM elements
  *     will be associated by item identity in the array.
@@ -38439,7 +38497,7 @@ angular.module('ui.router.state')
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
 /**
- * @license AngularJS v1.6.5
+ * @license AngularJS v1.6.6
  * (c) 2010-2017 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -42575,7 +42633,7 @@ angular.module('ngAnimate', [], function initAngularHelpers() {
   isFunction  = angular.isFunction;
   isElement   = angular.isElement;
 })
-  .info({ angularVersion: '1.6.5' })
+  .info({ angularVersion: '1.6.6' })
   .directive('ngAnimateSwap', ngAnimateSwapDirective)
 
   .directive('ngAnimateChildren', $$AnimateChildrenDirective)
@@ -78983,8 +79041,24 @@ angular.module("material.core").constant("$MD_THEME_CSS", "md-autocomplete.md-TH
 
 
 })(window, window.angular);;window.ngMaterial={version:{full: "1.1.5"}};
-angular.module('angularApp', ['ui.router','ngAnimate','ngAria','ngMaterial','ngMessages'])
+angular.module('angularApp', ['ui.router','ngAnimate','ngAria','ngMaterial','ngMessages','ngTable','ADM-dateTimePicker', 'angularTrix','ngSanitize'])
 
+/**
+ * Created by semianchuk on 08.10.16.
+ */
+angular.module('angularApp')
+    .factory('mainFactory', [ function () {
+
+        var thisIsPrivate = "mainFactory";
+        
+        function getPrivate() {
+            return thisIsPrivate;
+        }
+
+        return {
+            getPrivate: getPrivate
+        };
+    }]);
 /**
  * Created by semianchuk on 08.10.16.
  */
@@ -79005,7 +79079,7 @@ angular.module('angularApp')
                 //str = JSON.stringify(app);
                 //console.log(str);
                 mainService.createTenantUserObjects();
-                $state.go('TenantLogin');    
+                $state.go('IndexPage');
             });
         }
         else{
@@ -79025,22 +79099,6 @@ angular.module('angularApp')
     .controller('MasterLayoutController', [ '$scope','$state','app',function ($scope,$state,app) {
 
         $scope.appType = app.appType;
-    }]);
-/**
- * Created by semianchuk on 08.10.16.
- */
-angular.module('angularApp')
-    .factory('mainFactory', [ function () {
-
-        var thisIsPrivate = "mainFactory";
-        
-        function getPrivate() {
-            return thisIsPrivate;
-        }
-
-        return {
-            getPrivate: getPrivate
-        };
     }]);
 /**
  * Created by semianchuk on 11.10.16.
@@ -79074,7 +79132,7 @@ angular.module('angularApp')
         
         this.getUsers = function(){
             var deferred = $q.defer();
-            $http.get("http://localhost:8080/api/users")
+            $http.get(app.apiUrl + "/users")
             .then(function(response) {
                 str = JSON.stringify(response);
                 console.log(str);
@@ -79085,7 +79143,7 @@ angular.module('angularApp')
 
         this.getTenantConfiguration = function(tenantName,url){
             var deferred = $q.defer();
-            $http.get("http://" + url + ":8080/api/tenant/" + tenantName)
+            $http.get(app.apiUrl + "/tenant/" + tenantName)
             .then(function(response) {
                 //str = JSON.stringify(response.data.tenant[0]);
                 //console.log(str);
@@ -79155,6 +79213,48 @@ angular.module('angularApp')
             }
         }
 
+        this.checkPostRequestPermission = function(){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].hasParent == 0){
+                    for(j=0;j<app.tenant.requests[i].postUsers.length;j++){
+                        if(app.tenant.requests[i].postUsers[j].name == app.loginUser.userType)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        this.checkViewRequestPermission = function(){
+            for(i=0;i<app.tenant.requests.length;i++){
+                if(app.tenant.requests[i].hasParent == 0){
+                    for(j=0;j<app.tenant.requests[i].viewUsers.length;j++){
+                        if(app.tenant.requests[i].viewUsers[j].name == app.loginUser.userType)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        this.getRequestConfsByUserType = function(userType){
+            postRequestTypes = [];
+            for(i=0;i<app.tenant.users.length;i++){
+                if(app.tenant.users[i].name == userType){
+                    for(k=0;k<app.tenant.requests.length;k++){
+                        if(app.tenant.requests[k].hasParent == 0){
+                            for(j=0;j<app.tenant.requests[k].postUsers.length;j++){
+                                if(app.tenant.requests[k].postUsers[j].name == userType)
+                                    postRequestTypes.push(app.tenant.requests[k].name);
+                            }
+                        }
+                    }
+                    return postRequestTypes;
+                }
+            }
+            return postRequestTypes;
+        }
+
     }]);
 /**
  * Created by semianchuk on 08.10.16.
@@ -79166,7 +79266,7 @@ angular.module('angularApp')
         $stateProvider
             .state('main', {
                 url         : '/',
-                controller  : 'mainController',
+                controller  : 'mainController'
             })
             .state('MasterLayout', {
                 //abstract: true,
@@ -79176,7 +79276,7 @@ angular.module('angularApp')
             .state('TenantLogin', {
                 url         : '/login',
                 templateUrl : 'public/templates/login/tenantLogin.html',
-                controller  : 'TenantLoginController',
+                controller  : 'TenantLoginController'
             })
             .state('TenantUserSignup', {
                 url         : '/signup',
@@ -79209,7 +79309,19 @@ angular.module('angularApp')
                 controller  : 'TenantRegisterController',
                 parent:'MasterLayout'
             })
-	    .state('ListTenant', {
+ 	        .state('ViewMyProfile', {
+                url         : '/profile/viewmyprofile',
+                templateUrl : 'public/templates/profile/viewMyProfile.html',
+                controller  : 'viewMyProfileController',
+                parent:'MasterLayout'
+            })
+            .state('ViewRequest', {
+                url         : '/request/view/:requestId',
+                templateUrl : 'public/templates/request/viewRequest.html',
+                controller  : 'viewRequestController',
+                parent:'MasterLayout'
+            })
+            .state('ListTenant', {
                 url         : '/tenant/list',
                 templateUrl : 'public/templates/tenant/list.html',
                 controller  : 'TenantListController',
@@ -79227,17 +79339,20 @@ angular.module('angularApp')
                 controller  : 'RequestListController',
                 parent:'MasterLayout'
             })
-            .state('ViewRequest', {
+           /* .state('ViewRequest', {
                 url         : '/request/view/:requestId',
                 templateUrl : 'public/templates/request/view.html',
                 controller  : 'RequestViewController',
                 parent:'MasterLayout'
-            })
+            })*/
             .state('ListUser', {
                 url         : '/user/list/byTenantId/:tenantId',
                 templateUrl : 'public/templates/user/list.html',
                 controller  : 'UserListController',
-                parent:'MasterLayout'
+                parent:'MasterLayout',
+                params:{
+                    tenantId:''
+                }
             })
             .state('ViewUser', {
                 url         : '/user/view/:userId',
@@ -79251,16 +79366,55 @@ angular.module('angularApp')
                 controller  : 'RequestPostController',
                 parent:'MasterLayout'
             })
-            .state('TennatUserListRequests', {
+            .state('TenantUserListRequests', {
                 url         : '/user/list/request',
                 templateUrl : 'public/templates/request/userListRequests.html',
                 controller  : 'UserListRequestsController',
+                parent:'MasterLayout'
+            })
+            .state('TenantUserListPostRequests', {
+                url         : '/user/list/post/request',
+                templateUrl : 'public/templates/request/userListPostRequests.html',
+                controller  : 'UserListPostRequestsController',
+                parent:'MasterLayout'
+            })
+	    .state('TennatUserListBills', {
+                url         : '/bill/userBills',
+                templateUrl : 'public/templates/bill/tennatUserListBills.html',
+                controller  : 'TennatUserListBillsController',
+                parent:'MasterLayout'
+            })
+	    .state('TenantUserCreation', {
+                url         : '/user/create/:tenantId',
+                templateUrl : 'public/templates/user/create.html',
+                controller  : 'CreateController',
+                parent:'MasterLayout',
+                params:{
+                    userType:''
+                }
+            })
+            .state('ViewPackages', {
+                url         : '/packages/view',
+                templateUrl : 'public/templates/packages/viewPackages.html',
+                controller  : 'ViewPackagesController',
+                parent:'MasterLayout'
+            })
+            .state('IndexPage', {
+                url         : '/index',
+                templateUrl : 'public/templates/index/index.html',
+                controller  : 'IndexController',
+            })
+            .state('ForgotPassword', {
+                url         : '/forgotPassword/tenantForgotPassword',
+                templateUrl : 'public/templates/forgotPassword/tenantForgotPassword.html',
+                controller  : 'TenantForgotPasswordController',
                 parent:'MasterLayout'
             })
 }]);
 
     var app = {
         baseUrl:'',
+        apiUrl:'http://localhost:3000',
         tenant:{},
         tenantUsers:[],
         tenantRequests:[],
@@ -79279,6 +79433,111 @@ angular.module('angularApp')
 
 }]);
 angular.module('angularApp')
+    .controller('TennatUserListBillsController', [ '$scope','$state','tennatUserListBillsService','app','NgTableParams',  function ($scope,$state,tennatUserListBillsService,app,NgTableParams) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : tennatUserListBillsService.getPrivate()
+        };
+
+        $scope.getUserBills = function(){
+            debugger;
+            userid = app.loginUser._id;
+            tennatUserListBillsService.getUserBills(userid).then(function(response){
+                $scope.userBills = response.data;
+                for(i=0;i<$scope.userBills.length;i++){
+                    $scope.userBills[i].dateCreated = new Date($scope.userBills[i].dateCreated).toLocaleString();
+                }
+                $scope.BillTable = new NgTableParams({count: 10}, { dataset: $scope.userBills});
+            });
+        };
+
+        $scope.getUserBills();
+    }]);
+angular.module('angularApp')
+    .controller('TenantForgotPasswordController', [ '$scope','$state','getUserInfoService','insertEmailService','sendEmailService',  function ($scope,$state,getUserInfoService,insertEmailService,sendEmailService) {
+        $scope.description = {
+           /* message : getUserInfoService.getPrivate(),*/
+        };
+
+        $scope.submit = function(){
+            debugger;
+           var tenantId=app.tenant._id;
+            console.log("tenantId entered is : " +tenantId);
+           var  emailId = $scope.emailId;
+            console.log("emailId entered is : " +emailId );
+
+            getUserInfoService.checkUserInfo(tenantId,emailId).then(function(response){
+                console.log(response);
+                if(response.success == true){
+                    debugger;
+                   var  userInfo= response.data;
+                    console.log("userInfo : "+userInfo);
+                    if(response.data!=null) {
+                        insertEmailService.insertMail(app.baseUrl,response.data._id,response.data.tenantId,response.data.email).then(function(response2){
+                           console.log(response2);
+                            if(response2.success==true){
+                                debugger;
+                                console.log(response.data.tenantId);
+                                console.log(response.data.email);
+                                console.log(response.data.username);
+                                var insertedDataId = response2.insertedData[0]._id;
+                                console.log(insertedDataId);
+                                    sendEmailService.sendMail(app.baseUrl,response.data._id,response.data.tenantId,response.data.email,insertedDataId).then(function(response3){
+                                        if(response.success==true){
+                                            console.log(response);
+                                        }else{
+                                            $scope.loginErrorMessage = response.error[0];
+                                            $scope.loginError = true;
+                                        }
+                                    });
+
+                            } else{
+                                $scope.loginErrorMessage = response.error[0];
+                                $scope.loginError = true;
+                            }
+
+                        });
+
+                    }
+
+
+
+                    //console.log("URL :"+app.baseUrl+"/forgotpassword" +ciphertext);
+                   /* console.log(JSON.stringify(app));
+                    $state.go("AdminHome");*/
+
+                }
+                else{
+                    $scope.loginErrorMessage = response.error[0];
+                    $scope.loginError = true;
+                }
+
+            });
+
+        }
+    }]);
+angular.module('angularApp')
+    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : tenantLoginService.getPrivate()
+        };
+    }]);
+angular.module('angularApp')
+    .controller('IndexController', [ '$scope','$state',  function ($scope,$state) {
+
+
+        $scope.signup = function(userTypeName){
+            $state.go("TenantUserSignup", {
+                userType: userTypeName
+            });
+
+        } ;
+    }]);
+
+angular.module('angularApp')
 .controller('AdminLoginController', [ '$scope','$state','adminLoginService',  function ($scope,$state,adminLoginService) {
     $scope.description = {
         message1  : 'My first Angular app',
@@ -79286,8 +79545,14 @@ angular.module('angularApp')
         message3 : adminLoginService.getPrivate()
     };
 
+    app.loginUser={};
+    console.log("app.LoginUser: ");
+    console.log(app.loginUser);
+
+
     $scope.login = function(){
         debugger;
+
         username = $scope.userNameAdmin;
         password = $scope.userPasswordAdmin;
         console.log(username + password);
@@ -79298,6 +79563,7 @@ angular.module('angularApp')
                 app.loginUser = response.data;
                 console.log(JSON.stringify(app));
                 $state.go("AdminHome");
+                console.log("app.LoginUser: "+app.loginUser);
             }
             else{
                 $scope.loginErrorMessage = response.error[0];
@@ -79326,6 +79592,10 @@ angular.module('angularApp')
 
     $scope.tenantName = app.tenant.name;
     $scope.userConfList = app.tenant.users;
+
+    app.loginUser={};
+    console.log("app.LoginUser: ");
+    console.log(app.loginUser);
 
     $scope.signup = function(userTypeName){
         $state.go("TenantUserSignup", {
@@ -79362,33 +79632,384 @@ angular.module('angularApp')
     }
 }]);
 
+/**
+ * Created by asd on 9/6/2017.
+ */
+
 angular.module('angularApp')
-    .controller('TenantUserHomeController', [ '$scope','$state','tenantLoginService','app',function ($scope,$state,tenantLoginService,app) {
-        $scope.description = {
-            message1  : 'My first Angular app',
-            message2 : 'developing for testing',
-            message3 : tenantLoginService.getPrivate()
+    .controller('ViewPackagesController', [ '$scope','$state', 'app', '$stateParams', 'viewPackagesService', 'mainService',  function ($scope,$state,app,$stateParams,viewPackagesService,mainService) {
+        /* $scope.description = {
+         message1  : 'My first Angular app',
+         message2 : 'developing for testing',
+         message3 : viewRequestController.getPrivate()
+         };*/
+
+        $scope.tenantId = app.loginUser.tenantId;
+        $scope.userId = app.loginUser._id;
+        $scope.userPackage = [];
+        $scope.totalPrice = 0;
+        $scope.totalRequests = 0;
+        $scope.checkboxes = [];
+        userPackage = [];
+        userPackageObject = {};
+        userPackageIds = [];
+        userBillPackgesObject = {};
+        userBillPackges = [];
+        $scope.cardTypes = [
+            "Credit Card",
+            "Debit Card"
+        ];
+        payment = {};
+
+        function dateOfExpiryUserPackage(days){
+            var currentDate = new Date();
+            currentDate.setDate(currentDate.getDate() + parseInt(days));
+            return currentDate;
         };
+
+        viewPackagesService.view($scope.tenantId).then(function(response){
+            console.log(response);
+            $scope.packages = response.packages;
+            for(p in $scope.packages){
+              $scope.checkboxes.push(false);
+            }
+        });
+        var packageInformation = $scope.packages;
+
+        $scope.addPackage = function(package, index){
+           debugger;
+            if($scope.checkboxes[index] == false){
+                $scope.userPackage.push(package);
+                $scope.totalPrice = $scope.totalPrice + parseFloat(package.price);
+                $scope.totalRequests = $scope.totalRequests + parseInt(package.numberOfRequests);
+                $scope.checkboxes[index] = true;
+            }
+            else{
+                for(i = 0; i<$scope.userPackage.length; i++ ){
+                    if($scope.userPackage[i]._id == package._id){
+                        $scope.userPackage.splice(i,1);
+                        $scope.totalPrice = $scope.totalPrice - parseFloat(package.price);
+                        $scope.totalRequests = $scope.totalRequests - parseInt(package.numberOfRequests);
+                        break;
+                    }
+
+                }
+                $scope.checkboxes[index] = false;
+            }
+        };
+
+        $scope.addPayment = function() {
+            var paymentInformation = {
+                "cardType": $scope.cardType,
+                "cardNumber": $scope.cardNumber,
+                "cardName": $scope.cardName,
+                "expiryDate": $scope.expiryDate,
+            };
+            console.log(paymentInformation);
+            for(i=0; i<$scope.userPackage.length; i++){
+                debugger;
+                userPackageObject.userId = app.loginUser._id;
+                userPackageObject.name = $scope.userPackage[i].name;
+                userPackageObject.dateLastModified = $scope.userPackage[i].dateLastModified;
+                userPackageObject.days = $scope.userPackage[i].days;
+                userPackageObject.description = $scope.userPackage[i].description;
+                userPackageObject.status = $scope.userPackage[i].status ;
+                userPackageObject.dateExpiry = $scope.userPackage[i].dateExpiry;
+                userPackageObject.reqType = $scope.userPackage[i].reqType;
+                userPackageObject.price = $scope.userPackage[i].price;
+                userPackageObject.userPackageStatus = "active";
+                userPackageObject.dateCreated = $scope.userPackage[i].dateCreated;
+                userPackageObject.dateLastRenewed = "";
+                userPackageObject.dateExpiryUserPackage = dateOfExpiryUserPackage($scope.userPackage[i].days);
+                userPackageObject.packageRenewedList = [];
+                userPackage.push(userPackageObject);
+            }
+
+            viewPackagesService.insertUserPackges(userPackage).then(function(response){
+                for(i=0; i<response.insertedData.length; i++){
+                    userPackageIds[i] = response.insertedData[i]._id;
+                }
+                userBills = {
+                    "userId" : app.loginUser._id,
+                    "amount" : $scope.totalPrice,
+                    "tenantId" : $scope.tenantId
+                };
+                viewPackagesService.insertUserBills(userBills).then(function(response){
+                    userBillId =  response.insertedData[0]._id;
+
+                    for(i = 0; i< userPackageIds.length; i++){
+                        userBillPackgesObject.userBillId = userBillId;
+                        userBillPackgesObject.userId = $scope.userId;
+                        userBillPackgesObject.userPackageId = userPackageIds[i];
+                        userBillPackgesObject.tenantId = $scope.tenantId;
+                        userBillPackges.push(userBillPackgesObject);
+                    }
+
+                    viewPackagesService.insertUserBillPackages(userBillPackges).then(function(response){
+                        console.log(response);
+                    });
+
+                    payment = {
+                        "userBillId" : userBillId,
+                        "amount" : $scope.totalPrice,
+                        "tenantId" : $scope.tenantId,
+                        "paymentMethodDetails" : {
+                            "cardType" : $scope.cardType,
+                            "cardNumber" : $scope.cardNumber,
+                            "cardName" : $scope.cardName,
+                            "expiryDate" : $scope.expiryDate
+                        }
+                    };
+                    viewPackagesService.insertPayment(payment).then(function(response){
+                        console.log(response);
+
+                    });
+                });
+
+            });
+
+
+
+        };
+
     }]);
 angular.module('angularApp')
-    .controller('RequestListController', [ '$scope','$stateParams','requestListService','app',  function ($scope,$stateParams,requestListService,app) {
+    .controller('dialogController', [ '$scope','$state','requestPostService','mainService','createObjectService','$mdDialog','$mdToast',  function ($scope,$state,requestPostService,mainService,createObjectService,$mdDialog,$mdToast) {
+        $scope.theme = 'red';
+
+        var isThemeRed = true;
+
+        /* $interval(function () {
+         $scope.theme = isThemeRed ? 'blue' : 'red';
+
+         isThemeRed = !isThemeRed;
+         }, 2000);*/
+
+        $scope.showAdvanced = function(ev) {
+            $mdDialog.show({
+                    controller: DialogController,
+                    templateUrl: 'public/templates/request/dialog.tmpl.html',
+                    //template: '{{dialogtest}}',
+                    //parent: angular.element(document.body),
+                    targetEvent: ev,
+                    clickOutsideToClose:true
+                })
+                .then(function(answer) {
+                    $scope.status = 'You said the information was "' + answer + '".';
+                }, function() {
+                    $scope.status = 'You cancelled the dialog.';
+                });
+        };
+
+        function DialogController($scope, $mdDialog) {
+            $scope.hide = function() {
+                $mdDialog.hide();
+            };
+
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+
+            $scope.answer = function(answer) {
+                $mdDialog.hide(answer);
+            };
+
+            $scope.dialogtest = "test dialog";
+debugger;
+            /* Post request code*/
+            //$scope.requestType = "Recruitment";
+            for(i=0; i<app.tenant.requests.length; i++){
+              if(app.tenant.requests[i].hasParent == 0){
+                  $scope.requestType = app.tenant.requests[i].name;
+                  break;
+              }
+            }
+            $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
+
+            $scope.requestPost = {};
+            $scope.requestPost.name= "";
+            $scope.requestPost.location= "";
+            $scope.requestPost.description= "";
+            $scope.requestPost.taskType= "Choose Job Type";
+            $scope.requestPost.experience= "Minimum Experience";
+            $scope.requestPost.qualification= "";
+            $scope.requestPost.salary= "";
+
+            $scope.requestPost.postUserId = app.loginUser._id;
+            $scope.requestPost.userResponses = [];
+            $scope.requestPost.requestType = $scope.requestType ;
+            $scope.requestPost.hasParent = $scope.requestConf.hasParent;
+
+
+            //$scope.postRequestTypes = mainService.getRequestConfsByUserType(app.loginUser.userType);
+
+            /*$scope.loadPostRequestForm = function(){
+                //$scope.requestType = postRequestType;
+                $scope.requestType = "Task";
+                debugger;
+                $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
+            };
+            $scope.loadPostRequestForm();*/
+            $scope.post = function(){
+                var loader = $mdDialog;
+             /*   loader.show({
+                    //targetEvent: $event,
+                    template:
+                    '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+                    '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+                    '       <h3>Posting Request ...</h3>' +
+                    '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+                    '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+                    '       </div>'+
+                    '  </md-dialog-content>' +
+                    '</md-dialog>'
+                });*/
+
+
+
+                /*$scope.request = createObjectService.createFormObject($scope.requestConf);
+                var formJSON = JSON.stringify($scope.request);
+                formJSON = formJSON.substring(0, formJSON.length - 1);
+                formJSON = formJSON + ",";
+                formJSON = formJSON + '"postUserId":' + '"' + app.loginUser._id + '",';
+                formJSON = formJSON + '"userResponses":[],';
+                formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '",';
+                formJSON = formJSON + '"hasParent":' + '"' + $scope.requestConf.hasParent + '"';
+                formJSON = formJSON + '}';
+                $scope.request = JSON.parse(formJSON);*/
+                debugger;
+                requestPostService.postRequest($scope.requestPost).then(function(response){
+                    $mdDialog.hide();
+                    //loader.hide();
+                    var str = JSON.stringify(response);
+                    console.log(str);
+                    if(response.success == true){
+                        var last = {
+                            bottom: false,
+                            top: true,
+                            left: false,
+                            right: true
+                        };
+                        $scope.getToastPosition = function() {
+                            //sanitizePosition();
+
+                            return Object.keys($scope.toastPosition)
+                                .filter(function(pos) { return $scope.toastPosition[pos]; })
+                                .join(' ');
+                        };
+
+                        $scope.toastPosition = angular.extend({},last);
+
+                        var pinTo = $scope.getToastPosition();
+                        $mdToast.show(
+                            $mdToast.simple()
+                                .textContent('Request Posted Successfully!')
+                                .position(pinTo )
+                                .hideDelay(3000)
+                        );
+
+                        $state.go("TennatUserListPostRequests");
+                    }
+                    else{
+                        alert(response.error[0]);
+                    }
+                });
+               // console.log(formJSON);
+            };
+
+
+        }
+
+
+
+
+
+    }]);
+angular.module('angularApp')
+    .controller('RequestListController', [ '$scope','$filter','$stateParams','requestListService','app','NgTableParams',  function ($scope,$filter,$stateParams,requestListService,app,NgTableParams) {
         $scope.description = {
             message: requestListService.getPrivate()
         };
         $scope.tenantID=$stateParams.tenantId;
         $scope.result;
-        $scope.pageTitle = " List Of Requests";
+        $scope.pageTitle = "Requests List";
+
+        //requestListService.getRequestList($scope.tenantID).then(
+        //    function(response){
+        //        $scope.result= response.data;
+        //    }
+        //);
 
         requestListService.getRequestList($scope.tenantID).then(
             function(response){
-                $scope.result= response.data;
+                debugger;
+                var result= response.data;
+                $scope.result=[];
+                for (var i = 0; i < result.length; i++) {
+                    var reqname = result[i].name;
+                    var req_id = result[i]._id;
+                    var username = "";
+                    var dateposted=new Date(result[i].datePosted).toLocaleString();
+
+                    var datelastmodified=new Date(result[i].dateLastModified).toLocaleString();
+                       /* response.data[i].dateCreated = new Date(response.data[i].dateCreated).toLocaleString();
+                        response.data[i].dateLastModified = new Date(response.data[i].dateLastModified).toLocaleString();*/
+
+
+                    if(result[i].hasOwnProperty("requestdetails")){
+                        var username = result[i].requestdetails.name;
+                    }
+                    var temp =
+                    {
+                        _id : req_id,
+                        reqname : reqname,
+                        username : username,
+                        dateposted:dateposted,
+                        datelastmodified:datelastmodified
+                    };
+                    $scope.result.push(temp);
+                }
+                $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
             }
         );
+
+
+        //$scope.requestTable = new NgTableParams({
+        //    page: 1,
+        //    count: 10
+        //
+        //}, {
+        //    getData: function ( params) {
+        //        requestListService.getRequestList($scope.tenantID).then(
+        //            function(response){
+        //                var result= response.data;
+        //                $scope.result=[];
+        //                for (var i = 0; i < result.length; i++) {
+        //                    var reqname = result[i].reqname;
+        //                    var username = result[i].requestdetails.username;
+        //                    var temp =
+        //                    {
+        //                        reqname : reqname,
+        //                        username : username
+        //                    };
+        //                    $scope.result.push(temp);
+        //                }
+        //                console.log("result"+result);
+        //                total= $scope.result.length;
+        //                $scope.data = params.sorting() ? $filter('orderBy')($scope.result, params.orderBy()) : $scope.result;
+        //                $scope.data = params.filter() ? $filter('filter')($scope.data, params.filter()) : $scope.data;
+        //                $scope.data = $scope.data.slice((params.page() - 1) * params.count(), params.page() * params.count());
+        //                return $scope.data;
+        //            }
+        //        );
+        //
+        //    }
+        //});
         //alert("my list request controller");
 
     }]);
 angular.module('angularApp')
-.controller('RequestPostController', [ '$scope','$state','requestPostService','mainService','createObjectService',  function ($scope,$state,requestPostService,mainService,createObjectService) {
+.controller('RequestPostController', [ '$scope','$state','requestPostService','mainService','createObjectService','$mdDialog','$mdToast',  function ($scope,$state,requestPostService,mainService,createObjectService,$mdDialog,$mdToast) {
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
@@ -79398,26 +80019,68 @@ angular.module('angularApp')
     $scope.requestType = "";
     $scope.requestConf;
 
-    $scope.loadPostRequestForm = function(){
+    $scope.postRequestTypes = mainService.getRequestConfsByUserType(app.loginUser.userType);
+
+    $scope.loadPostRequestForm = function(postRequestType){
+        $scope.requestType = postRequestType;
         debugger;
         $scope.requestConf = mainService.getRequestConfByRequestType($scope.requestType);
     };
 
     $scope.post = function(){
+        $mdDialog.show({
+            //targetEvent: $event,
+            template:
+            '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+            '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+            '       <h3>Posting Request ...</h3>' +
+            '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+            '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+            '       </div>'+
+            '  </md-dialog-content>' +
+            '</md-dialog>'
+        });
+
         $scope.request = createObjectService.createFormObject($scope.requestConf);
         var formJSON = JSON.stringify($scope.request);
         formJSON = formJSON.substring(0, formJSON.length - 1);
         formJSON = formJSON + ",";
         formJSON = formJSON + '"postUserId":' + '"' + app.loginUser._id + '",';
         formJSON = formJSON + '"userResponses":[],';
-        formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '"';
+        formJSON = formJSON + '"requestType":' + '"' + $scope.requestType + '",';
+        formJSON = formJSON + '"hasParent":' + '"' + $scope.requestConf.hasParent + '"';
         formJSON = formJSON + '}';
         $scope.request = JSON.parse(formJSON);
         requestPostService.postRequest($scope.request).then(function(response){
+            $mdDialog.hide();
             var str = JSON.stringify(response);
             console.log(str);
             if(response.success == true){
-                $state.go("TenantUserHome");
+                var last = {
+                    bottom: false,
+                    top: true,
+                    left: false,
+                    right: true
+                };
+                $scope.getToastPosition = function() {
+                    //sanitizePosition();
+
+                    return Object.keys($scope.toastPosition)
+                        .filter(function(pos) { return $scope.toastPosition[pos]; })
+                        .join(' ');
+                };
+
+                $scope.toastPosition = angular.extend({},last);
+
+                var pinTo = $scope.getToastPosition();
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent('Request Posted Successfully!')
+                        .position(pinTo )
+                        .hideDelay(3000)
+                );
+
+                $state.go("TennatUserListPostRequests");
             }
             else{
                 alert(response.error[0]);
@@ -79427,34 +80090,26 @@ angular.module('angularApp')
     };
 
 
-
 }]);
 angular.module('angularApp')
-    .controller('UserListRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListRequestsService',  function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListRequestsService) {
+    .controller('UserListPostRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListPostRequestsService',  function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListPostRequestsService) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing',
             message3 : requestPostService.getPrivate()
         };
 
-        debugger;
+
         $scope.requests;
         $scope.requestConfigurations = app.tenant.requests;
         $scope.requestTypes = [];
         $scope.requestResponses = [];
+        $scope.userid = app.loginUser._id;
 
-        for(i=0;i<$scope.requestConfigurations.length;i++){
-            for(j=0;j<$scope.requestConfigurations[i].viewUsers.length;j++){
-                if($scope.requestConfigurations[i].viewUsers[j].name == 'jobseeker' && $scope.requestConfigurations[i].hasParent != "1"){
-                    $scope.requestTypes.push($scope.requestConfigurations[i].name);
-                    break;
-                }
-            }
-        }
-
+        debugger;
         for(i=0;i<$scope.requestConfigurations.length;i++){
             for(j=0;j<$scope.requestConfigurations[i].userResponses.length;j++){
-                if($scope.requestConfigurations[i].userResponses[j].user.name == 'jobseeker'){
+                if($scope.requestConfigurations[i].userResponses[j].user.name == app.loginUser.userType){
                     response = {
                         request:$scope.requestConfigurations[i],
                         responses:$scope.requestConfigurations[i].userResponses[j].responseRequests
@@ -79465,23 +80120,195 @@ angular.module('angularApp')
             }
         }
 
+        $scope.selectedRequestId = "";
+        $scope.selectedRequest = {};
+        $scope.selectTask = function(requestId){
+            debugger;
+            $scope.selectedRequestId = requestId;
+            for(i=0;i<$scope.requests.length;i++){
+
+                if($scope.requests[i]._id == requestId){
+                    $scope.selectedRequest = $scope.requests[i];
+                    break;
+                }
+
+            }
+        }
+
+
+        $scope.listRequestsByUserId = function(userId){
+            debugger;
+            userListPostRequestsService.listPostRequestsByUserId(userId).then(function(response){
+                $scope.requests = response.data;
+                for(i=0;i<$scope.requests.length;i++){
+                    //$scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+                    //$scope.requests[i].datePosted = $scope.requests[i].datePosted.toLocaleString();
+
+                    $scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+
+                    var seconds = parseInt((new Date() - $scope.requests[i].datePosted) / (1000));
+                    var minutes = Math.floor(seconds / 60);
+                    var hours = Math.floor(minutes / 60);
+                    var days = Math.floor(hours / 24);
+                    //var days = parseInt((new Date() - $scope.requests[i].datePosted) / (1000 * 60 * 60 * 24));
+                    var months = Math.floor(days / 31);
+                    var years = Math.floor(months / 12);
+                    if (years != 0) {
+                        $scope.requests[i].datePosted = years + " years ago";
+                    }
+                    else if(months != 0 && years == 0){
+                        $scope.requests[i].datePosted = months + " months ago";
+                    }
+                    else if(days != 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted =days + " days ago";
+                    }
+                    else if(hours != 0 && days == 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted = hours + " hours ago";
+                    }
+                    else if(minutes != 0 && hours == 0 && days == 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted =  minutes + " minutes ago";
+                    }
+                    else if(seconds != 0 && minutes == 0 && hours == 0 && days == 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted =  seconds + " seconds ago";
+                    }
+                    else if(seconds == 0 && minutes == 0 && hours == 0 && days == 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted =  "Just now";
+                    }
+                }
+            });
+        };
+
+        $scope.listRequestsByUserId(app.loginUser._id);
+    }]);
+angular.module('angularApp')
+    .controller('UserListRequestsController', [ '$scope','$state','requestPostService','requestGetService','requestUpdateService','mainService','createObjectService','userListRequestsService','$mdDialog','$mdToast','viewRequestService', function ($scope,$state,requestPostService,requestGetService,requestUpdateService,mainService,createObjectService,userListRequestsService,$mdDialog,$mdToast,viewRequestService) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : requestPostService.getPrivate()
+        };
+        $scope.requestSelected = false;
+        debugger;
+        $scope.requests;
+        $scope.requestConfigurations = app.tenant.requests;
+        $scope.requestTypes = [];
+        $scope.requestResponses = [];
+
+        for(i=0;i<$scope.requestConfigurations.length;i++){
+            for(j=0;j<$scope.requestConfigurations[i].viewUsers.length;j++){
+                if($scope.requestConfigurations[i].viewUsers[j].name == app.loginUser.userType && $scope.requestConfigurations[i].hasParent != "1"){
+                    $scope.requestTypes.push($scope.requestConfigurations[i].name);
+                    break;
+                }
+            }
+        }
+
+        for(i=0;i<$scope.requestConfigurations.length;i++){
+            for(j=0;j<$scope.requestConfigurations[i].userResponses.length;j++){
+                if($scope.requestConfigurations[i].userResponses[j].user.name == app.loginUser.userType){
+                    response = {
+                        request:$scope.requestConfigurations[i],
+                        responses:$scope.requestConfigurations[i].userResponses[j].responseRequests
+                    }
+                    $scope.requestResponses.push(response);
+                    break;
+                }
+            }
+        }
+        $scope.selectedRequestId = "";
+        $scope.selectedRequest = {};
+        $scope.selectTask = function(requestId){
+            debugger;
+            //requestId = "59d4aee2d7dfa42a20d98ce5";
+            //requestId = "59d4c5380faa2316303529ab";
+            //requestId = "59c0fe7667b9b2042819722f";
+            $scope.selectedRequestId = requestId;
+            for(i=0;i<$scope.requests.length;i++){
+
+                if($scope.requests[i]._id == requestId){
+                    $scope.selectedRequest = $scope.requests[i];
+                    break;
+                }
+
+            }
+            //var requestId = $stateParams.requestId;
+            //viewRequestService.view(requestId).then(function(response){
+            //    console.log(response);
+            //    // $scope.result = response.data;
+            //    var information_to_print = response.data[0];
+            //    var information_to_print2 = response.data2[0];
+            //    debugger;
+            //    delete information_to_print._id;
+            //    delete information_to_print.postUserId;
+            //    information_to_print.postusername = information_to_print.username.username;
+            //    delete information_to_print.username;
+            //    delete information_to_print.user_response;
+            //    delete information_to_print.userResponses;
+            //    delete information_to_print.tenantId;
+            //    delete information_to_print.post_user_id;
+            //    information_to_print.tenantname = information_to_print2.tenantname.name;
+            //    $scope.result = information_to_print;
+            //
+            //    // $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
+            //});
+        }
+
+        $scope.viewResponse = function(){
+            debugger;
+            viewRequestService.viewResponse($scope.selectedRequestId).then(function(response){
+                $scope.responses = response.data;
+            });
+        };
+
         $scope.listRequestsByRequestTypes = function(requestTypes){
             debugger;
             userListRequestsService.listRequestsByRequestTypes(requestTypes,app.loginUser._id).then(function(response){
                 $scope.requests = response.data;
-                for(i=0;i<$scope.requests.length;i++){
+                for(i=0;i<$scope.requests.length;i++) {
                     $scope.requests[i].userResponded = false;
-                    for(j=0;j<$scope.requests[i].userResponses.length;j++){
+                    for (j = 0; j < $scope.requests[i].userResponses.length; j++) {
 
-                            if($scope.requests[i].userResponses[j].userId == app.loginUser._id){
-                                $scope.requests[i].userResponded = true;
-                            }
-                            else{
-                                $scope.requests[i].userResponses.splice(j,1);
+                        if ($scope.requests[i].userResponses[j].userId == app.loginUser._id) {
+                            $scope.requests[i].userResponded = true;
+                        }
+                        else {
+                            $scope.requests[i].userResponses.splice(j, 1);
 
-                            }
+                        }
 
                     }
+                    debugger;
+                    $scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+
+                    var seconds = parseInt((new Date() - $scope.requests[i].datePosted) / (1000));
+                    var minutes = Math.floor(seconds / 60);
+                    var hours = Math.floor(minutes / 60);
+                    var days = Math.floor(hours / 24);
+                    //var days = parseInt((new Date() - $scope.requests[i].datePosted) / (1000 * 60 * 60 * 24));
+                    var months = Math.floor(days / 31);
+                    var years = Math.floor(months / 12);
+                    if (years != 0) {
+                        $scope.requests[i].datePosted = years + " years ago";
+                    }
+                    else if(months != 0 && years == 0){
+                        $scope.requests[i].datePosted = months + " months ago";
+                    }
+                    else if(days != 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted =days + " days ago";
+                    }
+                    else if(hours != 0 && days == 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted = hours + " hours ago";
+                    }
+                    else if(minutes != 0 && hours == 0 && days == 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted =  minutes + " minutes ago";
+                    }
+                    else if(seconds != 0 && minutes == 0 && hours == 0 && days == 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted =  seconds + " seconds ago";
+                    }
+                    else if(seconds == 0 && minutes == 0 && hours == 0 && days == 0 && months == 0 && years == 0){
+                        $scope.requests[i].datePosted =  "Just now";
+                    }
+
                 }
             });
         };
@@ -79489,7 +80316,20 @@ angular.module('angularApp')
         $scope.listRequestsByRequestTypes($scope.requestTypes);
 
         $scope.respondRequest = function(request,responseRequestConf){
-            responseRequestConf = JSON.parse(responseRequestConf);
+            $mdDialog.show({
+                //targetEvent: $event,
+                template:
+                '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+                '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+                '       <h3>Posting Request ...</h3>' +
+                '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+                '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+                '       </div>'+
+                '  </md-dialog-content>' +
+                '</md-dialog>'
+            });
+
+            //responseRequestConf = JSON.parse(responseRequestConf);
             debugger;
             responseRequest = createObjectService.createFormObject(responseRequestConf);
             var formJSON = JSON.stringify(responseRequest);
@@ -79517,23 +80357,51 @@ angular.module('angularApp')
                                 requestId: response.data._id
                             }
                             requestUpdateService.addResponse(request._id, requestResponse).then(function(response){
+                                $mdDialog.hide();
                                 var str = JSON.stringify(response);
                                 console.log(str);
                                 if(response.success == true){
                                     //$state.go("TenantUserHome");
-                                    alert("your request is sent successfully");
+                                    var last = {
+                                        bottom: false,
+                                        top: true,
+                                        left: false,
+                                        right: true
+                                    };
+                                    $scope.getToastPosition = function() {
+                                        //sanitizePosition();
+
+                                        return Object.keys($scope.toastPosition)
+                                            .filter(function(pos) { return $scope.toastPosition[pos]; })
+                                            .join(' ');
+                                    };
+
+                                    $scope.toastPosition = angular.extend({},last);
+
+                                    var pinTo = $scope.getToastPosition();
+                                    $mdToast.show(
+                                        $mdToast.simple()
+                                            .textContent('Request Posted Successfully!')
+                                            .position(pinTo )
+                                            .hideDelay(3000)
+                                    );
+                                    $scope.selectedRequest.userResponded == true;
+                                    //alert("your request is sent successfully");
                                 }
                                 else{
+                                    $mdDialog.hide();
                                     alert(response.error[0]);
                                 }
                             });
                         }
                         else{
+                            $mdDialog.hide();
                             alert(response.error[0]);
                         }
                     });
                 }
                 else{
+                    $mdDialog.hide();
                     alert(response.error[0]);
                 }
             });
@@ -79541,6 +80409,7 @@ angular.module('angularApp')
             console.log(formJSON);
         }
     }]);
+
 angular.module('angularApp')
     .controller('RequestViewController', [ '$scope','$stateParams','requestViewService','app',  function ($scope,$stateParams,requestViewService,app) {
         $scope.description = {
@@ -79553,8 +80422,153 @@ angular.module('angularApp')
         //alert("View Request controller");
 
     }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+
 angular.module('angularApp')
-.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,mainService,$state,app) {
+    .controller('viewRequestController', [ '$scope','$state', 'app', '$stateParams', 'viewRequestService', 'mainService','NgTableParams','$filter',  function ($scope,$state,app,$stateParams,viewRequestService,mainService,NgTableParams,$filter) {
+       /* $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : viewRequestController.getPrivate()
+        };*/
+
+        var requestId = $stateParams.requestId;
+        viewRequestService.view(requestId).then(function(response){
+            console.log(response);
+           // $scope.result = response.data;
+            var information_to_print = response.data[0];
+            var information_to_print2 = response.data2[0];
+            debugger;
+            delete information_to_print._id;
+            delete information_to_print.postUserId;
+            information_to_print.postusername = information_to_print.username.username;
+            delete information_to_print.username;
+            delete information_to_print.user_response;
+            delete information_to_print.userResponses;
+            delete information_to_print.tenantId;
+            delete information_to_print.post_user_id;
+            information_to_print.tenantname = information_to_print2.tenantname.name;
+            $scope.result = information_to_print;
+
+           // $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
+        });
+        
+
+        $scope.viewResponse = function(){
+            debugger;
+            viewRequestService.viewResponse(requestId).then(function(response){
+                $scope.responses = response.data;
+            });
+        };
+
+    }]);
+/**
+ * Created by asd on 8/30/2017.
+ */
+
+angular.module('angularApp')
+    .controller('viewMyProfileController', [ '$scope','$stateParams','mainService','$state','app','createObjectService','viewMyProfileService',  function ($scope,$stateParams,mainService,$state,app,createObjectService,viewMyProfileService) {
+        //$scope.description = {
+        //    message1  : 'My first Angular app',
+        //    message2 : 'developing for testing',
+        //    message3 : viewMyProfileService.getPrivate()
+        //};
+
+        $scope.insertPropertyValue = function(property,name,loginUserProperty){
+
+            if(property.list == 'true') {
+                if (property.subProperties.length == 0) {
+                    for (j = 0; j < loginUserProperty[name].length; j++) {
+                        var tempConf = JSON.stringify(property);
+                        tempConf = JSON.parse(tempConf);
+                        tempConf.value = loginUserProperty[name][j];
+                        property.propertiesList.push(tempConf);
+                    }
+                }
+                else if(property.subProperties.length != 0){
+                    for (j = 0; j < loginUserProperty[name].length; j++) {
+                        var tempConf = JSON.stringify(property);
+                        tempConf = JSON.parse(tempConf);
+                        tempConf.subProperties = [];
+
+                        for(k=0;k<property.subProperties.length;k++){
+                            childName = property.subProperties[k].name;
+                            var subProperty = $scope.insertPropertyValue(property.subProperties[k],childName,loginUserProperty[name][j]);
+                            tempConf.subProperties.push(subProperty);
+                        }
+                        property.propertiesList.push(tempConf);
+                    }
+                }
+            }
+            else if(property.list != 'true'){
+
+                if (property.subProperties.length != 0){
+                    for(k=0;k<property.subProperties.length;k++){
+                        childName = property.subProperties[k].name;
+                        var subProperty = $scope.insertPropertyValue(property.subProperties[k],childName,loginUserProperty[name]);
+                    }
+                }
+                else {
+                    if(loginUserProperty.hasOwnProperty(name)){
+                        // if(loginUserProperty[name] == "saira"){
+                        property.value = loginUserProperty[name];
+                        console.log( loginUserProperty[name]);
+                        console.log( property);
+                        return property;
+                    }
+                }
+
+            }
+
+        };
+
+        $scope.userConf1 = mainService.getUserConfByUserType(app.loginUser.userType);
+        $scope.userConf = JSON.stringify($scope.userConf1);
+        $scope.userConf = JSON.parse($scope.userConf);
+        userProperties =$scope.userConf.properties;
+        console.log("app ===" );
+        console.log(JSON.stringify(app.loginUser));
+        console.log(JSON.stringify($scope.userConf));
+        debugger;
+        for(i=0;i<userProperties.length;i++) {
+            console.log(userProperties[i].name);
+            name = userProperties[i].name;
+            var prop = $scope.insertPropertyValue(userProperties[i],name,app.loginUser);
+
+        }
+
+        $scope.viewMyProfile = function(){
+            debugger;
+            console.log("View my profile");
+        }
+
+        $scope.update = function(){
+            debugger;
+            var updatedUser = createObjectService.createFormObject($scope.userConf);
+            updatedUser.tenantId = app.tenant._id;
+            updatedUser._id = app.loginUser._id;
+            updatedUser.dateCreated = new Date(app.loginUser.dateCreated);
+            viewMyProfileService.updateUserProfile(updatedUser).then(function(response){
+                console.log(response);
+                if(response.success == true){
+                    updatedUser._id = updatedUser._id.toString();
+                    app.loginUser = updatedUser;
+                    alert("You have successfully updated your profile !");
+                    $state.go("AdminHome");
+                }
+                else{
+                    alert("There is some problem updating your profile");
+                }
+            });
+        }
+
+
+    }]);
+
+angular.module('angularApp')
+.controller('TenantUserSignupController', [ '$scope','$stateParams','tenantUserSignupService','tenantLoginService','mainService','$state','app',  function ($scope,$stateParams,tenantUserSignupService,tenantLoginService ,mainService,$state,app) {
     $scope.description = {
         message1  : 'My first Angular app',
         message2 : 'developing for testing',
@@ -79564,22 +80578,50 @@ angular.module('angularApp')
     $scope.tenantName = app.tenant.name;
     $scope.userType = $stateParams.userType;
     //$scope.user = mainService.getUserObjectByUserType($scope.userType);
-    $scope.user;
-    $scope.userConf = mainService.getUserConfByUserType($scope.userType);
-    str = JSON.stringify($scope.user);
-    console.log(str);
+    $scope.user = {};
+    if($scope.userType == "Company"){
+        $scope.user.email = "";
+        $scope.user.fullName = "";
+        $scope.user.password = "";
+        $scope.user.phoneNumber = "";
+        $scope.user.name = "";
+        $scope.user.countryName = "";
+        $scope.user.source = "";
+        $scope.user.numberOfEmployees = "";
+        $scope.username = "";
+        $scope.password = "";
+
+    }
+    else if($scope.userType == "Sider"){
+        $scope.user.name = "";
+        //$scope.user.lastName = "";
+        $scope.user.gender = "I am a";
+        $scope.user.email = "";
+        $scope.user.phoneNumber = "";
+        $scope.user.age = "How old are you?";
+        $scope.user.source = "How did you hear about npDemo?";
+        $scope.user.availability = "What's your general weekly availability?";
+        $scope.user.isStudent = "Are you a student";
+        $scope.username = "";
+
+    }
+    //$scope.userConf = mainService.getUserConfByUserType($scope.userType);
+    //str = JSON.stringify($scope.user);
+    //console.log(str);
 
     $scope.signup = function(){
         debugger;
-        $scope.formObject();
+        /*$scope.formObject();
         str = JSON.stringify($scope.user);
-        console.log(str);
+        console.log(str);*/
         $scope.user.userType = $scope.userType ;
         tenantUserSignupService.signup($scope.user,app).then(function(response){
             var str = JSON.stringify(response);
             console.log(str);
             if(response.success == true){
-                $state.go("TenantUserHome");
+
+                $scope.loginInfo();
+                //$state.go("TenantUserHome");
             }
             else{
                 alert(response.error[0]);
@@ -79590,33 +80632,64 @@ angular.module('angularApp')
 
     $scope.formObject = function(){
         $scope.user = tenantUserSignupService.createFormObject($scope.userConf);
-        //console.log($scope.user);
+    }
+
+    $scope.loginInfo = function(){
+        debugger;
+        tenant_id = app.tenant._id;
+        username = $scope.user.username;
+        password = $scope.user.password;
+        console.log("tenantId="+tenant_id + " Username="+username + " password="+password);
+        var loginUser = {
+            tenant_id : tenant_id,
+            username : username,
+            password : password
+        }
+
+        tenantLoginService.getUserInformation(tenant_id, username , password).then(function(response){
+            console.log(response);
+            if(response.success == true){
+                app.loginUser = response.data;
+                console.log(JSON.stringify(app.loginUser));
+                $state.go("TenantUserHome");
+            }
+            else{
+                $scope.loginErrorMessage = response.error[0];
+                $scope.loginError = true;
+            }
+
+        });
+
     }
 
 }]);
 
 angular.module('angularApp')
-    .controller('TenantListController', [ '$scope','tenantListService','app',  function ($scope,tenantListService,app) {
+    .controller('TenantListController', [ '$scope','$filter','tenantListService','app','NgTableParams','$q', function ($scope,$filter,tenantListService,app,NgTableParams,$q) {
         $scope.description = {
             message: tenantListService.getPrivate()
         };
-        $scope.result;
-        $scope.pageTitle = " List Of Tenants ";
+        //$scope.result = [{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'},{name:'usman'}];
+        $scope.pageTitle = "Tenants List ";
+        $scope.tenantsTable;
 
-        tenantListService.getTenantList().then(
-                function(response){
-                    $scope.result= response.data;
+        debugger;
+
+        $scope.tenantList = tenantListService.getTenantList().then(
+            function(response){
+                for(var i=0;i<response.data.length;i++){
+                    response.data[i].dateCreated = new Date(response.data[i].dateCreated).toLocaleString();
+                    response.data[i].dateLastModified = new Date(response.data[i].dateLastModified).toLocaleString();
                 }
+                $scope.tenantsTable = new NgTableParams({count: 20}, { dataset: response.data});
+            }
         );
-
-       // alert("my list tenant controller");
-
     }]);
 /**
  * Created by Usman Irfan on 15.09.17.
  */
 angular.module('angularApp')
-.controller('TenantRegisterController', [ '$scope','tenantRegisterService','app','$q',  function ($scope,tenantRegisterService,app,$q) {
+.controller('TenantRegisterController', [ '$scope','tenantRegisterService','app','$q','$state','$mdDialog','$mdToast',  function ($scope,tenantRegisterService,app,$q,$state,$mdDialog,$mdToast) {
    
     $scope.userPropertyIds = 0;
     $scope.tenantuserIds = 0;
@@ -79648,8 +80721,8 @@ angular.module('angularApp')
                 name: 'username',
                 value:'',
                 type:'text',
-                min:'',
-                max:'',
+                min:'3',
+                max:'15',
                 required:'true',
                 pattern:'',
                 list:false,
@@ -79661,8 +80734,8 @@ angular.module('angularApp')
                 name: 'password',
                 value:'',
                 type:'password',
-                min:'',
-                max:'',
+                min:'3',
+                max:'15',
                 required:'true',
                 pattern:'',
                 list:false,
@@ -79674,8 +80747,8 @@ angular.module('angularApp')
                 name: 'name',
                 value:'',
                 type:'text',
-                min:'',
-                max:'',
+                min:'3',
+                max:'30',
                 required:'true',
                 pattern:'',
                 list:false,
@@ -79741,8 +80814,8 @@ angular.module('angularApp')
                     name: 'name',
                     value:'',
                     type:'text',
-                    min:'',
-                    max:'',
+                    min:'3',
+                    max:'50',
                     required:'true',
                     pattern:'',
                     list:false,
@@ -79880,75 +80953,134 @@ angular.module('angularApp')
         }
     }
 
-    $scope.registerTenant = function(){
+    $scope.registerTenant = function(ev){
         //console.log($scope.tenant.users.length);
-        
-        for(j=0;j<$scope.tenant.users.length;j++){
-            var userPropertiesLength = $scope.tenant.users[j].properties.length;
-            for(i=0;i<userPropertiesLength;i++){
-                if($scope.tenant.users[j].properties[i].parentId != 0){
-                    $scope.tenant.users[j].properties.splice(i,1);
-                    userPropertiesLength--;
-                    i--;
-                }
-            }
-        }
+        var confirm = $mdDialog.confirm()
+            .title('Please confirm')
+            .textContent('Are you sure you want to create new tenant with specified configuration.')
+            .targetEvent(ev)
+            .ok('Yes')
+            .cancel('Cancel');
 
-        for(j=0;j<$scope.tenant.requests.length;j++){
-            var requestPropertiesLength = $scope.tenant.requests[j].properties.length;
-            for(i=0;i<requestPropertiesLength;i++){
-                if($scope.tenant.requests[j].properties[i].parentId != 0){
-                    $scope.tenant.requests[j].properties.splice(i,1);
-                    requestPropertiesLength--;
-                    i--;
-                }
-            }
-        }
-        str = JSON.stringify($scope.tenant);
-        console.log(str);
+            $mdDialog.show(confirm).then(function() {
+                //alert("yes");
+                $mdDialog.show({
+                    //targetEvent: $event,
+                    template:
+                    '<md-dialog aria-label="List dialog" style="text-align:center;height:250px;height:300px;padding:20px">' +
+                    '  <md-dialog-content style="text-align:center;height:100%;width:100%;padding:0px">'+
+                    '       <h3>Creating Tenant ...</h3>' +
+                    '       <div style="text-align:center;height:200px;width:100%;padding:60px">'+
+                    '           <md-progress-circular class="md-hue-2" md-diameter="70"></md-progress-circular>' +
+                    '       </div>'+
+                    '  </md-dialog-content>' +
+                    '</md-dialog>'
+                });
 
-        tenantRegisterService.register($scope.tenant,app.baseUrl).then(function(response){
-
-        });
-    }
-
-    $scope.checkPropertyNameUnique = function(formField,propertyName,list){
-        debugger;
-        var fieldName = formField;
-        if($scope.tenantRegistrationForm.hasOwnProperty(formField)){
-            fieldName = formField;
-        }
-        else{
-            propertyName = propertyName.substring(0, propertyName.length - 1);
-            fieldName = formField + propertyName;
-        }
-
-        $scope.tenantRegistrationForm[fieldName].$viewValue;
-        var matchCounter=0
-
-            for(i=0;i<list.length;i++){
-                if($scope.tenantRegistrationForm[fieldName].$viewValue == list[i].name) {
-                    matchCounter++;
-                    if(matchCounter == 2) {
-                        $scope.tenantRegistrationForm[fieldName].$setValidity('unique', false);
-                        break;
+                for(j=0;j<$scope.tenant.users.length;j++){
+                    var userPropertiesLength = $scope.tenant.users[j].properties.length;
+                    for(i=0;i<userPropertiesLength;i++){
+                        if($scope.tenant.users[j].properties[i].parentId != 0){
+                            $scope.tenant.users[j].properties.splice(i,1);
+                            userPropertiesLength--;
+                            i--;
+                        }
                     }
                 }
-                else{
-                    $scope.tenantRegistrationForm[fieldName].$setValidity('unique', true);
+
+                for(j=0;j<$scope.tenant.requests.length;j++){
+                    var requestPropertiesLength = $scope.tenant.requests[j].properties.length;
+                    for(i=0;i<requestPropertiesLength;i++){
+                        if($scope.tenant.requests[j].properties[i].parentId != 0){
+                            $scope.tenant.requests[j].properties.splice(i,1);
+                            requestPropertiesLength--;
+                            i--;
+                        }
+                    }
+                }
+                str = JSON.stringify($scope.tenant);
+                console.log(str);
+
+                tenantRegisterService.register($scope.tenant,app.baseUrl).then(function(response){
+                    $mdDialog.hide();
+                    var pinTo = $scope.getToastPosition();
+
+                    $mdToast.show(
+                        $mdToast.simple()
+                            .textContent('Tenant Created Successfully!')
+                            .position(pinTo )
+                            .hideDelay(3000)
+                    );
+                    $state.go("ListTenant");
+                });
+
+            }, function() {
+                //alert("no");
+            });
+
+
+    }
+
+    $scope.checkPropertyNameUnique = function(formField,list,r,fieldIndex){
+        debugger;
+
+        var fieldName = formField;
+
+        fieldName = formField + fieldIndex;
+        var matchCounter=0;
+
+        for(i=0;i<list.length;i++){
+            if(r.name == list[i].name){
+                matchCounter++;
+                if(matchCounter == 2) {
+                    //r.name  = r.name .substring(0, r.name.length - 1);
+                    $scope.tenantRegistrationForm[fieldName].$setValidity('unique', false);
+                    break;
                 }
             }
-
-
-
+            else{
+                $scope.tenantRegistrationForm[fieldName].$setValidity('unique', true);
+            }
+        }
 
 
     };
 
-    $scope.test = function(){
-        return "xyz";
+    $scope.removeFromList = function(item,list){
+        for(i=0;i<list.length;i++){
+            if(item == list[i])
+                list.splice(i,1);
+        }
+    };
+
+    var last = {
+        bottom: false,
+        top: true,
+        left: false,
+        right: true
+    };
+
+    $scope.toastPosition = angular.extend({},last);
+
+    $scope.getToastPosition = function() {
+        //sanitizePosition();
+
+        return Object.keys($scope.toastPosition)
+            .filter(function(pos) { return $scope.toastPosition[pos]; })
+            .join(' ');
+    };
+
+    function sanitizePosition() {
+        var current = $scope.toastPosition;
+
+        if ( current.bottom && last.top ) current.top = false;
+        if ( current.top && last.bottom ) current.bottom = false;
+        if ( current.right && last.left ) current.left = false;
+        if ( current.left && last.right ) current.right = false;
+
+        last = angular.extend({},current);
     }
- 
+
 }]);
 
 angular.module('angularApp')
@@ -79965,30 +81097,122 @@ angular.module('angularApp')
 
     }]);
 angular.module('angularApp')
-    .controller('UserListController', [ '$scope','$stateParams','userListService','app',  function ($scope,$stateParams,userListService,app) {
+    .controller('CreateController', [ '$scope','$stateParams','createService','getService','mainService','$state','app',  function ($scope,$stateParams,createService,getService,mainService,$state,app) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing',
+            message3 : createService.getPrivate(),
+            message4 : getService.getPrivate()
+        };
+        debugger;
+        $scope.userType='';
+        $scope.tenantConf = {};
+        $scope.userConfList = [];
+        $scope.userConf = {};
+
+        $scope.getTenantConfiguration = function() {
+            debugger;
+            getService.getTenantConf($stateParams.tenantId).then(
+                function (response) {
+                    debugger;
+                    $scope.tenantConf = response.tenant[0];
+                    $scope.userConfList = $scope.tenantConf.users;
+                });
+        };
+
+        $scope.getTenantConfiguration();
+        $scope.loadSignUpForm = function(){
+            for(i=0;i<$scope.tenantConf.users.length;i++){
+                    if($scope.tenantConf.users[i].name == $scope.userType)
+                        $scope.userConf = $scope.tenantConf.users[i];
+            }
+        };
+        str = JSON.stringify($scope.user);
+        console.log(str);
+
+        $scope.signup = function(){
+            debugger;
+            $scope.formObject();
+            str = JSON.stringify($scope.user);
+            console.log(str);
+            $scope.user.userType = $scope.userType ;
+            $scope.user.tenantId = $stateParams.tenantId;
+            createService.signup($scope.user,app).then(function(response){
+                debugger;
+                var str = JSON.stringify(response);
+                console.log(str);
+                if(response.success == true){
+                    $state.go("ListUser", {'tenantId': $stateParams.tenantId});
+                }
+                else{
+                    alert(response.error[0]);
+                }
+            });
+
+        }
+
+        $scope.formObject = function(){
+            $scope.user = createService.createFormObject($scope.userConf);
+
+        }
+
+    }]);
+angular.module('angularApp')
+    .controller('UserListController', [ '$scope','$filter','$stateParams','userListService','app','NgTableParams',  function ($scope,$filter,$stateParams,userListService,app,NgTableParams) {
         $scope.description = {
             message: userListService.getPrivate()
         };
         $scope.tenantID=$stateParams.tenantId;
         $scope.result;
-        $scope.pageTitle = " List Of Users";
+        $scope.pageTitle = " Users List";
 
         userListService.getUserList($scope.tenantID).then(
             function(response){
-                $scope.result= response.data;
+                for(var i=0;i<response.data.length;i++){
+                    response.data[i].dateCreated = new Date(response.data[i].dateCreated).toLocaleString();
+                    response.data[i].dateLastModified = new Date(response.data[i].dateLastModified).toLocaleString();
+                }
+                $scope.userTable = new NgTableParams({count: 2}, { dataset: response.data});
             }
         );
-        //alert("my list user controller");
 
     }]);
 angular.module('angularApp')
-    .controller('UserViewController', [ '$scope','$stateParams','userViewService','app',  function ($scope,$stateParams,userViewService,app) {
+    .controller('UserViewController', [ '$scope','$stateParams','userViewService','app', 'userListPostRequestsService',  function ($scope,$stateParams,userViewService,app,userListPostRequestsService) {
         $scope.description = {
             message: userViewService.getPrivate()
         };
 
-        $scope.pageTitle = "User Page ";
-        $scope.userID=$stateParams.userId;
+        var userId = $stateParams.userId;
+        $scope.requestResponses = [];
+
+        userViewService.view(userId).then(function(response){
+            console.log(response);
+            // $scope.result = response.data;
+            var information_to_print = response.data[0];
+            debugger;
+            information_to_print.tenantName = information_to_print.tenantName.name;
+            delete information_to_print.tenantId;
+            delete information_to_print._id;
+            information_to_print.dateCreated =  new Date(information_to_print.dateCreated).toLocaleString();
+            information_to_print.dateLastModified = new Date(information_to_print.dateLastModified).toLocaleString();
+            $scope.result = information_to_print;
+
+            // $scope.requestTable = new NgTableParams({count: 10}, { dataset: $scope.result});
+        });
+
+        $scope.listRequestsByUserId = function(userId){
+            debugger;
+            userListPostRequestsService.listPostRequestsByUserId(userId).then(function(response){
+                $scope.requests = response.data;
+                for(i=0;i<$scope.requests.length;i++){
+                    $scope.requests[i].datePosted = new Date($scope.requests[i].datePosted);
+                    $scope.requests[i].datePosted = $scope.requests[i].datePosted.toLocaleString();
+                    console.log($scope.requests[i]);
+                }
+            });
+        };
+        $scope.listRequestsByUserId(userId);
 
         //alert("View User controller");
 
@@ -80014,6 +81238,33 @@ angular.module('angularApp')
  * Created by Usman Irfan.
  */
 angular.module('angularApp')
+    .service('tennatUserListBillsService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "adminService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.login = function(){
+            return true;
+        }
+
+        this.getUserBills = function(userid){
+            var deferred = $q.defer();
+            $http.get(app.apiUrl + "/bill/getUserBillList/ByUserId/" + userid)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
     .service('createObjectService', ['$http','$q', function ($http,$q) {
 
         var thisIsPrivate = "createObjectService";
@@ -80029,7 +81280,7 @@ angular.module('angularApp')
             formJSON = this.createFormJSON(conf.properties,formJSON,skipPropertyName);
             formJSON = formJSON.substring(0, formJSON.length - 1);
             formJSON = formJSON + '}';
-            alert(formJSON);
+            //alert(formJSON);
             var formObject = JSON.parse(formJSON);
             return formObject;
         };
@@ -80087,6 +81338,102 @@ angular.module('angularApp')
         }
 
     }]);
+
+angular.module('angularApp')
+    .service('getUserInfoService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "getUserInfoService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.checkUserInfo = function(tenantId , emailId){
+
+            var deferred = $q.defer();
+            var user_data = {
+                tenantId : tenantId,
+                emailId : emailId
+            };
+            $http.post(app.apiUrl + "/user/getUser" , user_data )
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+    }]);
+angular.module('angularApp')
+    .service('insertEmailService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "insertEmailService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.insertMail = function(baseUrl,userId,tenantId , emailId){
+
+            var deferred = $q.defer();
+            var user_data = {
+                baseUrl:baseUrl,
+                userId:userId,
+                tenantId : tenantId,
+                emailId : emailId,
+
+            };
+
+            $http.post(app.apiUrl + "/email/forgotPasswordInsertEmail" , user_data )
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+    }]);
+
+angular.module('angularApp')
+    .service('sendEmailService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "sendEmailService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.sendMail = function(baseUrl,userId,tenantId , emailId,_id){
+
+            var deferred = $q.defer();
+            var user_data = {
+                baseUrl:baseUrl,
+                userId:userId,
+                tenantId : tenantId,
+                emailId : emailId,
+                _id:_id
+
+            };
+
+
+            $http.post(app.apiUrl + "/email/forgotPasswordUpdateEmail" , user_data )
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+    }]);
 /**
  * Created by Usman Irfan.
  */
@@ -80110,7 +81457,7 @@ angular.module('angularApp')
             username : username,
             password : password
         };
-        $http.post(app.baseUrl + "api/user/loginUser" , login_data )
+        $http.post(app.apiUrl + "/user/loginUser" , login_data )
             .then(function(response) {
                 debugger;
                 str = JSON.stringify(response);
@@ -80143,7 +81490,7 @@ angular.module('angularApp')
             username : username,
             password : password
         };
-        $http.post(app.baseUrl + "api/user/loginUser" , login_data )
+        $http.post(app.apiUrl + "/user/loginUser" , login_data )
             .then(function(response) {
                 debugger;
                 str = JSON.stringify(response);
@@ -80157,155 +81504,58 @@ angular.module('angularApp')
 }]);
 
 /**
- * Created by Usman Irfan.
+ * Created by asd on 9/6/2017.
  */
+
 angular.module('angularApp')
-    .service('requestGetService', ['$http','$q', function ($http,$q) {
+    .service('viewPackagesService', ['$http','$q', function ($http,$q) {
 
-        var thisIsPrivate = "requestPostService";
+        //var thisIsPrivate = "viewPackagesService";
 
-        this.getPrivate = function() {
+       /* this.getPrivate = function() {
             return thisIsPrivate;
-        };
+        };*/
 
-        this.getRequestByName = function(requestName){
+        this.view = function(tenantId){
+
             var deferred = $q.defer();
-            $http.get(app.baseUrl + "api/request/getByName/" + requestName)
-                .then(function(response) {
-                    str = JSON.stringify(response);
-                    console.log(str);
-                    return deferred.resolve(response.data);
-                });
-            return deferred.promise;
-        }
-
-    }]);
-angular.module('angularApp')
-    .service('requestListService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "requestListService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-        this.getRequestList = function(tenantID){
-            var deferred = $q.defer();
-            $http.get(app.baseUrl + "api/request/list/"+tenantID)
-                .then(function(response) {
-                    str = JSON.stringify(response);
-                    return deferred.resolve(response.data);
-                });
-            return deferred.promise;
-
-        }
-
-
-    }]);
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-    .service('requestPostService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "requestPostService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-
-        this.postRequest = function(request){
-            var deferred = $q.defer();
-            request.tenantId = app.tenant._id;
-            $http.post(app.baseUrl + "api/request/post",request)
-                .then(function(response) {
-                    str = JSON.stringify(response);
-                    console.log(str);
-                    return deferred.resolve(response.data);
-                });
-            return deferred.promise;
-        }
-
-    }]);
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-    .service('requestUpdateService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "requestPostService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-
-        this.addResponse = function(requestId,response){
-            var deferred = $q.defer();
-            addResponsePayLoad = {
-                requestId: requestId,
-                response:response
-            }
-            $http.post(app.baseUrl + "api/request/update/addResponse",addResponsePayLoad)
-                .then(function(response) {
-                    str = JSON.stringify(response);
-                    console.log(str);
-                    return deferred.resolve(response.data);
-                });
-            return deferred.promise;
-        }
-
-    }]);
-/**
- * Created by Usman Irfan.
- */
-angular.module('angularApp')
-    .service('userListRequestsService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "requestPostService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-
-        this.listRequestsByRequestTypes = function(requestTypes,userid){
-            var deferred = $q.defer();
-            var listRequestPayload = {
-                requestTypes: requestTypes,
-                userid:userid
+            var packageData = {
+                tenantId: tenantId
             };
-            $http.post(app.baseUrl + "api/request/user/list/requestTypes/",listRequestPayload)
+            $http.post(app.apiUrl + "/packages/view", packageData )
                 .then(function(response) {
+                    debugger;
                     str = JSON.stringify(response);
                     console.log(str);
                     return deferred.resolve(response.data);
                 });
             return deferred.promise;
+
         }
 
-    }]);
-angular.module('angularApp')
-    .service('requestViewService', ['$http','$q', function ($http,$q) {
 
-        var thisIsPrivate = "requestViewService";
+        this.insertUserPackges = function(userPackage){
 
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-
-    }]);
-angular.module('angularApp')
-    .service('tenantListService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "tenantListService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-        this.getTenantList = function(){
-            //return "List Tenant Service executed!";
             var deferred = $q.defer();
-            $http.get(app.baseUrl + "api/tenant/get/list")
+            $http.post(app.apiUrl + "/packages/userpackages/insert", userPackage )
                 .then(function(response) {
+                    debugger;
                     str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+        this.insertUserBills = function(userBills){
+
+            var deferred = $q.defer();
+            $http.post(app.apiUrl + "/bills/userbills/insert", userBills )
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
                     return deferred.resolve(response.data);
                 });
             return deferred.promise;
@@ -80313,72 +81563,61 @@ angular.module('angularApp')
         }
 
 
-}]);
+        this.insertUserBillPackages = function(userBillPackages){
 
+            var deferred = $q.defer();
+            $http.post(app.apiUrl + "/bills/userbillpackages/insert", userBillPackages )
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+        this.insertPayment = function(payment) {
+
+            var deferred = $q.defer();
+            $http.post(app.apiUrl + "/payment/insert", payment)
+                .then(function (response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+        }]);
 /**
- * Created by Usman Irfan.
+ * Created by asd on 8/30/2017.
  */
+
 angular.module('angularApp')
-.service('tenantRegisterService', ['$http','$q', function ($http,$q) {
+    .service('viewMyProfileService', ['$http','$q', function ($http,$q) {
 
-    var thisIsPrivate = "tenantRegisterService";
-    
-    this.getPrivate = function() {
-        return thisIsPrivate;
-    };
-
-    this.register = function(tenant,baseUrl){
-        
-        var deferred = $q.defer();
-        $http.post(app.baseUrl + "api/tenant/register",tenant)
-        .then(function(response) {
-            str = JSON.stringify(response);
-            console.log(str);
-            return deferred.resolve(response.data);
-        });
-        return deferred.promise;
-    };
-
-}]);
-angular.module('angularApp')
-    .service('tenantViewService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "tenantViewService";
+        var thisIsPrivate = "viewMyProfileService";
 
         this.getPrivate = function() {
             return thisIsPrivate;
         };
 
-    }]);
-angular.module('angularApp')
-    .service('userListService', ['$http','$q', function ($http,$q) {
+        this.updateUserProfile = function(updatedUser){
 
-        var thisIsPrivate = "userListService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
-        this.getUserList = function(tenantID){
             var deferred = $q.defer();
-            $http.get(app.baseUrl + "api/user/list/"+tenantID)
+            $http.post(app.apiUrl + "/user/updateUser" , updatedUser )
                 .then(function(response) {
+                    debugger;
                     str = JSON.stringify(response);
+                    console.log(str);
                     return deferred.resolve(response.data);
                 });
             return deferred.promise;
 
         }
-
-
-    }]);
-angular.module('angularApp')
-    .service('userViewService', ['$http','$q', function ($http,$q) {
-
-        var thisIsPrivate = "userViewService";
-
-        this.getPrivate = function() {
-            return thisIsPrivate;
-        };
 
     }]);
 /**
@@ -80446,10 +81685,23 @@ angular.module('angularApp')
                 }
                 else {
                     if(skipPropertyName == true){
-                        formJSON = formJSON + '"'+ properties[i].value +'",';
+                        if(properties[i].type == "dateTime") {
+                            properties[i].value = new Date(properties[i].value);
+                            properties[i].value = JSON.stringify(properties[i].value);
+                            formJSON = formJSON + properties[i].value + ',';
+                        }
+                        else
+                            formJSON = formJSON + '"'+ properties[i].value +'",';
                     }
-                    else
-                        formJSON = formJSON + '"' + properties[i].name + '":"'+ properties[i].value +'",';
+                    else {
+                        if(properties[i].type == "dateTime") {
+                            properties[i].value = new Date(properties[i].value);
+                            properties[i].value = JSON.stringify(properties[i].value);
+                            formJSON = formJSON + '"' + properties[i].name + '":' + properties[i].value + ',';
+                        }
+                        else
+                        formJSON = formJSON + '"' + properties[i].name + '":"' + properties[i].value + '",';
+                    }
                 }
             }
         }
@@ -80459,7 +81711,7 @@ angular.module('angularApp')
     this.signup = function(user,app){
         var deferred = $q.defer();
         user.tenantId = app.tenant._id;
-        $http.post(app.baseUrl + "api/user/signup",user)
+        $http.post(app.apiUrl + "/user/signup",user)
             .then(function(response) {
                 str = JSON.stringify(response);
                 console.log(str);
@@ -80469,6 +81721,451 @@ angular.module('angularApp')
     }
 }]);
 
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('requestGetService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "requestPostService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.getRequestByName = function(requestName){
+            var deferred = $q.defer();
+            $http.get(app.apiUrl + "/request/getByName/" + requestName)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
+    }]);
+angular.module('angularApp')
+    .service('requestListService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "requestListService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+        this.getRequestList = function(tenantID){
+            var deferred = $q.defer();
+            $http.get(app.apiUrl + "/request/list/"+tenantID)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('requestPostService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "requestPostService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.postRequest = function(request){
+            var deferred = $q.defer();
+            request.tenantId = app.tenant._id;
+            $http.post(app.apiUrl + "/request/post",request)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('requestUpdateService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "requestPostService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.addResponse = function(requestId,response){
+            var deferred = $q.defer();
+            addResponsePayLoad = {
+                requestId: requestId,
+                response:response
+            }
+            $http.post(app.apiUrl + "/request/update/addResponse",addResponsePayLoad)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('userListPostRequestsService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "requestPostService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.listPostRequestsByUserId = function(userid){
+            var deferred = $q.defer();
+
+            $http.get(app.apiUrl + "/user/post/request/list/userid/" + userid)
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('userListRequestsService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "requestPostService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.listRequestsByRequestTypes = function(requestTypes,userid){
+            var deferred = $q.defer();
+            var listRequestPayload = {
+                requestTypes: requestTypes,
+                userid:userid
+            };
+            $http.post(app.apiUrl + "/request/user/list/requestTypes/",listRequestPayload)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
+    }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+
+angular.module('angularApp')
+    .service('viewRequestService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "viewRequestService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.view = function(requestId){
+
+            var deferred = $q.defer();
+            var reqData = {
+                requestId: requestId
+            };
+            $http.post(app.apiUrl + "/request/view" , reqData)
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+        this.viewResponse = function(requestId){
+            var deferred = $q.defer();
+            var listRequestPayload = {
+                requestId:requestId
+            };
+            $http.post(app.apiUrl + "/request/response/",listRequestPayload)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        }
+
+    }]);
+angular.module('angularApp')
+    .service('requestViewService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "requestViewService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+    }]);
+angular.module('angularApp')
+    .service('getService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "getService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.getTenantConf=function(tenantId){
+            var deferred = $q.defer();
+            //user.tenantId = tenantId;
+            /*tenantId = "";*/
+                $http.get(app.apiUrl + "/tenant/tenantId/"+tenantId)
+                .then(function(response) {
+                     debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+            });
+            return deferred.promise;
+        }
+
+    }]);
+angular.module('angularApp')
+    .service('tenantListService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "tenantListService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+        this.getTenantList = function(){
+            //return "List Tenant Service executed!";
+            var deferred = $q.defer();
+            $http.get(app.apiUrl + "/tenant/get/list")
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+
+}]);
+
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+.service('tenantRegisterService', ['$http','$q', function ($http,$q) {
+
+    var thisIsPrivate = "tenantRegisterService";
+    
+    this.getPrivate = function() {
+        return thisIsPrivate;
+    };
+
+    this.register = function(tenant,baseUrl){
+        
+        var deferred = $q.defer();
+        $http.post(app.apiUrl + "/tenant/register",tenant)
+        .then(function(response) {
+            str = JSON.stringify(response);
+            console.log(str);
+            return deferred.resolve(response.data);
+        });
+        return deferred.promise;
+    };
+
+}]);
+angular.module('angularApp')
+    .service('tenantViewService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "tenantViewService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+    }]);
+/**
+ * Created by Usman Irfan.
+ */
+angular.module('angularApp')
+    .service('createService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "createService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.createFormObject = function(userConf){
+            debugger;
+            var formJSON = '{';
+            var skipPropertyName = false;
+            formJSON = this.createFormJSON(userConf.properties,formJSON,skipPropertyName);
+            formJSON = formJSON.substring(0, formJSON.length - 1);
+            formJSON = formJSON + '}';
+            alert(formJSON);
+            var formObject = JSON.parse(formJSON);
+            return formObject;
+        };
+
+        this.createFormJSON = function(userProperties,formJSON,skipPropertyName){
+            var properties = userProperties;
+            var i = 0;
+            var p = JSON.stringify(properties);
+            for(i;i<properties.length;i++){
+                if(skipPropertyName == true)
+                    properties[i].list = "";
+
+                if(properties[i].name != undefined || properties[i].name != null || properties[i].name != ""){
+                    if(properties[i].list == "true") {
+
+                        if(properties[i].subProperties.length != 0) {
+                            formJSON = formJSON + '"' + properties[i].name + '":[';
+                            for(var j=0;j<properties[i].propertiesList.length;j++) {
+                                formJSON = formJSON + '{';
+                                formJSON = this.createFormJSON(properties[i].propertiesList[j].subProperties, formJSON,false);
+                                formJSON = formJSON.substring(0, formJSON.length - 1);
+                                formJSON = formJSON + '},';
+                            }
+                            formJSON = formJSON.substring(0, formJSON.length - 1);
+                            formJSON = formJSON + '],';
+                        }
+                        else{
+                            formJSON = formJSON + '"' + properties[i].name + '":[';
+                            if(properties[i].propertiesList != 0) {
+                                formJSON = this.createFormJSON(properties[i].propertiesList, formJSON, true);
+                                formJSON = formJSON.substring(0, formJSON.length - 1);
+                                formJSON = formJSON + '],';
+                            }
+                            else
+                                formJSON = formJSON + '],';
+                        }
+                    }
+                    else if(properties[i].subProperties.length != 0){
+                        formJSON = formJSON + '"' + properties[i].name + '"' +  ':{';
+                        formJSON = this.createFormJSON(properties[i].subProperties, formJSON,false);
+                        formJSON = formJSON.substring(0, formJSON.length - 1);
+                        formJSON = formJSON + '},';
+                    }
+                    else {
+                        if(skipPropertyName == true){
+                            formJSON = formJSON + '"'+ properties[i].value +'",';
+                        }
+                        else
+                            formJSON = formJSON + '"' + properties[i].name + '":"'+ properties[i].value +'",';
+                    }
+                }
+            }
+            return formJSON;
+        };
+
+        this.signup = function(user,app){
+            var deferred = $q.defer();
+            $http.post(app.apiUrl + "/user/signup",user)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+        };
+
+    }]);
+angular.module('angularApp')
+    .service('userListService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "userListService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+        this.getUserList = function(tenantID){
+            var deferred = $q.defer();
+            $http.get(app.apiUrl + "/user/list/"+tenantID)
+                .then(function(response) {
+                    str = JSON.stringify(response);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+
+    }]);
+angular.module('angularApp')
+    .service('userViewService', ['$http','$q', function ($http,$q) {
+
+        var thisIsPrivate = "userViewService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.view = function(userId){
+
+            var deferred = $q.defer();
+            var userData = {
+                userId: userId
+            };
+            $http.post(app.apiUrl + "/user/view" , userData)
+                .then(function(response) {
+                    debugger;
+                    str = JSON.stringify(response);
+                    console.log(str);
+                    return deferred.resolve(response.data);
+                });
+            return deferred.promise;
+
+        }
+
+    }]);
+angular.module('angularApp')
+    .service('toastService', ['$http','$q','$mdToast', function ($http,$q,$mdToast) {
+
+        var thisIsPrivate = "userViewService";
+
+        this.getPrivate = function() {
+            return thisIsPrivate;
+        };
+
+        this.showToast = function(message,toastPosition){
+            debugger;
+            var pinTo = toastPosition;
+            $mdToast.show(
+                $mdToast.simple()
+                    .textContent('Tenant Created Successfully!')
+                    .position(pinTo )
+                    .hideDelay(3000)
+            );
+        }
+
+    }]);
 angular.module('angularApp')
     .directive('propertyConfiguration', function () {
         return {
@@ -80557,6 +82254,68 @@ angular.module('angularApp')
         //};
 
         //alert($scope.property.name);
+        $scope.removeProperty = function(property){
+            debugger;
+            for(i=0;i<$scope.properties.length;i++){
+                if($scope.properties[i] == property)
+                    $scope.properties.splice(i,1);
+            }
+        };
+    }]);
+/**
+ * Created by asd on 9/6/2017.
+ */
+angular.module('angularApp')
+    .directive('propertyDisplay', function () {
+        return {
+            restrict : "A",
+            templateUrl : "src/common/directives/propertyDisplay/propertyDisplayTemplate.html",
+            /*scope: {
+                property: '=',
+                data: '='
+            },*/
+            scope: {
+                row : '=propertyDisplay',
+                property : '=',
+                data: '=',
+                keyRequired: '@'
+            },
+            controller:"PropertyDisplayController"
+        };
+    });
+/**
+ * Created by asd on 9/6/2017.
+ */
+angular.module('angularApp')
+    .controller('PropertyDisplayController', [ '$scope','NgTableParams','$filter', function ($scope,NgTableParams,$filter) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+        debugger;
+
+        $scope.isArray=function(type) {
+            if (angular.isArray(type)) {
+            $scope.columns = type.length;
+            $scope.lastColumnWidth = 100 - [($scope.columns - 1) * 20];
+            $scope.columnWidth = (100 - $scope.lastColumnWidth)/($scope.columns - 1);
+                $scope.lastColumnWidth = $scope.lastColumnWidth.toString() + "%;";
+                $scope.columnWidth = $scope.columnWidth.toString() + "%;";
+            return true;
+            }
+            else
+               return false;
+        }
+
+        $scope.isObject=function(type){
+            if( angular.isObject(type))
+                return true;
+            else
+                return false;
+        }
+
+        /**/
+
     }]);
 angular.module('angularApp')
 .directive('propertyInput', function () {
@@ -80580,6 +82339,11 @@ angular.module('angularApp')
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
+        debugger;
+        if($scope.property.type == 'dateTime'){
+            $scope.property.value = new Date($scope.property.value);
+        }
+
         $scope.addPropertyInList = function(mainProperty){
             var property = JSON.stringify(mainProperty);
             property = JSON.parse(property);
@@ -80598,13 +82362,106 @@ angular.module('angularApp')
             restrict : "E",
             templateUrl : "src/common/directives/requestResponse/requestResponseTemplate.html",
             scope: {
-                response: '='
+                response: '=',
+                requestResponses: '=',
+                userid: '='
             },
             controller:"RequestResponseController"
         };
     });
 angular.module('angularApp')
-    .controller('RequestResponseController', [ '$scope', function ($scope) {
+    .controller('RequestResponseController', [ '$scope','requestPostService','requestGetService','requestUpdateService','createObjectService', function ($scope,requestPostService,requestGetService,requestUpdateService,createObjectService) {
+        $scope.description = {
+            message1  : 'My first Angular app',
+            message2 : 'developing for testing'
+        };
+        debugger;
+        if($scope.response.requestDetails.hasOwnProperty('datePosted')){
+            $scope.response.requestDetails.datePosted = new Date($scope.response.requestDetails.datePosted);
+            $scope.response.requestDetails.datePosted = $scope.response.requestDetails.datePosted.toLocaleString();
+        }
+
+        if($scope.response.hasOwnProperty('requestDetails')){
+            $scope.response.requestDetails.userResponded = false;
+            for(i=0;i<$scope.response.requestDetails.userResponses.length;i++){
+
+
+
+                if($scope.response.requestDetails.userResponses[i].userId == $scope.userid){
+                    $scope.response.requestDetails.userResponded = true;
+                }
+
+            }
+        }
+
+
+        $scope.respondRequest = function(request,responseRequestConf){
+            responseRequestConf = JSON.parse(responseRequestConf);
+            debugger;
+            responseRequest = createObjectService.createFormObject(responseRequestConf);
+            var formJSON = JSON.stringify(responseRequest);
+            formJSON = formJSON.substring(0, formJSON.length - 1);
+            formJSON = formJSON + ",";
+            formJSON = formJSON + '"postUserId":' + '"' + app.loginUser._id + '",';
+            formJSON = formJSON + '"userResponses":[],';
+            formJSON = formJSON + '"requestType":' + '"' + responseRequestConf.name + '"';
+            formJSON = formJSON + '}';
+            responseRequest = JSON.parse(formJSON);
+            responseRequest.name = request.requestId + $scope.userid;
+
+            requestPostService.postRequest(responseRequest).then(function(response){
+                var str = JSON.stringify(response);
+                console.log(str);
+                if(response.success == true){
+                    //$state.go("TenantUserHome");
+                    requestGetService.getRequestByName(responseRequest.name).then(function(response){
+                        var str = JSON.stringify(response);
+                        console.log(str);
+                        if(response.success == true){
+                            //$state.go("TenantUserHome");
+                            var requestResponse = {
+                                userId : app.loginUser._id,
+                                requestId: response.data._id
+                            }
+                            requestUpdateService.addResponse(request.requestId, requestResponse).then(function(response){
+                                var str = JSON.stringify(response);
+                                console.log(str);
+                                if(response.success == true){
+                                    //$state.go("TenantUserHome");
+                                    alert("your request is sent successfully");
+                                }
+                                else{
+                                    alert(response.error[0]);
+                                }
+                            });
+                        }
+                        else{
+                            alert(response.error[0]);
+                        }
+                    });
+                }
+                else{
+                    alert(response.error[0]);
+                }
+            });
+
+            console.log(formJSON);
+        }
+
+    }]);
+angular.module('angularApp')
+    .directive('requestResponseExpansion', function () {
+        return {
+            restrict : "E",
+            templateUrl : "src/common/directives/requestResponseExpansion/requestResponseExpansionTemplate.html",
+            scope: {
+                response: '='
+            },
+            controller:"RequestResponseExpansionController"
+        };
+    });
+angular.module('angularApp')
+    .controller('RequestResponseExpansionController', [ '$scope', function ($scope) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
@@ -80623,13 +82480,21 @@ angular.module('angularApp')
         };
     });
 angular.module('angularApp')
-    .controller('SideMenuController', [ '$scope', 'app', function ($scope,app) {
+    .controller('SideMenuController', [ '$scope', 'app','mainService', function ($scope,app,mainService) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
         $scope.appType = app.appType;
+
+        if($scope.appType == "tenant"){
+            $scope.postRequestPermission = mainService.checkPostRequestPermission();
+            $scope.viewRequestPermission = mainService.checkViewRequestPermission();
+        }
+
     }]);
+
+
 angular.module('angularApp')
     .directive('topNav', function () {
         return {
@@ -80642,17 +82507,23 @@ angular.module('angularApp')
         };
     });
 angular.module('angularApp')
-    .controller('TopNavController', [ '$scope', 'app', function ($scope,app) {
+    .controller('TopNavController', [ '$scope', 'app','mainService', function ($scope,app,mainService) {
         $scope.description = {
             message1  : 'My first Angular app',
             message2 : 'developing for testing'
         };
+        $scope.userID = app.loginUser._id;
         $scope.appType = app.appType;
         if($scope.appType == "admin") {
             $scope.headTitle = "Generic Marketplace";
         }
         else if($scope.appType == "tenant"){
             $scope.headTitle = app.tenant.name;
+        }
+
+        if($scope.appType == "tenant"){
+            $scope.postRequestPermission = mainService.checkPostRequestPermission();
+            $scope.viewRequestPermission = mainService.checkViewRequestPermission();
         }
     }]);
 /**
@@ -80674,7 +82545,7 @@ angular.module('angularApp').directive('unique', function(usernameservice) {
 angular.module('angularApp').factory('usernameservice', function($q, $http) {
     return function(username) {
         var deferred = $q.defer();
-        $http.get('/api/tenant/' + username).then(function(response) {
+        $http.get(app.apiUrl + '/tenant/' + username).then(function(response) {
             debugger;
                 str = JSON.stringify(response);
                 if(response.data.tenant.length > 0){
@@ -80688,3 +82559,4092 @@ angular.module('angularApp').factory('usernameservice', function($q, $http) {
         return deferred.promise;
     }
 });
+/*
+ * Picking date & time in AngularJS is easier than ever.
+ * 
+ * Demo: http://amirkabirdataminers.github.io/ADM-dateTimePicker
+ *
+ * @version 1.2.0
+ *
+ * © 2017 Amirkabir Data Miners <info@adm-co.net> - www.adm-co.net
+ */
+
+(function(angular) {
+    'use strict';
+    
+    if (!angular.merge)
+        angular.merge = angular.extend;
+
+    String.prototype.toPersianDigits = function(){
+        var id= ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+        return this.replace(/[0-9]/g, function(w){
+            return id[+w]
+        });
+    };
+    String.prototype.toEnglishDigits = function(){
+        var id= {'۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+        return this.replace(/[^0-9.]/g, function(w){
+            return id[w]||w;
+        });
+    };
+    String.prototype.lZero = function() {
+        return (this.length<2 ? '0'+this : this);
+    };
+    Array.prototype.toNumber = function() {
+        return this.map(function(item) {return Number(item);});
+    };
+    Array.prototype.dtp_toDate = function(type) {
+        var splitter = '-';
+        if (/invalid/i.test(new Date('1991-9-12')))
+            splitter = '/';
+        
+        var date = this.join(splitter);
+        if (this.length == 5)
+            date = this.slice(0,3).join(splitter) +' '+ this.slice(3,5).join(':')
+        if (!type) return date;
+        date = new Date(date);
+        if (type == 'unix')
+            return date.getTime();
+        return date;
+    };
+    Number.prototype.lZero = function() {
+        return (this<10 ? '0'+this : this);
+    };
+    Date.prototype.dtp_shortDate = function () {
+        return [this.getFullYear(), this.getMonth() + 1, this.getDate()].dtp_toDate();
+    }
+    
+    var ADMdtpProvider = function() {
+
+        var options = {
+            calType: 'gregorian',
+            format: 'YYYY/MM/DD hh:mm', 
+            multiple: true,
+            autoClose: false,
+            transition: true,
+            disabled: [],
+            smartDisabling: true,
+            minuteStep: 1,
+            gregorianStartDay: 0,
+            gregorianDic: {
+                title: 'Gregorian',
+                monthsNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                daysNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                todayBtn: 'Today',
+            },
+            jalaliDic: {
+                title: 'جلالی',
+                monthsNames: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+                daysNames: ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'],
+                todayBtn: 'امروز'
+            }
+        };
+
+        var ADMdtp = {
+            getOptions: function(type) {
+                var typeOptions = type && options[type] || options;
+                return typeOptions;
+            }
+        };
+
+        this.setOptions = function(type, customOptions) {
+            if (!customOptions) {
+                customOptions = type;
+                options = angular.merge(options, customOptions);
+                return;
+            }
+            options[type] = angular.merge(options[type] || {}, customOptions);
+        };
+
+        this.$get = function() {
+            return ADMdtp;
+        };
+
+    };
+    
+    var ADMdtpDigitTypeFilter = function() {
+        return function(input, type) {
+            return type=='jalali' ? String(input).toPersianDigits() : input;
+        };
+    };
+    
+    var ADMdtpConvertor = function() {
+        
+        function getJalaliDate(date) {
+            var daysPassedInGregorianCalender = getDaysPassedInGregorianCalender(date);
+            daysPassedInGregorianCalender -= 226894;
+            return getJalaliDateOfDay(daysPassedInGregorianCalender);
+        }
+        function getJalaliDateOfDay(daysPassedInJalaliCalender) {
+            var yearOfDay = getYearJalaliCalender(daysPassedInJalaliCalender);
+
+            var monthOfDay = getMonthJalaliCalender(daysPassedInJalaliCalender, yearOfDay);
+
+            var dayOfMonth = getDayJalaliCalender(daysPassedInJalaliCalender, yearOfDay, monthOfDay);
+            var date =
+                {
+                    day: dayOfMonth,
+                    month: monthOfDay,
+                    year: yearOfDay
+                };
+            return date;
+        }
+        function getDayJalaliCalender(daysPassedInJalaliCalender, yearOfDay, monthOfDay) {
+            var leaps = howManyLeapsYearPassedInJalaliCalender(yearOfDay);
+            daysPassedInJalaliCalender -= leaps + ((yearOfDay - 1) * 365);
+            for (var i = 1; i < monthOfDay; i++) {
+                if (i <= 6) {
+                    daysPassedInJalaliCalender -= 31;
+                }
+                else {
+                    daysPassedInJalaliCalender -= 30;
+                }
+            }
+            return daysPassedInJalaliCalender;
+        }
+        function getMonthJalaliCalender(daysPassedInJalaliCalender, yearOfDay) {
+            var leaps = howManyLeapsYearPassedInJalaliCalender(yearOfDay);
+            daysPassedInJalaliCalender -= leaps + ((yearOfDay - 1) * 365);
+            var jalaliMonths = getJalaliMonths();
+            for (var i = 0; i < jalaliMonths.length; i++) {
+                if (daysPassedInJalaliCalender <= jalaliMonths[i].count) {
+                    return jalaliMonths[i].id;
+                }
+                daysPassedInJalaliCalender -= jalaliMonths[i].count;
+            }
+            return 12;
+        }
+        function getJalaliMonths() {
+            return [
+                { id: 1, count: 31 },
+                { id: 2, count: 31 },
+                { id: 3, count: 31 },
+                { id: 4, count: 31 },
+                { id: 5, count: 31 },
+                { id: 6, count: 31 },
+                { id: 7, count: 30 },
+                { id: 8, count: 30 },
+                { id: 9, count: 30 },
+                { id: 10, count: 30 },
+                { id: 11, count: 30 },
+                { id: 12, count: 29 }
+            ];
+        }
+        function getYearJalaliCalender(daysPassedInJalaliCalender) {
+            var years = Math.floor((daysPassedInJalaliCalender - 1) / 365);
+            var leapsCount = 0;
+            if (years > 22) {
+                var year1 = years - 22 - 1;
+                var year2 = years - 22;
+
+                var siose = Math.floor(year1 / 33);
+                var remainYear = (year2 - (siose * 33));
+                if (remainYear >= 28) {
+                    remainYear = 28;
+                }
+                var a = Math.floor(remainYear / 4);
+                var sum = a + (siose * 8) + 6;
+                var sal = Math.floor((daysPassedInJalaliCalender - sum) / 365);
+                leapsCount = howManyLeapsYearPassedInJalaliCalender(sal);
+                if (daysPassedInJalaliCalender - (sal * 365) - leapsCount - (isLeapYearInJalaliCalender(sal) ? 1 : 0) > 0) {
+                    sal++;
+                    return sal;
+                }
+                else if (daysPassedInJalaliCalender - (sal * 365) + leapsCount <= 0) {
+                    return sal;
+                }
+                return sal;
+
+            }
+            else {
+                if (years < 1) {
+                    leapsCount = 0;
+                }
+                else if (years >= 1 && years <= 4) {
+                    leapsCount = 1;
+                }
+                else if (years >= 5 && years <= 8) {
+                    leapsCount = 2;
+                }
+                else if (years >= 9 && years <= 12) {
+                    leapsCount = 3;
+                }
+                else if (years >= 13 && years <= 16) {
+                    leapsCount = 4;
+                }
+                else if (years >= 17 && years < 22) {
+                    leapsCount = 5;
+                }
+                else {
+                    leapsCount = 6;
+                }
+                years = Math.floor((daysPassedInJalaliCalender - leapsCount - 1) / 365);
+
+                return years + 1;
+            }
+        }
+        function howManyLeapsYearPassedInJalaliCalender(year) {
+            if (year < 23) {
+                switch (year) {
+                    case 1:
+                        return 0;
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                        return 1;
+                    case 6:
+                    case 7:
+                    case 8:
+                    case 9:
+                        return 2;
+                    case 10:
+                    case 11:
+                    case 12:
+                    case 13:
+                        return 3;
+                    case 14:
+                    case 15:
+                    case 16:
+                    case 17:
+                        return 4;
+                    case 18:
+                    case 19:
+                    case 20:
+                    case 21:
+                    case 22:
+                        return 5;
+
+
+                }
+            }
+            var yearAfterFirstEra = year - 22;
+            var countSioSe = Math.floor((yearAfterFirstEra - 1) / 33);
+            var remainOfNormalLeapsYear = yearAfterFirstEra - countSioSe * 33;
+            if (remainOfNormalLeapsYear > 28) {
+                remainOfNormalLeapsYear = 28;
+            }
+            var leapsCount = Math.floor(remainOfNormalLeapsYear / 4) + countSioSe * 8 + 6;
+            if (isLeapYearInJalaliCalender(year) && (yearAfterFirstEra - countSioSe * 33) <= 28) {
+                leapsCount--;
+            }
+            return leapsCount;
+        }
+        
+        function getDaysPassedInGregorianCalender(date) {
+            var gregorianMonths = getGregorianMonths();
+            var passedLeapYears = howManyGregorianLeapsYearPassed(date.year);
+            var days = passedLeapYears;
+            var isMiladiLeaps = isGregorianLeapYear(date.year);
+            days += (date.year - 1) * 365;
+            for (var i = 0; i < date.month - 1; i++) {
+                if (isMiladiLeaps && i + 1 == 2) {
+                    gregorianMonths[i].count = 29;
+                }
+                days += gregorianMonths[i].count;
+
+            }
+            days += date.day;
+            return days;
+        }
+        function getGregorianMonths() {
+            return [
+                { id: 1, count: 31 },
+                { id: 2, count: 28 },
+                { id: 3, count: 31 },
+                { id: 4, count: 30 },
+                { id: 5, count: 31 },
+                { id: 6, count: 30 },
+                { id: 7, count: 31 },
+                { id: 8, count: 31 },
+                { id: 9, count: 30 },
+                { id: 10, count: 31 },
+                { id: 11, count: 30 },
+                { id: 12, count: 31 }
+            ];
+        }
+        function isGregorianLeapYear(year) {
+            if (year % 4 != 0) {
+                return false;
+            }
+            if (year % 100 != 0) {
+                return true;
+            }
+            if (year % 400 != 0) {
+                return false;
+            }
+            return true;
+        }
+        function howManyGregorianLeapsYearPassed(year) {
+            var yearsPassed = year - 1;
+            var countOfFourYears = Math.floor(yearsPassed / 4);
+            var countOfHandredYears = Math.floor(yearsPassed / 100);
+            var countOfFourHandredYears = Math.floor(yearsPassed / 400);
+            return countOfFourYears - countOfHandredYears + countOfFourHandredYears;
+        }
+        function getGregorianYear(gregorianPassedDays) {
+            var pureYear = Math.floor((gregorianPassedDays) / 365);
+            var gregorianLeapsYear = howManyGregorianLeapsYearPassed(pureYear);
+            var year = Math.floor((gregorianPassedDays - gregorianLeapsYear) / 365);
+            var remainDay = gregorianPassedDays - year * 365 - gregorianLeapsYear;
+            if (remainDay != 0) {
+                year++;
+            }
+            else if (isGregorianLeapYear(year + 1)) {
+                year += gregorianLeapsYear / 365;
+            }
+            return Math.floor(year);
+        }
+        function getGregorianMonth(daysPassed) {
+            var year = getGregorianYear(daysPassed);
+            var leaspYearCount = howManyGregorianLeapsYearPassed(year);
+            daysPassed -= (year - 1) * 365 + leaspYearCount;
+            var months = getGregorianMonths();
+            var month = 0;
+            var isCurrentYearLeaps = isGregorianLeapYear(year);
+            for (var i = 0; i < months.length; i++) {
+                if (isCurrentYearLeaps && months[i].id == 2) {
+                    months[i].count = 29;
+                }
+                if (daysPassed < months[i].count) {
+                    if (daysPassed != 0 || month == 0) {
+                        month++;
+                    }
+                    return month;
+                }
+                daysPassed -= months[i].count;
+                month = months[i].id;
+            }
+            return month;
+        }
+        function getGregorianDayOfMonthByPassedDay(daysPassed) {
+            var year = getGregorianYear(daysPassed);
+            var month = getGregorianMonth(daysPassed);
+            return getGregorianDayOfMonth(year, month, daysPassed);
+        }
+
+        function getGregorianDayOfMonth(year, month, daysPassed) {
+            var leaspYearCount = howManyGregorianLeapsYearPassed(year);
+            var months = getGregorianMonths();
+            var sumOfMonths = 0;
+            for (var i = 0; i < months.length; i++) {
+                if (months[i].id < month) {
+                    sumOfMonths += months[i].count;
+                }
+            }
+            if (isGregorianLeapYear(year) && month > 2) {
+                sumOfMonths++;
+            }
+            return daysPassed - (year - 1) * 365 - leaspYearCount - sumOfMonths;
+        }
+        function getDaysPassedInJalaliCalander(date) {
+            var days = date.day;
+            days += passedDaysFromMonthsInJalaliCalander(date.month);
+            days += passedDaysToYearsInJalaliCalander(date.year);
+            return days;
+        }
+
+        function passedDaysFromMonthsInJalaliCalander(month) {
+            var days = 0;
+            var months = getJalaliMonths();
+            for (var i = 0; i < month - 1; i++) {
+                days += months[i].count;
+            }
+            return days;
+        }
+
+        function passedDaysToYearsInJalaliCalander(years) {
+            var days = howManyLeapsYearPassedInJalaliCalender(years);
+            days += (years - 1) * 365;
+            return days;
+        }
+
+        function getGregorianDate(date) {
+            var daysPassed = getDaysPassedInJalaliCalander(date) + 226894;
+            var day = getGregorianDayOfMonthByPassedDay(daysPassed);
+            var month = getGregorianMonth(daysPassed);
+            var year = getGregorianYear(daysPassed);
+            if (day == 0)
+            {
+                day = 31;
+                month = 12;
+                year--;
+            }
+            return {
+                day: day,
+                month: month,
+                year: year
+            };
+
+        }
+        var isLeapYearInJalaliCalender = function(years) {
+            if (years == 1 || years == 5 || years == 9 || years == 13 || years == 17 || years == 22) {
+                return true;
+            }
+            else if (years < 22) {
+                return false;
+            }
+            var year = years - 22;
+            var siosesal = Math.floor(year / 33);
+            return ((year - (siosesal * 33)) % 4 == 0) && (year - (siosesal * 33)) / 4 != 8;
+        }
+        var getPersianDate = function(year, month, day) {
+            year = (year<=99)?(2000+year):year;
+            var date = { year: year, month: month, day: day };
+            date = getJalaliDate(date);
+            return date;
+        }
+        var getGregorianDates = function(year, mont, day) {
+            year = (year<=99)?(1300+year):year;
+            var date= getGregorianDate( {
+                day: day,
+                month: mont,
+                year: year
+            });
+            return date;
+        }
+        
+        return {
+            toJalali: getPersianDate,
+            toGregorian: getGregorianDates,
+            isLeapJalali: isLeapYearInJalaliCalender
+        }
+    }
+    
+    var ADMdtpFactory = function(ADMdtpConvertor) {
+
+        this.dateFormat = function(date, time, format, notView) {
+            if (!date.year) return '';
+
+            var year = date.year;
+            var halfYear = notView ? date.year : date.year%100;
+            var month = date.month.lZero();
+            var day = date.day.lZero();
+            var hour = time.hour.lZero();
+            var minute = time.minute.lZero();
+            
+            var replaceMap = [
+                {key: 'YYYY', value: year},
+                {key: 'YY', value: halfYear},
+                {key: 'MM', value: month},
+                {key: 'DD', value: day},
+                {key: 'hh', value: hour},
+                {key: 'mm', value: minute}
+            ]
+            
+            for(var i=0,j=replaceMap.length;i<j;i++) {
+                format = format.replace(replaceMap[i].key, replaceMap[i].value);
+            }
+            
+            return format;
+        };
+        this.parseString = function(str, format) {
+            var _keys = [], _date = {};
+            var formats = ['YY/MM/DD', 'YY/MM/DD hh:mm', 'YY-MM-DD', 'YY-MM-DD hh:mm', 'MM/DD/YY', 'MM-DD-YY', 'MM/DD/YY hh:mm', 'MM-DD-YY hh:mm'];
+            formats.unshift(format);
+            
+            for(var i=0,j=formats.length;i<j;i++) {
+                var _isValid = new RegExp('^' + formats[i].replace(/[a-z]+/gi, function(key) {
+                    var _mustReplace = false;
+                    if (key.indexOf('YY') != -1)
+                        _keys.push('year'), _mustReplace=true;
+                    else if (key.indexOf('MM') != -1)
+                        _keys.push('month'), _mustReplace=true;
+                    else if (key.indexOf('DD') != -1)
+                        _keys.push('day'), _mustReplace=true;
+                    else if (key.indexOf('hh') != -1)
+                        _keys.push('hour'), _mustReplace=true;
+                    else if (key.indexOf('mm') != -1)
+                        _keys.push('minute'), _mustReplace=true;
+
+                    if (_mustReplace)
+                        return '[0-9]+';
+                    else 
+                        return key;
+                }).replace(/[(]/g, '[(]').replace(/[)]/g, '[)]') + '$').test(str);
+
+                if (!_isValid)
+                    continue;
+
+                _keys.reverse();
+                
+                str.replace(/[0-9]+/g, function(value) {
+                    _date[_keys.pop()] = Number(value);
+                    return value;
+                });
+                _date.hour = _date.hour || 0;
+                _date.minute = _date.minute || 0;
+
+                return _date;
+            }
+            
+            return false;
+        };
+        this.toRegularFormat = function(date, type, format) {
+            if (!date) return false;
+            
+            if (typeof date == "string")
+                date = this.parseString(date, format);
+            else if (typeof date == "number")
+                date = this.convertFromUnix(date, type);
+            
+            if (!date) return false;
+
+            if (date.year<=99)
+                date.year = ((type == 'jalali') ? 1300+date.year : 2000+date.year);
+            
+            return [date.year, date.month.lZero(), date.day.lZero(), date.hour.lZero(), date.minute.lZero()].dtp_toDate();
+        };
+        this.isDateEqual = function(date1, date2) {
+            var diff = new Date(date1) - new Date(date2);
+            return diff==0;
+        };
+        this.isDateBigger = function(date1, date2) {
+            var diff = new Date(date1) - new Date(date2);
+            return diff>=0;
+        };
+        this.isMonthBigger = function(date1, date2) {
+            var diff = new Date(date1.year, date1.month) - new Date(date2.year, date2.month);
+            return diff>=0;
+        };
+        this.joinTime = function(date, time) {
+            return new Date(new Date(new Date(date).setHours(time.hour)).setMinutes(time.minute));
+        };
+        this.removeTime = function(date) {
+            return [date.getFullYear(), date.getMonth()+1, date.getDate()].dtp_toDate('date');
+        }
+        this.validateJalaliDateSeparate = function(date, time) {
+            if (date.length!=3 || time.length!=2)
+                return false;
+            
+            if (time[0]>23 || time[0]<0 || time[1]>59 || time[1]<0 || date[0]<0 || date[1]<1 || date[1]>12)
+                return false;
+            
+            if (date[1]>0 && date[1]<7) {
+                if (date[2]<1 || date[2]>31)
+                    return false;
+            }
+            else if (date[1]>6 && date[1]<12) {
+                if (date[2]<1 || date[2]>30)
+                    return false;
+            }
+            else if (date[1] == 12) {
+                var isLeap = ADMdtpConvertor.isLeapJalali(date[0]);
+                if ((isLeap && (date[2]<1 || date[2]>30)) || (!isLeap && (date[2]<1 || date[2]>29)))
+                    return false;
+            }
+
+            return true;
+        }
+        this.validateJalaliDate = function(input, format) {
+            var _dateTime;
+            
+            if (typeof input == "number") {
+                var _gDate = new Date(input);
+                if (/invalid/i.test(_gDate))
+                    return false;
+                var _pDate = this.convertToJalali(_gDate);
+                _dateTime = angular.merge(_pDate, {hour: _gDate.getHours(), minute: _gDate.getMinutes()});
+            }
+            else if (typeof input == "string")
+                _dateTime = this.parseString(input, format);
+            
+            else if (input instanceof Object)
+                _dateTime = input;
+            
+            if (!_dateTime) return false;
+            
+            var _date = [_dateTime.year, _dateTime.month, _dateTime.day];
+            var _time = [_dateTime.hour, _dateTime.minute];
+            
+            if (this.validateJalaliDateSeparate(_date, _time)) {
+                var _gDateC = ADMdtpConvertor.toGregorian(_date[0],_date[1],_date[2]);
+                var _gDate = [_gDateC.year, _gDateC.month, _gDateC.day, _time[0], _time[1]].dtp_toDate('date');
+                
+                return {
+                    year: _date[0],
+                    month: _date[1],
+                    day: _date[2],
+                    hour: _time[0],
+                    minute: _time[1],
+                    unix: _gDate.getTime(),
+                    gDate: _gDate
+                }
+            }
+            return false;
+
+        };
+        this.convertToUnix = function(value, type, format) {
+            if (!value)
+                return null;
+            if (typeof value == "number")
+                return value;
+            
+            if (typeof value == "string") {
+                value = this.parseString(value, format);
+            }
+            else if (value instanceof Date)
+                value = {year: value.getFullYear(), month: value.getMonth()+1, day: value.getDate(), hour: value.getHours(), minute: value.getMinutes()};
+            else
+                return null;
+            
+            if (value.year<=99)
+                value.year = ((type == 'jalali') ? 1300+value.year : 2000+value.year);
+            
+            
+            if (type == 'jalali') {
+                var _dateTime = this.validateJalaliDate(value, format);
+                return _dateTime.unix || null;
+            }
+            else if (type == 'gregorian') {
+                var _dateTime = new Date(this.toRegularFormat(value, type));
+                return (/invalid/i.test(_dateTime))?null:_dateTime.getTime();
+            }
+            
+            return null;
+        };
+        this.convertFromUnix = function(unix, type) {
+            var _gDate = new Date(unix);
+            if (type == 'jalali')
+                return this.convertToJalali(_gDate);
+            else if (type == 'gregorian')
+                return {
+                    year: _gDate.getFullYear(),
+                    month: _gDate.getMonth()+1,
+                    day: _gDate.getDate(),
+                    unix: unix
+                };
+        };
+        this.convertToJalali = function(date) {
+            
+            if (date instanceof Date) {
+                var _date = {
+                    year: date.getFullYear(),
+                    month: date.getMonth()+1,
+                    day: date.getDate(),
+                    unix: date.getTime()
+                }
+                date = _date;
+            }
+            if (date instanceof Object) {
+                return angular.merge(ADMdtpConvertor.toJalali(date.year, date.month, date.day), {unix: date.unix});
+            }
+        };
+        this.parseDisablePattern = function(options) {
+            var arr = options.disabled, smart = options.smartDisabling, calType = options.calType, format = options.format;
+            
+            var _inWeek = Array.apply(null, Array(7)).map(Number.prototype.valueOf,0);
+            var _inMonth = Array.apply(null, Array(31)).map(Number.prototype.valueOf,0);
+            var _static = {};
+            
+            if (arr instanceof Array) {
+                for (var i=0,j=arr.length; i<j; i++) {
+                    if (typeof arr[i] == "number") {
+                        var _gDate = new Date(arr[i]);
+                        if (!/invalid/i.test(_gDate))
+                            _static[this.removeTime(_gDate).getTime()] = true;
+                    }
+                    else if (typeof arr[i] == "string") {
+                        arr[i] = arr[i].toLowerCase();
+                        if (arr[i].indexOf('d') == -1 && arr[i].indexOf('i') == -1) {
+                            var _unix = this.convertToUnix(arr[i], calType, format);
+                            if (_unix)
+                                _static[_unix] = true;
+                        }
+                        else {
+                            var _inMonthValid = new RegExp("^[!]?(([0-9]?[0-9])?[d]([+][0-9][0-9]?)?)([&]([0-9]?[0-9])?[d]([+][0-9][0-9]?)?)*?$").test(arr[i]);
+                            var _inWeekhValid = new RegExp("^[!]?([i]([+][0-9][0-9]?)?)([&][i]([+][0-9][0-9]?)?)*?$").test(arr[i]);
+                            
+                            if (_inMonthValid || _inWeekhValid) {
+                                var _not = arr[i][0]=='!';
+                                arr[i] = _not?arr[i].split('!')[1]:arr[i];
+                                var _patt = arr[i].split('&');
+                                
+                                if (_inMonthValid) {
+                                    var _tmpObj = {};
+                                    _patt.forEach(function(item) {
+                                        var _params = item.split(/d[+]?/).map(function(str) {return Number(str);});
+                                        _params[0] = _params[0]?_params[0]:1;
+                                        _params[1]%=31;
+
+                                        for (var k=0; k<31; k++) {
+                                            if (_params[0]!=1 && k%_params[0] == _params[1] || _params[0]==1 && k==_params[1])
+                                                _tmpObj[k] = 1;
+                                        }
+                                    });
+                                    for (var k=0; k<31; k++) {
+                                        if (_not) {
+                                            if (!_tmpObj[k])
+                                                _inMonth[k] = 1;
+                                        }
+                                        else {
+                                            if (_tmpObj[k])
+                                                _inMonth[k] = 1;
+                                        }
+                                    }
+                                }
+                                else if (_inWeekhValid) {
+                                    var _tmpObj = {};
+                                    _patt.forEach(function(item) {
+                                        var _params = item.split(/i[+]?/).map(function(str) {return Number(str);});
+                                        _params[1]%=7;
+                                        _tmpObj[_params[1]] = 1;
+                                    });
+                                    for (var k=0; k<7; k++) {
+                                        if (_not) {
+                                            if (!_tmpObj[k])
+                                                _inWeek[k] = 1;
+                                        }
+                                        else {
+                                            if (_tmpObj[k])
+                                                _inWeek[k] = 1;
+                                        }
+                                        
+                                    }
+                                }
+                            }
+                            else {
+                                console.warn(arr[i] + " is not valid!");
+                            }
+                        }
+                    }
+                }
+            }
+            return {smart: smart, calType: calType, static: _static, inWeek: _inWeek, inMonth: _inMonth};
+        }
+        this.isDayDisable = function(calType, disabled, day) {
+            if (disabled.static[day.unix])
+                return true;
+            
+            var _gap = 0;
+            
+            if (disabled.smart) {
+                if (disabled.calType=='gregorian' && calType=='jalali')
+                    _gap = +1;
+                else if (disabled.calType=='jalali' && calType=='gregorian')
+                    _gap = -1;
+            }
+            else {
+                if (disabled.calType=='gregorian' && calType=='jalali')
+                    _gap = -1;
+                else if (disabled.calType=='jalali' && calType=='gregorian')
+                    _gap = +1;
+            }
+                
+            
+            var _dayName = (day.dayName + 7 + _gap)%7;
+            
+            if (disabled.inMonth[day.day-1])
+                return true;
+            
+            return !!+disabled.inWeek[_dayName];
+        }
+        
+        return {
+            dateFormat: this.dateFormat,
+            parseString: this.parseString,
+            toRegularFormat: this.toRegularFormat,
+            isDateEqual: this.isDateEqual,
+            isDateBigger: this.isDateBigger,
+            isMonthBigger: this.isMonthBigger,
+            joinTime: this.joinTime,
+            removeTime: this.removeTime,
+            validateJalaliDateSeparate: this.validateJalaliDateSeparate,
+            validateJalaliDate: this.validateJalaliDate,
+            convertToUnix: this.convertToUnix,
+            convertFromUnix: this.convertFromUnix,
+            convertToJalali: this.convertToJalali,
+            parseDisablePattern: this.parseDisablePattern,
+            isDayDisable: this.isDayDisable,
+            counter: 0
+        }
+    }
+    
+    var ADMdtpCalendarDirective = function(ADMdtp, ADMdtpConvertor, ADMdtpFactory, constants, $timeout) {
+
+        return {
+            restrict: 'E',
+            replace: true,
+            //require: '^^admDtp',
+            link: function(scope, element, attrs) {
+
+                var admDtp = scope.api;
+                
+                var _standValue;
+                if (!scope.dtpValue.unix)
+                    _standValue = new Date();                   
+                else
+                    _standValue = new Date(scope.dtpValue.fullDate);
+                
+                if (scope.calType == 'jalali')
+                    _standValue = ADMdtpFactory.convertToJalali(_standValue);
+                
+                admDtp.fillDays(_standValue, !scope.option.transition);
+
+                scope.previousMonth = function(flag) {
+                    if (scope.calType == 'jalali' && !flag) {
+                        scope.nextMonth(true);
+                        return;
+                    }
+                    
+                    if (scope.current.month == 1)
+                        scope.current.month = 12, scope.current.year--;
+                    else
+                        scope.current.month--
+                    admDtp.reload();
+                }
+
+                scope.nextMonth = function(flag) {
+                    if (scope.calType == 'jalali' && !flag) {
+                        scope.previousMonth(true);
+                        return;
+                    }
+                        
+                    if (scope.current.month == 12)
+                        scope.current.month = 1, scope.current.year++;
+                    else
+                        scope.current.month++
+                    admDtp.reload();
+                }
+                
+                scope.previousYear = function(flag) {
+                    if (scope.calType == 'jalali' && !flag) {
+                        scope.nextYear(true);
+                        return;
+                    }
+
+                    var _firstYear = scope.generatedYears.shift();
+                    scope.generatedYears = [];
+                    for (var i=1;i<17;i++) {
+                        scope.generatedYears.push(_firstYear - 17 + i);
+                    }
+                }
+
+                scope.nextYear = function(flag) {
+                    if (scope.calType == 'jalali' && !flag) {
+                        scope.previousYear(true);
+                        return;
+                    }
+
+                    var _lastYear = scope.generatedYears.pop();
+                    scope.generatedYears = [];
+                    for (var i=1;i<17;i++) {
+                        scope.generatedYears.push(_lastYear + i);
+                    }
+                }
+                
+                scope.selectMonthInit = function() {
+                    scope.yearSelectStat = false;
+                    scope.monthPickerStat = true;
+                }
+                
+                scope.selectYearInit = function() {
+                    scope.yearSelectStat = true;
+                    scope.generatedYears = [];
+                    for (var i=0;i<16;i++) {
+                        scope.generatedYears.push(scope.current.year + i - 7);
+                    }
+                }
+                
+                scope.selectMonth = function(monthIdx) {
+                    if (monthIdx+1 != scope.current.month) {
+                        scope.current.month = monthIdx+1;
+                        admDtp.reload();
+                    }
+                    scope.monthPickerStat = false;
+                }
+                
+                scope.selectYear = function(yearName) {
+                    if (yearName != scope.current.year) {
+                        scope.current.year = yearName;
+                        admDtp.reload();
+                    }
+                    scope.monthPickerStat = false;
+                    //scope.yearSelectStat = false;
+                }
+
+                scope.selectThisDay = function(day) {
+                    if (day.valid == 0)
+                        return;
+                    
+                    scope.dtpValue.selected = false;
+                    
+                    admDtp.updateMasterValue(day, 'day');
+                    
+                    if (scope.option.autoClose) {
+                        $timeout(function() {
+                            scope.closeCalendar();
+                        },100);
+                        return;
+                    }
+                        
+                    
+                    if (day.disable) {
+                        $timeout(function() {
+                            if (ADMdtpFactory.isMonthBigger(day, scope.current))
+                                scope.nextMonth(true);
+                            else
+                                scope.previousMonth(true);
+                        }, 0);
+                    } else
+                        day.selected = true;
+                }
+                
+                scope.today = function() {
+                    var _standValue = new Date();
+
+                    if (scope.calType == 'jalali')
+                        _standValue = ADMdtpFactory.convertToJalali(_standValue);
+
+                    admDtp.fillDays(_standValue, !scope.option.transition);
+                }
+
+                scope.changeTimeValue = function(variable, value) {
+                    value *= (variable=='minute' ? scope.option.minuteStep : 1);
+                    
+                    var _num = (Number(scope.time[variable]) + value + ((variable=='hour')?24:60)) % ((variable=='hour')?24:60);
+                    var _timeCopy = angular.copy(scope.time);
+                    _timeCopy[variable] = _num.lZero();
+                    
+                    if (scope.dtpValue.unix) {
+                        if (scope.minDate || scope.maxDate) {
+                            var _dateTime = ADMdtpFactory.joinTime(scope.dtpValue.unix, _timeCopy);
+                            if ((scope.minDate && !ADMdtpFactory.isDateBigger(_dateTime,scope.minDate)) || (scope.maxDate && !ADMdtpFactory.isDateBigger(scope.maxDate,_dateTime)))
+                                return;
+                        }
+                    }
+                    
+                    scope.time[variable] = _num.lZero();
+                    
+                    
+                    if (scope.dtpValue.unix)
+                        admDtp.updateMasterValue(false, 'time');
+                    
+                    admDtp.reload();
+                }
+                
+                scope.modelChanged = function(input) {
+                    
+                    var _value = (angular.isDefined(input) ? input : scope.dtpValue.formated);
+                    
+                    if (!_value) {
+                        if (scope.dtpValue.unix)
+                            scope.destroy();
+                        return;
+                    }
+                    
+                    var _inputUnix = ADMdtpFactory.convertToUnix(_value, scope.calType, scope.option.format);
+                    if (!_inputUnix || scope.option.freezeInput || scope.disable || ((scope.minDate && !ADMdtpFactory.isDateBigger(_inputUnix,scope.minDate)) || (scope.maxDate && !ADMdtpFactory.isDateBigger(scope.maxDate,_inputUnix)))) {
+                        admDtp.updateMasterValue(false);
+                        return;
+                    }
+                        
+                    if (_inputUnix == scope.fullData.unix)
+                        return;
+                    
+                    scope.parseInputValue(_value, false, true);
+                    
+                    var _gDate = new Date(_inputUnix);
+                    if (scope.calType == 'jalali')
+                        _gDate = ADMdtpFactory.convertToJalali(_gDate);
+
+                    admDtp.fillDays(_gDate, true);
+                    
+                }
+                admDtp.modelChanged = scope.modelChanged;
+                
+                scope.calTypeChanged = function(calType) {
+                    scope.calType = (calType ? calType : ((scope.calType=='gregorian')?'jalali':'gregorian'));
+                    
+                    scope.monthNames = scope.option[scope.calType + 'Dic'].monthsNames;
+                    scope.daysNames = scope.option[scope.calType + 'Dic'].daysNames;
+                    
+                    var _cur = angular.copy(scope.current);
+                    var _mainDate;
+                    
+                    if (scope.calType == 'jalali') {
+                        _mainDate = ADMdtpConvertor.toJalali(_cur.year, _cur.month, 15);
+                    }
+                    else {
+                        _mainDate = ADMdtpConvertor.toGregorian(_cur.year, _cur.month, 15);
+                        _mainDate = [_mainDate.year, _mainDate.month, _mainDate.day].dtp_toDate('date');
+                    }
+                    
+                    if (scope.dtpValue.unix) {
+                        admDtp.updateMasterValue(ADMdtpFactory.convertFromUnix(scope.dtpValue.unix, scope.calType));
+                    }
+                    
+                    admDtp.fillDays(_mainDate, true);
+                    
+                }
+
+                
+            },
+            //templateUrl: 'js/ADM-dateTimePicker/ADM-dateTimePicker_calendar.html'
+            template: '<div class="ADMdtp-box ADMdtp-calendar-container" ng-class="{rtl: (calType==\'jalali\'), square: monthPickerStat||timePickerStat}"> <div class="dtpNewBox" ng-class="{active: monthPickerStat}"> <i class="calendarIcon" ng-class="{show: monthPickerStat}" ng-click="monthPickerStat = false"> <svg class="dtp-i" viewBox="0 0 24 24"> <use xlink:href="#dtp-i-calendar" /> </svg> </i> <div class="content"> <div class="ADMdtpMonths" ng-class="{onYear: yearSelectStat, rtl: (calType==\'jalali\')}"> <div class="ADMdtpYears"> <svg class="dtp-i dtp-i-180 dtp-trs-3 arrow left" viewBox="0 0 24 24" ng-if="yearSelectStat" ng-click="previousYear()"> <use xlink:href="#dtp-i-right" /> </svg> <p class="dtp-trs-3" ng-click="selectYearInit()">{{current.year | digitType:calType}}</p> <svg class="dtp-i dtp-trs-3 arrow right" viewBox="0 0 24 24" ng-if="yearSelectStat" ng-click="nextYear()"> <use xlink:href="#dtp-i-right" /> </svg> </div> <span ng-repeat="yearName in generatedYears" ng-if="yearSelectStat"><span class="dtp-trs-5" ng-class="{selected: yearName==current.year}" ng-click="selectYear(yearName)">{{yearName | digitType:calType}}</span></span> <span ng-repeat="monthName in monthNames" ng-if="!yearSelectStat"><span class="dtp-trs-5" ng-class="{selected: monthName==current.monthDscr}" ng-click="selectMonth($index)">{{monthName}}</span></span> </div> </div> </div> <div class="dtpNewBox" ng-class="{active: timePickerStat}"> <i class="calendarIcon" ng-class="{show: timePickerStat}" ng-click="timePickerStat = false"> <svg class="dtp-i" viewBox="0 0 24 24"> <use xlink:href="#dtp-i-calendar" /> </svg> </i> <div class="content"> <div class="ADMdtpTime"> <span class="dtpIcon null up" ng-click="changeTimeValue(\'hour\', 1)"><svg class="dtp-i dtp-trs-5 dtp-i-270" viewBox="0 0 24 24"><use xlink:href="#dtp-i-right" /></svg></span><!-- --><span></span><!-- --><span class="dtpIcon null up" ng-click="changeTimeValue(\'minute\', 1)"><svg class="dtp-i dtp-trs-5 dtp-i-270" viewBox="0 0 24 24"><use xlink:href="#dtp-i-right" /></svg></span><!-- --><span>{{time.hour}}</span><!-- --><span class="period">:</span><!-- --><span>{{time.minute}}</span><!-- --><span class="dtpIcon null down" ng-click="changeTimeValue(\'hour\', -1)"><svg class="dtp-i dtp-trs-5 dtp-i-90" viewBox="0 0 24 24"><use xlink:href="#dtp-i-right" /></svg></span><!-- --><span></span><!-- --><span class="dtpIcon null down" ng-click="changeTimeValue(\'minute\', -1)"><svg class="dtp-i dtp-trs-5 dtp-i-90" viewBox="0 0 24 24"><use xlink:href="#dtp-i-right" /></svg></span> </div> </div> </div> <header> <svg class="dtp-i dtp-i-180 dtp-trs-3 arrow left" viewBox="0 0 24 24" ng-click="previousMonth()"> <use xlink:href="#dtp-i-right" /> </svg> <span class="yearMonth" ng-click="selectMonthInit()">{{current.monthDscr}} {{current.year | digitType:calType}}</span> <svg class="dtp-i dtp-trs-3 arrow right" viewBox="0 0 24 24" ng-click="nextMonth()"> <use xlink:href="#dtp-i-right" /> </svg> </header> <div class="daysNames"> <span ng-repeat="dayName in daysNames">{{dayName}}</span> </div> <hr> <div class="ADMdtpDays" ng-class="{loading:loadingDays}"> <span ng-repeat="day in current.days" ng-click="selectThisDay(day)"><span ng-class="[{disable: day.disable||!day.valid, today: day.today, selected: day.selected, valid:(day.valid==2)}, (day.isMin)?((calType==\'jalali\')?\'max\':\'min\'):\'\', (day.isMax)?((calType==\'jalali\')?\'min\':\'max\'):\'\']">{{day.day | digitType:calType}}</span></span> </div> <hr> <footer> <div class="calTypeContainer dtp-trs-3" ng-class="$parent.calType" ng-click="calTypeChanged()" ng-if="option.multiple"> <p class="gregorian">{{option.gregorianDic.title}}</p> <p class="jalali">{{option.jalaliDic.title}}</p> </div> <button type="button" class="today dtp-trs-3" ng-click="today()">{{option[calType + "Dic"].todayBtn}}</button> <svg class="dtp-i dtp-trs-5 timeSelectIcon" viewBox="0 0 24 24" ng-show="option.dtpType != \'date\'" ng-click="timePickerStat = !timePickerStat"> <use xlink:href="#dtp-i-clock" /> </svg> </footer> </div>'
+        }
+    }
+
+    var ADMdtpDirective = function(ADMdtp, ADMdtpConvertor, ADMdtpFactory, constants, $compile, $timeout) {
+
+        return {
+            restrict: 'E',
+            replace: true,
+            transclude: true,
+            require: ['ngModel', 'admDtp'],
+            scope: {
+                options: '=?',
+                fullData: '=?',
+                name: '=?',
+                ngRequired: '=?',
+                onChange: '&?',
+                onDatechange: '&?',
+                onTimechange: '&?',
+                onOpen: '&?',
+                onClose: '&?',
+            },
+            link: function(scope, element, attrs, ctrls) {
+                var ngModel = ctrls[0], admDtp = ctrls[1];
+                scope.api = admDtp;
+                scope.dtpId = 'adm-' + (++ADMdtpFactory.counter);
+                
+                if (!element.find('ng-transclude').children().length) {
+                    scope.defaultTemplate = true;
+                    element.find('ng-transclude').remove();
+                }
+                
+                var _options = scope.options;
+                if (!(_options instanceof Object))
+                    _options = {};
+                scope.option = angular.merge(angular.copy(ADMdtp.getOptions()), _options);
+                scope.option.minuteStep = Math.max(Math.min(scope.option.minuteStep, 60), 1);
+                var dayNames = angular.copy(scope.option.gregorianDic.daysNames);
+                scope.option.gregorianDic.daysNamesUntouched = dayNames;
+                scope.option.gregorianDic.daysNames = dayNames.slice(scope.option.gregorianStartDay,7).concat(dayNames.slice(0,scope.option.gregorianStartDay));
+                
+                scope.disableDays = ADMdtpFactory.parseDisablePattern(scope.option);
+                scope.calType = scope.option.calType;
+                scope.monthNames = scope.option[scope.calType + 'Dic'].monthsNames;
+                scope.daysNames = scope.option[scope.calType + 'Dic'].daysNames;
+                scope.timeoutValue = [0,0];
+                scope.dtpValue = {};
+
+                scope.minDate = scope.mindate?new Date(scope.mindate):null;
+                scope.maxDate = scope.maxdate?new Date(scope.maxdate):null;
+                
+                scope.current = {
+                    year: '',
+                    month: '',
+                    monthDscr: '',
+                    days: []
+                };
+                
+
+                scope.updateMasterValue = function(newDate, releaseTheBeast) {
+                    if (!newDate)
+                        newDate = (scope.dtpValue.unix ? scope.dtpValue : {});
+                        
+
+                    scope.$applyAsync(function() {
+                        scope.dtpValue = newDate;
+                        var minute = Number(scope.time.minute);
+                        minute -= minute % scope.option.minuteStep;
+                        scope.time.minute = minute.lZero();
+                        scope.dtpValue.formated = ADMdtpFactory.dateFormat(newDate, scope.time, scope.option.format);
+                        scope.dtpValue.fullDate = ADMdtpFactory.joinTime(newDate.unix, scope.time);
+                        scope.fullData = {
+                            formated: scope.dtpValue.formated,
+                            lDate: scope.dtpValue.fullDate.dtp_shortDate(),
+                            gDate: scope.dtpValue.fullDate,
+                            unix: scope.dtpValue.fullDate.getTime(),
+                            year: newDate.year,
+                            month: newDate.month,
+                            day: newDate.day,
+                            hour: Number(scope.time.hour),
+                            minute: Number(scope.time.minute),
+                            minDate: scope.minDate,
+                            maxDate: scope.maxDate,
+                            calType: scope.calType,
+                            format: scope.option.format
+                        }
+
+                        ngModel.$setViewValue( scope.dtpValue.formated );
+                        ngModel.$render();
+                            
+                        if (scope.hasInputDtp)
+                            element[0].querySelector('[dtp-input]').value = scope.dtpValue.formated;
+
+                        if (releaseTheBeast) {
+                            if (scope.onChange)
+                                scope.onChange({date:scope.fullData});
+                            if (releaseTheBeast == 'time' && scope.onTimechange)
+                                scope.onTimechange({date:scope.fullData});
+                            else if (releaseTheBeast == 'day' && scope.onDatechange)
+                                scope.onDatechange({date:scope.fullData});
+                        }
+
+                    });
+                }
+                
+                scope.parseInputValue = function(valueStr, resetTime, releaseTheBeast) {
+                    if (valueStr == 'today') {
+                        valueStr = ADMdtpFactory.removeTime(new Date()).getTime();
+                    }
+                    
+                    var _dateTime = false;
+
+                    if (valueStr) {
+
+                        if (scope.calType == 'jalali') {
+                            _dateTime = ADMdtpFactory.validateJalaliDate(valueStr, scope.option.format);
+                        }
+                        else {
+                            if (typeof valueStr == "string")
+                                valueStr = ADMdtpFactory.toRegularFormat(valueStr, scope.calType, scope.option.format);
+                                
+                            _dateTime = new Date(valueStr);
+                            _dateTime = (/invalid/i.test(_dateTime))?false:_dateTime;
+                        }
+                    }
+
+                    if (_dateTime) {
+                        scope.dtpValue = {
+                            year: _dateTime.year || _dateTime.getFullYear(),
+                            month: _dateTime.month || _dateTime.getMonth()+1,
+                            day: _dateTime.day || _dateTime.getDate(),
+                            unix: _dateTime.unix || _dateTime.getTime(),
+                            fullDate: _dateTime.gDate || _dateTime
+                        }
+                        
+                        scope.dtpValue.fullDate = ADMdtpFactory.removeTime(scope.dtpValue.fullDate);
+                        scope.dtpValue.unix = scope.dtpValue.fullDate.getTime();
+
+                        scope.time = {
+                            hour: ( _dateTime.getHours?_dateTime.getHours():_dateTime.hour ).lZero(),
+                            minute: ( _dateTime.getMinutes?_dateTime.getMinutes():_dateTime.minute ).lZero()
+                        }
+
+                        scope.updateMasterValue(false, releaseTheBeast);
+                    }
+                    else {
+                        if (resetTime)
+                            scope.time = {
+                                hour: '00',
+                                minute: '00'
+                            }
+                        }
+                }
+                scope.parseInputValue(ngModel.$viewValue || scope.option.default, true, false);
+                
+                ngModel.$formatters.push(function (val) {
+                    if (!val && scope.dtpValue.unix) {
+                        scope.destroy();
+                    }
+                    else if (scope.dtpValue && val == scope.dtpValue.formated) {
+                    }
+                    else {
+                        scope.parseInputValue(val, false, true);
+                    }
+
+                    return val;
+                });
+                
+                if (scope.option.watchingOptions) {
+                    //return;
+                    scope.$watch('options', function(nuVal, old) {
+                        if (!nuVal || typeof nuVal != 'object') return;
+                        if (old && JSON.stringify(old) == JSON.stringify(nuVal)) return;
+                        
+                        var daysNamesUntouched = scope.option.gregorianDic.daysNamesUntouched;
+                        scope.option = angular.merge(angular.copy(ADMdtp.getOptions()), nuVal);
+                        scope.option.minuteStep = Math.max(Math.min(scope.option.minuteStep, 60), 1);
+                        
+                        if (nuVal.gregorianDic && nuVal.gregorianDic.daysNames)
+                            scope.option.gregorianDic.daysNamesUntouched = nuVal.gregorianDic.daysNames;
+                        else
+                            scope.option.gregorianDic.daysNamesUntouched = daysNamesUntouched;
+                        
+                        var dayNames = angular.copy(scope.option.gregorianDic.daysNamesUntouched);
+                        scope.option.gregorianDic.daysNames = dayNames.slice(scope.option.gregorianStartDay,7).concat(dayNames.slice(0,scope.option.gregorianStartDay));
+
+                        scope.disableDays = ADMdtpFactory.parseDisablePattern(scope.option);
+                        if (scope.calTypeChanged) scope.calTypeChanged(scope.option.calType);
+                    }, true);
+                }                
+                
+                attrs.$observe("disable", function (_newVal) {
+                    scope.$applyAsync(function() {
+                        _newVal = scope.$eval(_newVal);
+                        scope.disable = _newVal;
+                    });
+                });
+                
+                attrs.$observe("mindate", function (_newVal) {
+                    scope.$applyAsync(function() {
+                        _newVal = scope.$eval(_newVal);
+                        scope.minDate = ADMdtpFactory.convertToUnix(_newVal, scope.calType, scope.option.format);
+                    });
+                });
+                
+                attrs.$observe("maxdate", function (_newVal) {
+                    scope.$applyAsync(function() {
+                        _newVal = scope.$eval(_newVal);
+                        scope.maxDate = ADMdtpFactory.convertToUnix(_newVal, scope.calType, scope.option.format);
+                    });
+                }); 
+
+                scope.onKeydown = function(e) {
+                    if (e.keyCode == 9)
+                        scope.closeCalendar();
+                }
+                
+                scope.openCalendar = function() {
+                    if (scope.showCalendarStat || scope.disable)
+                        return;
+                    
+                    scope.timeoutValue[0] = 0;
+                    scope.showCalendarStat = true;
+                    
+                    var _admDtpCalendarHtml = angular.element('<adm-dtp-calendar id="'+ scope.dtpId +'" style="opacity:0; z-index: '+ scope.option.zIndex +';"></adm-dtp-calendar>');
+                    angular.element(document.body).append(_admDtpCalendarHtml);
+
+                    scope.$applyAsync(function () {
+                        $compile(_admDtpCalendarHtml)(scope);
+                    });
+                    
+                    $timeout(function() {
+                        var top = document.documentElement.scrollTop || document.body.scrollTop;
+                        var popup = document.getElementById(scope.dtpId);
+                        var popupBound = popup.getBoundingClientRect();
+                        var _input = element.children().children()[0];
+                        var _inputBound = _input.getBoundingClientRect();
+                        var _corner = {
+                            x: _inputBound.left,
+                            y: _inputBound.top + _inputBound.height
+                        }
+
+                        var _totalSize = {
+                            width: popupBound.width + _corner.x,
+                            height: popupBound.height + _corner.y
+                        }
+                        
+                        var _pos = {
+                            top: '',
+                            bottom: '',
+                            left: '',
+                            right: ''
+                        }
+                        if (_totalSize.height > window.innerHeight)
+                            _pos.top = (top + _inputBound.top - popupBound.height) + 'px';
+                        else
+                            _pos.top = (top + _inputBound.top + _inputBound.height) + 'px';
+                        
+                        if (_totalSize.width > window.innerWidth)
+                            _pos.left = (_corner.x + window.innerWidth - _totalSize.width - 20) + 'px';
+                        else
+                            _pos.left = _corner.x + 'px';
+                        
+                        angular.element(popup).css({top: _pos.top, bottom: _pos.bottom, left: _pos.left, opacity: 1});
+                        
+                    }, 70);
+                    
+                    if (scope.onOpen)
+                        scope.onOpen();
+                }
+                
+                scope.closeCalendar = function() {
+                    if (!scope.showCalendarStat)
+                        return;
+                    
+                    scope.$applyAsync(function() {
+                        scope.monthPickerStat = false;
+                        scope.timePickerStat = false;
+                        scope.showCalendarStat = false;
+                    });
+                
+                    var popup = document.getElementById(scope.dtpId);
+                    if (popup) {
+                        angular.element(popup).remove();
+                        
+                        if (scope.onClose)
+                            scope.onClose();
+                    }
+                    
+                }
+                
+                scope.toggleCalendar = function() {
+                    if (scope.showCalendarStat)
+                        scope.closeCalendar();
+                    else
+                        scope.openCalendar();
+                }
+
+                scope.destroy = function(noRefresh) {
+                    if (scope.disable)
+                        return;
+                    
+                    scope.monthPickerStat = false;
+                    scope.timePickerStat = false;
+                    
+                    scope.current = {
+                        year: '',
+                        month: '',
+                        monthDscr: '',
+                        days: []
+                    };
+                    scope.dtpValue = {};
+                    scope.fullData = {
+                        minDate: scope.minDate,
+                        maxDate: scope.maxDate
+                    }
+                    scope.time = {
+                        hour: '00',
+                        minute: '00'
+                    }
+                    var _standValue = new Date();                   
+
+                    if (scope.calType == 'jalali')
+                        _standValue = ADMdtpFactory.convertToJalali(_standValue);
+
+                    ngModel.$setViewValue('');
+                    ngModel.$render();
+                    
+                    if (!noRefresh)
+                        admDtp.fillDays(_standValue, !scope.option.transition);
+                    
+                    if (scope.onChange)
+                        scope.onChange({date:scope.fullData});
+                }
+                                
+                var dtpOpen = element[0].querySelector('[dtp-open]') || {};
+                dtpOpen.onclick = scope.openCalendar;
+                
+                var dtpClose = element[0].querySelector('[dtp-close]') || {};
+                dtpClose.onclick = scope.closeCalendar;
+
+                var dtpToggle = element[0].querySelector('[dtp-toggle]') || {};
+                dtpToggle.onclick = scope.toggleCalendar;
+                
+                var dtpDestroy = element[0].querySelector('[dtp-destroy]') || {};
+                dtpDestroy.onclick = scope.destroy;
+            },
+            controller: ['$scope', function($scope) {
+
+                this.updateMasterValue = function(newDate, releaseTheBeast) {
+                    $scope.updateMasterValue(newDate, releaseTheBeast);
+                }
+
+                this.fillDays = function(date, noTransition) {
+
+                    if (noTransition)
+                        $scope.timeoutValue[0] = 0;
+                    else
+                        $scope.loadingDays = true;
+
+
+                    var _mainDate = angular.copy(date);
+
+                    if ($scope.calType == 'jalali') {
+                        var _gDate = ADMdtpConvertor.toGregorian(date.year, date.month, 29);
+                        date = [_gDate.year, _gDate.month, _gDate.day].dtp_toDate('date');
+                    }
+
+                    var _input = {
+                        year: date.getFullYear(),
+                        month: date.getMonth()+1,
+                        day: date.getDate()
+                    }
+
+                    $scope.$applyAsync(function() {
+                        var _month = _mainDate.month || (_mainDate.getMonth()+1);
+                        angular.merge($scope.current, {
+                            year: _mainDate.year || _mainDate.getFullYear(),
+                            month: _month,
+                            monthDscr: $scope.monthNames[_month-1]
+                        });
+                    });
+
+                    var startDay, shift = startDay = $scope.option.gregorianStartDay;
+
+                    if ($scope.calType == 'jalali')
+                        shift = 0, startDay = 6;
+
+                    var _today = new Date();
+                    _today = [_today.getFullYear(), _today.getMonth()+1, _today.getDate(), 1, 0].dtp_toDate('unix');
+
+                    var _selected = ($scope.dtpValue.unix || -1), _selectedIdx;
+
+                    var _currDay = [_input.year, _input.month, _input.day, 1, 0].dtp_toDate('date');
+                    var _firstDayName = new Date(angular.copy(_currDay).setDate(1)).getDay();
+
+                    var _days = [];
+
+                    var _diff = -1 * (_firstDayName - shift + 7) % 7,
+                        _ite_date, _disable = true;
+                    var _lastValidStat = -1;
+
+                    if ($scope.calType == 'jalali') {
+                        var _ite_date = new Date(angular.copy(_currDay).setDate(_diff));
+                        var _pDate = ADMdtpConvertor.toJalali(_ite_date.getFullYear(), _ite_date.getMonth()+1, _ite_date.getDate());
+                        _diff -= (Math.ceil((_pDate.day-1)/7)*7 + 1);
+                    }
+
+
+                    while (true) {
+                        _diff++;
+                        var _ite_date = new Date(angular.copy(_currDay).setDate(_diff));
+                        var _pDate = false;
+
+                        if ($scope.calType == 'jalali') {
+                            _pDate = ADMdtpConvertor.toJalali(_ite_date.getFullYear(), _ite_date.getMonth()+1, _ite_date.getDate());
+                        }
+
+                        var _thisDay = _pDate.day || _ite_date.getDate();
+
+                        if (_thisDay == 1)
+                            _disable = !_disable;
+
+                        if (_disable && _thisDay < 8 && _ite_date.getDay() == startDay)
+                            break;
+
+
+                        var _isMin = false;
+                        var _valid = 1;
+                        if ($scope.minDate || $scope.maxDate) {
+                            var _dateTime = ADMdtpFactory.joinTime(_ite_date, $scope.time);
+                            if (($scope.minDate && !ADMdtpFactory.isDateBigger(_dateTime,$scope.minDate)) || ($scope.maxDate && !ADMdtpFactory.isDateBigger($scope.maxDate,_dateTime))) {
+                                _valid = 0;
+
+                                if (_lastValidStat == 2)
+                                    _days[_days.length-1].isMax = true;
+                            }
+                            else {
+                                _valid = 2;
+
+                                if (_lastValidStat == 0)
+                                    _isMin = true;
+                            }
+                            _lastValidStat = _valid;
+                        }
+
+                        var _unix = _ite_date.getTime();
+                        var _dayName = _ite_date.getDay() + (($scope.calType=='jalali')?1:0);
+                        
+                        var _day = {
+                            day: _thisDay,
+                            month: _pDate.month || _ite_date.getMonth()+1,
+                            year: _pDate.year || _ite_date.getFullYear(),
+                            dayName: _dayName,
+                            fullDate: _ite_date,
+                            disable: _disable,
+                            today: (_unix == _today),
+                            selected: (_unix == _selected),
+                            unix: _unix,
+                            valid: _valid,
+                            isMin: _isMin
+                        }
+
+                        if (ADMdtpFactory.isDayDisable($scope.calType, $scope.disableDays, _day))
+                            _day.valid = 0;
+
+                        if (_day.selected)
+                            _selectedIdx = _days.length;
+
+                        _days.push(_day);
+                    }
+
+                    $timeout(function() {
+
+                        $scope.timeoutValue[0] = 500;
+
+                        $scope.$applyAsync(function() {
+                            $scope.current.days = _days;
+                            if (_selectedIdx)
+                                $scope.updateMasterValue($scope.current.days[_selectedIdx]);
+                            $timeout(function() {
+                                $scope.loadingDays = false;
+                            }, $scope.timeoutValue[1]);
+                        });
+
+                    }, $scope.timeoutValue[0]);
+                }
+
+                this.reload = function() {
+                    var _cur = angular.copy($scope.current);
+                    _cur.day = 29;
+                    var _date = [_cur.year, _cur.month, 8].dtp_toDate('date');
+                    if ($scope.calType == 'jalali')
+                        _date = _cur;
+                    this.fillDays(_date, !$scope.option.transition);
+                }
+
+                this.vm = $scope;
+            }],
+            //templateUrl: 'js/ADM-dateTimePicker/ADM-dateTimePicker_view.html'
+            template: '<md-input-container><div class="ADMdtp ADMdtp-container" ng-class="{rtl: (calType==\'jalali\'), touch: option.isDeviceTouch, disable: disable}"> <div class="clickOutContainer" click-out="closeCalendar()"  alias="{{dtpId}}"> <ng-transclude></ng-transclude> <div ng-if="defaultTemplate" ng-class="{touch: option.isDeviceTouch, disable: disable, open: showCalendarStat}"> <label>Date Time</label><input type="text" name="{{name}}" ng-model="dtpValue.formated" ng-focus="openCalendar()" ng-click="openCalendar()" ng-readonly="option.freezeInput || option.isDeviceTouch || disable" ng-blur="modelChanged()" ng-keydown="onKeydown($event)" ng-required="ngRequired" > </md-input-container> <use xlink:href="#dtp-i-close" /> </svg> </div> </div> <svg style="display:none;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"> <defs> <g id="dtp-i-calendar"> <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/> <path d="M0 0h24v24H0z" fill="none"/> </g> <g id="dtp-i-clock"> <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/> <path d="M0 0h24v24H0z" fill="none"/> <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/> </g> <g id="dtp-i-right"> <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/> <path d="M0 0h24v24H0z" fill="none"/> </g> <g id="dtp-i-close"> <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/> <path d="M0 0h24v24H0z" fill="none"/> </g> <g id="dtp-i-off"> <path d="M0 0h24v24H0z" fill="none"/> <path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/> </g> </defs> </svg> </div><md-input-container>'
+        };
+    }
+    
+    var dtpInputDirective = function() {
+        return {
+            require: ['^^admDtp', 'ngModel'],
+            link: function(scope, element, attrs, ctrls) {
+                var admDtp = ctrls[0], ngModel = ctrls[1];
+
+                ngModel.$parsers.push(function() {
+                    return ngModel.$modelValue;
+                })
+
+                admDtp.vm.hasInputDtp = true;
+
+                element.on('focus', function() {
+                    admDtp.vm.openCalendar();
+                });
+                element.on('blur', function() {
+                    admDtp.vm.modelChanged(element[0].value);
+                });
+                
+            }
+        }
+    }
+
+    /* https://github.com/IamAdamJowett/angular-click-outside */
+    var clickOutside = function($document) {
+        return {
+            restrict: 'A',
+            scope: {
+                clickOut: '&'
+            },
+            link: function ($scope, elem, attr) {
+                if (attr.id == undefined) attr.$set('id', 'id_' + Math.random());
+
+                $document.on('click contextmenu', function (e) {
+                    var i = 0,
+                        element;
+
+                    if (!e.target) return;
+                    
+                    var classList = (attr.alias !== undefined) ? attr.alias.replace(', ', ',').split(',') : [];
+                    classList.push(attr.id);
+
+                    for (element = e.target; element; element = element.parentNode) {
+                        var id = element.id;
+                        var classNames = element.className;
+
+                        if (id !== undefined) {
+                            for (i = 0; i < classList.length; i++) {
+                                if (id.indexOf(classList[i]) > -1 || (typeof classNames == 'string' && classNames.indexOf(classList[i]) > -1)) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    $scope.$eval($scope.clickOut);
+                });
+            }
+        };
+    }
+    
+    var ADMdtpConfig = function(ADMdtp) {
+        
+        ADMdtp.setOptions({isDeviceTouch: ('ontouchstart' in window || navigator.maxTouchPoints)});
+        
+        var style = document.createElement('style');
+        style.type = 'text/css';
+        
+        var vendor = function(css) {
+            return '-moz-' + css + '-o-' + css + '-webkit-' + css + css;
+        }
+        
+        for (var i=1; i<51; i++)
+            style.innerHTML += '.ADMdtpDays>span:nth-child('+ i +')>span {'+ vendor('transition: all .5s, transform 0.2s '+ i*.01 +'s cubic-bezier(0.680, -0.550, 0.265, 1.550); ') +'}';
+
+        document.getElementsByTagName('head')[0].appendChild(style);
+        
+    }
+
+    return angular.module('ADM-dateTimePicker', [])
+        .constant('constants', {})
+        .provider('ADMdtp', ADMdtpProvider)
+        .filter('digitType', [ADMdtpDigitTypeFilter])
+        .factory('ADMdtpConvertor', [ADMdtpConvertor])
+        .factory('ADMdtpFactory', ['ADMdtpConvertor', ADMdtpFactory])
+        .directive('admDtp', ['ADMdtp', 'ADMdtpConvertor', 'ADMdtpFactory', 'constants', '$compile', '$timeout', ADMdtpDirective])
+        .directive('admDtpCalendar', ['ADMdtp', 'ADMdtpConvertor', 'ADMdtpFactory', 'constants', '$timeout', ADMdtpCalendarDirective])
+        .directive('dtpInput', [dtpInputDirective])
+        .directive('clickOut', ['$document', clickOutside])
+        .config(['ADMdtpProvider', ADMdtpConfig]);
+}(window.angular));
+
+
+
+
+/*! angular-trix - v1.0.0 - 2015-12-09
+ * https://github.com/sachinchoolur/angular-trix
+ * Copyright (c) 2015 Sachin; Licensed MIT */
+!function(){"use strict";angular.module("angularTrix",[]).directive("angularTrix",function(){return{restrict:"A",require:"ngModel",scope:{trixInitialize:"&",trixChange:"&",trixSelectionChange:"&",trixFocus:"&",trixBlur:"&",trixFileAccept:"&",trixAttachmentAdd:"&",trixAttachmentRemove:"&"},link:function(a,b,c,d){b.on("trix-initialize",function(){d.$modelValue&&b[0].editor.loadHTML(d.$modelValue)}),d.$render=function(){b[0].editor&&b[0].editor.loadHTML(d.$modelValue),b.on("trix-change",function(){d.$setViewValue(b.html())})};var e=function(d,e){b[0].addEventListener(d,function(f){"trix-file-accept"===d&&"true"===c.preventTrixFileAccept&&f.preventDefault(),a[e]({e:f,editor:b[0].editor})})};e("trix-initialize","trixInitialize"),e("trix-change","trixChange"),e("trix-selection-change","trixSelectionChange"),e("trix-focus","trixFocus"),e("trix-blur","trixBlur"),e("trix-file-accept","trixFileAccept"),e("trix-attachment-add","trixAttachmentAdd"),e("trix-attachment-remove","trixAttachmentRemove")}}})}();
+/*
+== malihu jquery custom scrollbar plugin == 
+Version: 3.1.5 
+Plugin URI: http://manos.malihu.gr/jquery-custom-content-scroller 
+Author: malihu
+Author URI: http://manos.malihu.gr
+License: MIT License (MIT)
+*/
+
+/*
+Copyright Manos Malihutsakis (email: manos@malihu.gr)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+/*
+The code below is fairly long, fully commented and should be normally used in development. 
+For production, use either the minified jquery.mCustomScrollbar.min.js script or 
+the production-ready jquery.mCustomScrollbar.concat.min.js which contains the plugin 
+and dependencies (minified). 
+*/
+
+(function(factory){
+	if(typeof define==="function" && define.amd){
+		define(["jquery"],factory);
+	}else if(typeof module!=="undefined" && module.exports){
+		module.exports=factory;
+	}else{
+		factory(jQuery,window,document);
+	}
+}(function($){
+(function(init){
+	var _rjs=typeof define==="function" && define.amd, /* RequireJS */
+		_njs=typeof module !== "undefined" && module.exports, /* NodeJS */
+		_dlp=("https:"==document.location.protocol) ? "https:" : "http:", /* location protocol */
+		_url="cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js";
+	if(!_rjs){
+		if(_njs){
+			require("jquery-mousewheel")($);
+		}else{
+			/* load jquery-mousewheel plugin (via CDN) if it's not present or not loaded via RequireJS 
+			(works when mCustomScrollbar fn is called on window load) */
+			$.event.special.mousewheel || $("head").append(decodeURI("%3Cscript src="+_dlp+"//"+_url+"%3E%3C/script%3E"));
+		}
+	}
+	init();
+}(function(){
+	
+	/* 
+	----------------------------------------
+	PLUGIN NAMESPACE, PREFIX, DEFAULT SELECTOR(S) 
+	----------------------------------------
+	*/
+	
+	var pluginNS="mCustomScrollbar",
+		pluginPfx="mCS",
+		defaultSelector=".mCustomScrollbar",
+	
+	
+		
+	
+	
+	/* 
+	----------------------------------------
+	DEFAULT OPTIONS 
+	----------------------------------------
+	*/
+	
+		defaults={
+			/*
+			set element/content width/height programmatically 
+			values: boolean, pixels, percentage 
+				option						default
+				-------------------------------------
+				setWidth					false
+				setHeight					false
+			*/
+			/*
+			set the initial css top property of content  
+			values: string (e.g. "-100px", "10%" etc.)
+			*/
+			setTop:0,
+			/*
+			set the initial css left property of content  
+			values: string (e.g. "-100px", "10%" etc.)
+			*/
+			setLeft:0,
+			/* 
+			scrollbar axis (vertical and/or horizontal scrollbars) 
+			values (string): "y", "x", "yx"
+			*/
+			axis:"y",
+			/*
+			position of scrollbar relative to content  
+			values (string): "inside", "outside" ("outside" requires elements with position:relative)
+			*/
+			scrollbarPosition:"inside",
+			/*
+			scrolling inertia
+			values: integer (milliseconds)
+			*/
+			scrollInertia:950,
+			/* 
+			auto-adjust scrollbar dragger length
+			values: boolean
+			*/
+			autoDraggerLength:true,
+			/*
+			auto-hide scrollbar when idle 
+			values: boolean
+				option						default
+				-------------------------------------
+				autoHideScrollbar			false
+			*/
+			/*
+			auto-expands scrollbar on mouse-over and dragging
+			values: boolean
+				option						default
+				-------------------------------------
+				autoExpandScrollbar			false
+			*/
+			/*
+			always show scrollbar, even when there's nothing to scroll 
+			values: integer (0=disable, 1=always show dragger rail and buttons, 2=always show dragger rail, dragger and buttons), boolean
+			*/
+			alwaysShowScrollbar:0,
+			/*
+			scrolling always snaps to a multiple of this number in pixels
+			values: integer, array ([y,x])
+				option						default
+				-------------------------------------
+				snapAmount					null
+			*/
+			/*
+			when snapping, snap with this number in pixels as an offset 
+			values: integer
+			*/
+			snapOffset:0,
+			/* 
+			mouse-wheel scrolling
+			*/
+			mouseWheel:{
+				/* 
+				enable mouse-wheel scrolling
+				values: boolean
+				*/
+				enable:true,
+				/* 
+				scrolling amount in pixels
+				values: "auto", integer 
+				*/
+				scrollAmount:"auto",
+				/* 
+				mouse-wheel scrolling axis 
+				the default scrolling direction when both vertical and horizontal scrollbars are present 
+				values (string): "y", "x" 
+				*/
+				axis:"y",
+				/* 
+				prevent the default behaviour which automatically scrolls the parent element(s) when end of scrolling is reached 
+				values: boolean
+					option						default
+					-------------------------------------
+					preventDefault				null
+				*/
+				/*
+				the reported mouse-wheel delta value. The number of lines (translated to pixels) one wheel notch scrolls.  
+				values: "auto", integer 
+				"auto" uses the default OS/browser value 
+				*/
+				deltaFactor:"auto",
+				/*
+				normalize mouse-wheel delta to -1 or 1 (disables mouse-wheel acceleration) 
+				values: boolean
+					option						default
+					-------------------------------------
+					normalizeDelta				null
+				*/
+				/*
+				invert mouse-wheel scrolling direction 
+				values: boolean
+					option						default
+					-------------------------------------
+					invert						null
+				*/
+				/*
+				the tags that disable mouse-wheel when cursor is over them
+				*/
+				disableOver:["select","option","keygen","datalist","textarea"]
+			},
+			/* 
+			scrollbar buttons
+			*/
+			scrollButtons:{ 
+				/*
+				enable scrollbar buttons
+				values: boolean
+					option						default
+					-------------------------------------
+					enable						null
+				*/
+				/*
+				scrollbar buttons scrolling type 
+				values (string): "stepless", "stepped"
+				*/
+				scrollType:"stepless",
+				/*
+				scrolling amount in pixels
+				values: "auto", integer 
+				*/
+				scrollAmount:"auto"
+				/*
+				tabindex of the scrollbar buttons
+				values: false, integer
+					option						default
+					-------------------------------------
+					tabindex					null
+				*/
+			},
+			/* 
+			keyboard scrolling
+			*/
+			keyboard:{ 
+				/*
+				enable scrolling via keyboard
+				values: boolean
+				*/
+				enable:true,
+				/*
+				keyboard scrolling type 
+				values (string): "stepless", "stepped"
+				*/
+				scrollType:"stepless",
+				/*
+				scrolling amount in pixels
+				values: "auto", integer 
+				*/
+				scrollAmount:"auto"
+			},
+			/*
+			enable content touch-swipe scrolling 
+			values: boolean, integer, string (number)
+			integer values define the axis-specific minimum amount required for scrolling momentum
+			*/
+			contentTouchScroll:25,
+			/*
+			enable/disable document (default) touch-swipe scrolling 
+			*/
+			documentTouchScroll:true,
+			/*
+			advanced option parameters
+			*/
+			advanced:{
+				/*
+				auto-expand content horizontally (for "x" or "yx" axis) 
+				values: boolean, integer (the value 2 forces the non scrollHeight/scrollWidth method, the value 3 forces the scrollHeight/scrollWidth method)
+					option						default
+					-------------------------------------
+					autoExpandHorizontalScroll	null
+				*/
+				/*
+				auto-scroll to elements with focus
+				*/
+				autoScrollOnFocus:"input,textarea,select,button,datalist,keygen,a[tabindex],area,object,[contenteditable='true']",
+				/*
+				auto-update scrollbars on content, element or viewport resize 
+				should be true for fluid layouts/elements, adding/removing content dynamically, hiding/showing elements, content with images etc. 
+				values: boolean
+				*/
+				updateOnContentResize:true,
+				/*
+				auto-update scrollbars each time each image inside the element is fully loaded 
+				values: "auto", boolean
+				*/
+				updateOnImageLoad:"auto",
+				/*
+				auto-update scrollbars based on the amount and size changes of specific selectors 
+				useful when you need to update the scrollbar(s) automatically, each time a type of element is added, removed or changes its size 
+				values: boolean, string (e.g. "ul li" will auto-update scrollbars each time list-items inside the element are changed) 
+				a value of true (boolean) will auto-update scrollbars each time any element is changed
+					option						default
+					-------------------------------------
+					updateOnSelectorChange		null
+				*/
+				/*
+				extra selectors that'll allow scrollbar dragging upon mousemove/up, pointermove/up, touchend etc. (e.g. "selector-1, selector-2")
+					option						default
+					-------------------------------------
+					extraDraggableSelectors		null
+				*/
+				/*
+				extra selectors that'll release scrollbar dragging upon mouseup, pointerup, touchend etc. (e.g. "selector-1, selector-2")
+					option						default
+					-------------------------------------
+					releaseDraggableSelectors	null
+				*/
+				/*
+				auto-update timeout 
+				values: integer (milliseconds)
+				*/
+				autoUpdateTimeout:60
+			},
+			/* 
+			scrollbar theme 
+			values: string (see CSS/plugin URI for a list of ready-to-use themes)
+			*/
+			theme:"light",
+			/*
+			user defined callback functions
+			*/
+			callbacks:{
+				/*
+				Available callbacks: 
+					callback					default
+					-------------------------------------
+					onCreate					null
+					onInit						null
+					onScrollStart				null
+					onScroll					null
+					onTotalScroll				null
+					onTotalScrollBack			null
+					whileScrolling				null
+					onOverflowY					null
+					onOverflowX					null
+					onOverflowYNone				null
+					onOverflowXNone				null
+					onImageLoad					null
+					onSelectorChange			null
+					onBeforeUpdate				null
+					onUpdate					null
+				*/
+				onTotalScrollOffset:0,
+				onTotalScrollBackOffset:0,
+				alwaysTriggerOffsets:true
+			}
+			/*
+			add scrollbar(s) on all elements matching the current selector, now and in the future 
+			values: boolean, string 
+			string values: "on" (enable), "once" (disable after first invocation), "off" (disable)
+			liveSelector values: string (selector)
+				option						default
+				-------------------------------------
+				live						false
+				liveSelector				null
+			*/
+		},
+	
+	
+	
+	
+	
+	/* 
+	----------------------------------------
+	VARS, CONSTANTS 
+	----------------------------------------
+	*/
+	
+		totalInstances=0, /* plugin instances amount */
+		liveTimers={}, /* live option timers */
+		oldIE=(window.attachEvent && !window.addEventListener) ? 1 : 0, /* detect IE < 9 */
+		touchActive=false,touchable, /* global touch vars (for touch and pointer events) */
+		/* general plugin classes */
+		classes=[
+			"mCSB_dragger_onDrag","mCSB_scrollTools_onDrag","mCS_img_loaded","mCS_disabled","mCS_destroyed","mCS_no_scrollbar",
+			"mCS-autoHide","mCS-dir-rtl","mCS_no_scrollbar_y","mCS_no_scrollbar_x","mCS_y_hidden","mCS_x_hidden","mCSB_draggerContainer",
+			"mCSB_buttonUp","mCSB_buttonDown","mCSB_buttonLeft","mCSB_buttonRight"
+		],
+		
+	
+	
+	
+	
+	/* 
+	----------------------------------------
+	METHODS 
+	----------------------------------------
+	*/
+	
+		methods={
+			
+			/* 
+			plugin initialization method 
+			creates the scrollbar(s), plugin data object and options
+			----------------------------------------
+			*/
+			
+			init:function(options){
+				
+				var options=$.extend(true,{},defaults,options),
+					selector=_selector.call(this); /* validate selector */
+				
+				/* 
+				if live option is enabled, monitor for elements matching the current selector and 
+				apply scrollbar(s) when found (now and in the future) 
+				*/
+				if(options.live){
+					var liveSelector=options.liveSelector || this.selector || defaultSelector, /* live selector(s) */
+						$liveSelector=$(liveSelector); /* live selector(s) as jquery object */
+					if(options.live==="off"){
+						/* 
+						disable live if requested 
+						usage: $(selector).mCustomScrollbar({live:"off"}); 
+						*/
+						removeLiveTimers(liveSelector);
+						return;
+					}
+					liveTimers[liveSelector]=setTimeout(function(){
+						/* call mCustomScrollbar fn on live selector(s) every half-second */
+						$liveSelector.mCustomScrollbar(options);
+						if(options.live==="once" && $liveSelector.length){
+							/* disable live after first invocation */
+							removeLiveTimers(liveSelector);
+						}
+					},500);
+				}else{
+					removeLiveTimers(liveSelector);
+				}
+				
+				/* options backward compatibility (for versions < 3.0.0) and normalization */
+				options.setWidth=(options.set_width) ? options.set_width : options.setWidth;
+				options.setHeight=(options.set_height) ? options.set_height : options.setHeight;
+				options.axis=(options.horizontalScroll) ? "x" : _findAxis(options.axis);
+				options.scrollInertia=options.scrollInertia>0 && options.scrollInertia<17 ? 17 : options.scrollInertia;
+				if(typeof options.mouseWheel!=="object" &&  options.mouseWheel==true){ /* old school mouseWheel option (non-object) */
+					options.mouseWheel={enable:true,scrollAmount:"auto",axis:"y",preventDefault:false,deltaFactor:"auto",normalizeDelta:false,invert:false}
+				}
+				options.mouseWheel.scrollAmount=!options.mouseWheelPixels ? options.mouseWheel.scrollAmount : options.mouseWheelPixels;
+				options.mouseWheel.normalizeDelta=!options.advanced.normalizeMouseWheelDelta ? options.mouseWheel.normalizeDelta : options.advanced.normalizeMouseWheelDelta;
+				options.scrollButtons.scrollType=_findScrollButtonsType(options.scrollButtons.scrollType); 
+				
+				_theme(options); /* theme-specific options */
+				
+				/* plugin constructor */
+				return $(selector).each(function(){
+					
+					var $this=$(this);
+					
+					if(!$this.data(pluginPfx)){ /* prevent multiple instantiations */
+					
+						/* store options and create objects in jquery data */
+						$this.data(pluginPfx,{
+							idx:++totalInstances, /* instance index */
+							opt:options, /* options */
+							scrollRatio:{y:null,x:null}, /* scrollbar to content ratio */
+							overflowed:null, /* overflowed axis */
+							contentReset:{y:null,x:null}, /* object to check when content resets */
+							bindEvents:false, /* object to check if events are bound */
+							tweenRunning:false, /* object to check if tween is running */
+							sequential:{}, /* sequential scrolling object */
+							langDir:$this.css("direction"), /* detect/store direction (ltr or rtl) */
+							cbOffsets:null, /* object to check whether callback offsets always trigger */
+							/* 
+							object to check how scrolling events where last triggered 
+							"internal" (default - triggered by this script), "external" (triggered by other scripts, e.g. via scrollTo method) 
+							usage: object.data("mCS").trigger
+							*/
+							trigger:null,
+							/* 
+							object to check for changes in elements in order to call the update method automatically 
+							*/
+							poll:{size:{o:0,n:0},img:{o:0,n:0},change:{o:0,n:0}}
+						});
+						
+						var d=$this.data(pluginPfx),o=d.opt,
+							/* HTML data attributes */
+							htmlDataAxis=$this.data("mcs-axis"),htmlDataSbPos=$this.data("mcs-scrollbar-position"),htmlDataTheme=$this.data("mcs-theme");
+						 
+						if(htmlDataAxis){o.axis=htmlDataAxis;} /* usage example: data-mcs-axis="y" */
+						if(htmlDataSbPos){o.scrollbarPosition=htmlDataSbPos;} /* usage example: data-mcs-scrollbar-position="outside" */
+						if(htmlDataTheme){ /* usage example: data-mcs-theme="minimal" */
+							o.theme=htmlDataTheme;
+							_theme(o); /* theme-specific options */
+						}
+						
+						_pluginMarkup.call(this); /* add plugin markup */
+						
+						if(d && o.callbacks.onCreate && typeof o.callbacks.onCreate==="function"){o.callbacks.onCreate.call(this);} /* callbacks: onCreate */
+						
+						$("#mCSB_"+d.idx+"_container img:not(."+classes[2]+")").addClass(classes[2]); /* flag loaded images */
+						
+						methods.update.call(null,$this); /* call the update method */
+					
+					}
+					
+				});
+				
+			},
+			/* ---------------------------------------- */
+			
+			
+			
+			/* 
+			plugin update method 
+			updates content and scrollbar(s) values, events and status 
+			----------------------------------------
+			usage: $(selector).mCustomScrollbar("update");
+			*/
+			
+			update:function(el,cb){
+				
+				var selector=el || _selector.call(this); /* validate selector */
+				
+				return $(selector).each(function(){
+					
+					var $this=$(this);
+					
+					if($this.data(pluginPfx)){ /* check if plugin has initialized */
+						
+						var d=$this.data(pluginPfx),o=d.opt,
+							mCSB_container=$("#mCSB_"+d.idx+"_container"),
+							mCustomScrollBox=$("#mCSB_"+d.idx),
+							mCSB_dragger=[$("#mCSB_"+d.idx+"_dragger_vertical"),$("#mCSB_"+d.idx+"_dragger_horizontal")];
+						
+						if(!mCSB_container.length){return;}
+						
+						if(d.tweenRunning){_stop($this);} /* stop any running tweens while updating */
+						
+						if(cb && d && o.callbacks.onBeforeUpdate && typeof o.callbacks.onBeforeUpdate==="function"){o.callbacks.onBeforeUpdate.call(this);} /* callbacks: onBeforeUpdate */
+						
+						/* if element was disabled or destroyed, remove class(es) */
+						if($this.hasClass(classes[3])){$this.removeClass(classes[3]);}
+						if($this.hasClass(classes[4])){$this.removeClass(classes[4]);}
+						
+						/* css flexbox fix, detect/set max-height */
+						mCustomScrollBox.css("max-height","none");
+						if(mCustomScrollBox.height()!==$this.height()){mCustomScrollBox.css("max-height",$this.height());}
+						
+						_expandContentHorizontally.call(this); /* expand content horizontally */
+						
+						if(o.axis!=="y" && !o.advanced.autoExpandHorizontalScroll){
+							mCSB_container.css("width",_contentWidth(mCSB_container));
+						}
+						
+						d.overflowed=_overflowed.call(this); /* determine if scrolling is required */
+						
+						_scrollbarVisibility.call(this); /* show/hide scrollbar(s) */
+						
+						/* auto-adjust scrollbar dragger length analogous to content */
+						if(o.autoDraggerLength){_setDraggerLength.call(this);}
+						
+						_scrollRatio.call(this); /* calculate and store scrollbar to content ratio */
+						
+						_bindEvents.call(this); /* bind scrollbar events */
+						
+						/* reset scrolling position and/or events */
+						var to=[Math.abs(mCSB_container[0].offsetTop),Math.abs(mCSB_container[0].offsetLeft)];
+						if(o.axis!=="x"){ /* y/yx axis */
+							if(!d.overflowed[0]){ /* y scrolling is not required */
+								_resetContentPosition.call(this); /* reset content position */
+								if(o.axis==="y"){
+									_unbindEvents.call(this);
+								}else if(o.axis==="yx" && d.overflowed[1]){
+									_scrollTo($this,to[1].toString(),{dir:"x",dur:0,overwrite:"none"});
+								}
+							}else if(mCSB_dragger[0].height()>mCSB_dragger[0].parent().height()){
+								_resetContentPosition.call(this); /* reset content position */
+							}else{ /* y scrolling is required */
+								_scrollTo($this,to[0].toString(),{dir:"y",dur:0,overwrite:"none"});
+								d.contentReset.y=null;
+							}
+						}
+						if(o.axis!=="y"){ /* x/yx axis */
+							if(!d.overflowed[1]){ /* x scrolling is not required */
+								_resetContentPosition.call(this); /* reset content position */
+								if(o.axis==="x"){
+									_unbindEvents.call(this);
+								}else if(o.axis==="yx" && d.overflowed[0]){
+									_scrollTo($this,to[0].toString(),{dir:"y",dur:0,overwrite:"none"});
+								}
+							}else if(mCSB_dragger[1].width()>mCSB_dragger[1].parent().width()){
+								_resetContentPosition.call(this); /* reset content position */
+							}else{ /* x scrolling is required */
+								_scrollTo($this,to[1].toString(),{dir:"x",dur:0,overwrite:"none"});
+								d.contentReset.x=null;
+							}
+						}
+						
+						/* callbacks: onImageLoad, onSelectorChange, onUpdate */
+						if(cb && d){
+							if(cb===2 && o.callbacks.onImageLoad && typeof o.callbacks.onImageLoad==="function"){
+								o.callbacks.onImageLoad.call(this);
+							}else if(cb===3 && o.callbacks.onSelectorChange && typeof o.callbacks.onSelectorChange==="function"){
+								o.callbacks.onSelectorChange.call(this);
+							}else if(o.callbacks.onUpdate && typeof o.callbacks.onUpdate==="function"){
+								o.callbacks.onUpdate.call(this);
+							}
+						}
+						
+						_autoUpdate.call(this); /* initialize automatic updating (for dynamic content, fluid layouts etc.) */
+						
+					}
+					
+				});
+				
+			},
+			/* ---------------------------------------- */
+			
+			
+			
+			/* 
+			plugin scrollTo method 
+			triggers a scrolling event to a specific value
+			----------------------------------------
+			usage: $(selector).mCustomScrollbar("scrollTo",value,options);
+			*/
+		
+			scrollTo:function(val,options){
+				
+				/* prevent silly things like $(selector).mCustomScrollbar("scrollTo",undefined); */
+				if(typeof val=="undefined" || val==null){return;}
+				
+				var selector=_selector.call(this); /* validate selector */
+				
+				return $(selector).each(function(){
+					
+					var $this=$(this);
+					
+					if($this.data(pluginPfx)){ /* check if plugin has initialized */
+					
+						var d=$this.data(pluginPfx),o=d.opt,
+							/* method default options */
+							methodDefaults={
+								trigger:"external", /* method is by default triggered externally (e.g. from other scripts) */
+								scrollInertia:o.scrollInertia, /* scrolling inertia (animation duration) */
+								scrollEasing:"mcsEaseInOut", /* animation easing */
+								moveDragger:false, /* move dragger instead of content */
+								timeout:60, /* scroll-to delay */
+								callbacks:true, /* enable/disable callbacks */
+								onStart:true,
+								onUpdate:true,
+								onComplete:true
+							},
+							methodOptions=$.extend(true,{},methodDefaults,options),
+							to=_arr.call(this,val),dur=methodOptions.scrollInertia>0 && methodOptions.scrollInertia<17 ? 17 : methodOptions.scrollInertia;
+						
+						/* translate yx values to actual scroll-to positions */
+						to[0]=_to.call(this,to[0],"y");
+						to[1]=_to.call(this,to[1],"x");
+						
+						/* 
+						check if scroll-to value moves the dragger instead of content. 
+						Only pixel values apply on dragger (e.g. 100, "100px", "-=100" etc.) 
+						*/
+						if(methodOptions.moveDragger){
+							to[0]*=d.scrollRatio.y;
+							to[1]*=d.scrollRatio.x;
+						}
+						
+						methodOptions.dur=_isTabHidden() ? 0 : dur; //skip animations if browser tab is hidden
+						
+						setTimeout(function(){ 
+							/* do the scrolling */
+							if(to[0]!==null && typeof to[0]!=="undefined" && o.axis!=="x" && d.overflowed[0]){ /* scroll y */
+								methodOptions.dir="y";
+								methodOptions.overwrite="all";
+								_scrollTo($this,to[0].toString(),methodOptions);
+							}
+							if(to[1]!==null && typeof to[1]!=="undefined" && o.axis!=="y" && d.overflowed[1]){ /* scroll x */
+								methodOptions.dir="x";
+								methodOptions.overwrite="none";
+								_scrollTo($this,to[1].toString(),methodOptions);
+							}
+						},methodOptions.timeout);
+						
+					}
+					
+				});
+				
+			},
+			/* ---------------------------------------- */
+			
+			
+			
+			/*
+			plugin stop method 
+			stops scrolling animation
+			----------------------------------------
+			usage: $(selector).mCustomScrollbar("stop");
+			*/
+			stop:function(){
+				
+				var selector=_selector.call(this); /* validate selector */
+				
+				return $(selector).each(function(){
+					
+					var $this=$(this);
+					
+					if($this.data(pluginPfx)){ /* check if plugin has initialized */
+										
+						_stop($this);
+					
+					}
+					
+				});
+				
+			},
+			/* ---------------------------------------- */
+			
+			
+			
+			/*
+			plugin disable method 
+			temporarily disables the scrollbar(s) 
+			----------------------------------------
+			usage: $(selector).mCustomScrollbar("disable",reset); 
+			reset (boolean): resets content position to 0 
+			*/
+			disable:function(r){
+				
+				var selector=_selector.call(this); /* validate selector */
+				
+				return $(selector).each(function(){
+					
+					var $this=$(this);
+					
+					if($this.data(pluginPfx)){ /* check if plugin has initialized */
+						
+						var d=$this.data(pluginPfx);
+						
+						_autoUpdate.call(this,"remove"); /* remove automatic updating */
+						
+						_unbindEvents.call(this); /* unbind events */
+						
+						if(r){_resetContentPosition.call(this);} /* reset content position */
+						
+						_scrollbarVisibility.call(this,true); /* show/hide scrollbar(s) */
+						
+						$this.addClass(classes[3]); /* add disable class */
+					
+					}
+					
+				});
+				
+			},
+			/* ---------------------------------------- */
+			
+			
+			
+			/*
+			plugin destroy method 
+			completely removes the scrollbar(s) and returns the element to its original state
+			----------------------------------------
+			usage: $(selector).mCustomScrollbar("destroy"); 
+			*/
+			destroy:function(){
+				
+				var selector=_selector.call(this); /* validate selector */
+				
+				return $(selector).each(function(){
+					
+					var $this=$(this);
+					
+					if($this.data(pluginPfx)){ /* check if plugin has initialized */
+					
+						var d=$this.data(pluginPfx),o=d.opt,
+							mCustomScrollBox=$("#mCSB_"+d.idx),
+							mCSB_container=$("#mCSB_"+d.idx+"_container"),
+							scrollbar=$(".mCSB_"+d.idx+"_scrollbar");
+					
+						if(o.live){removeLiveTimers(o.liveSelector || $(selector).selector);} /* remove live timers */
+						
+						_autoUpdate.call(this,"remove"); /* remove automatic updating */
+						
+						_unbindEvents.call(this); /* unbind events */
+						
+						_resetContentPosition.call(this); /* reset content position */
+						
+						$this.removeData(pluginPfx); /* remove plugin data object */
+						
+						_delete(this,"mcs"); /* delete callbacks object */
+						
+						/* remove plugin markup */
+						scrollbar.remove(); /* remove scrollbar(s) first (those can be either inside or outside plugin's inner wrapper) */
+						mCSB_container.find("img."+classes[2]).removeClass(classes[2]); /* remove loaded images flag */
+						mCustomScrollBox.replaceWith(mCSB_container.contents()); /* replace plugin's inner wrapper with the original content */
+						/* remove plugin classes from the element and add destroy class */
+						$this.removeClass(pluginNS+" _"+pluginPfx+"_"+d.idx+" "+classes[6]+" "+classes[7]+" "+classes[5]+" "+classes[3]).addClass(classes[4]);
+					
+					}
+					
+				});
+				
+			}
+			/* ---------------------------------------- */
+			
+		},
+	
+	
+	
+	
+		
+	/* 
+	----------------------------------------
+	FUNCTIONS
+	----------------------------------------
+	*/
+	
+		/* validates selector (if selector is invalid or undefined uses the default one) */
+		_selector=function(){
+			return (typeof $(this)!=="object" || $(this).length<1) ? defaultSelector : this;
+		},
+		/* -------------------- */
+		
+		
+		/* changes options according to theme */
+		_theme=function(obj){
+			var fixedSizeScrollbarThemes=["rounded","rounded-dark","rounded-dots","rounded-dots-dark"],
+				nonExpandedScrollbarThemes=["rounded-dots","rounded-dots-dark","3d","3d-dark","3d-thick","3d-thick-dark","inset","inset-dark","inset-2","inset-2-dark","inset-3","inset-3-dark"],
+				disabledScrollButtonsThemes=["minimal","minimal-dark"],
+				enabledAutoHideScrollbarThemes=["minimal","minimal-dark"],
+				scrollbarPositionOutsideThemes=["minimal","minimal-dark"];
+			obj.autoDraggerLength=$.inArray(obj.theme,fixedSizeScrollbarThemes) > -1 ? false : obj.autoDraggerLength;
+			obj.autoExpandScrollbar=$.inArray(obj.theme,nonExpandedScrollbarThemes) > -1 ? false : obj.autoExpandScrollbar;
+			obj.scrollButtons.enable=$.inArray(obj.theme,disabledScrollButtonsThemes) > -1 ? false : obj.scrollButtons.enable;
+			obj.autoHideScrollbar=$.inArray(obj.theme,enabledAutoHideScrollbarThemes) > -1 ? true : obj.autoHideScrollbar;
+			obj.scrollbarPosition=$.inArray(obj.theme,scrollbarPositionOutsideThemes) > -1 ? "outside" : obj.scrollbarPosition;
+		},
+		/* -------------------- */
+		
+		
+		/* live option timers removal */
+		removeLiveTimers=function(selector){
+			if(liveTimers[selector]){
+				clearTimeout(liveTimers[selector]);
+				_delete(liveTimers,selector);
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* normalizes axis option to valid values: "y", "x", "yx" */
+		_findAxis=function(val){
+			return (val==="yx" || val==="xy" || val==="auto") ? "yx" : (val==="x" || val==="horizontal") ? "x" : "y";
+		},
+		/* -------------------- */
+		
+		
+		/* normalizes scrollButtons.scrollType option to valid values: "stepless", "stepped" */
+		_findScrollButtonsType=function(val){
+			return (val==="stepped" || val==="pixels" || val==="step" || val==="click") ? "stepped" : "stepless";
+		},
+		/* -------------------- */
+		
+		
+		/* generates plugin markup */
+		_pluginMarkup=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				expandClass=o.autoExpandScrollbar ? " "+classes[1]+"_expand" : "",
+				scrollbar=["<div id='mCSB_"+d.idx+"_scrollbar_vertical' class='mCSB_scrollTools mCSB_"+d.idx+"_scrollbar mCS-"+o.theme+" mCSB_scrollTools_vertical"+expandClass+"'><div class='"+classes[12]+"'><div id='mCSB_"+d.idx+"_dragger_vertical' class='mCSB_dragger' style='position:absolute;'><div class='mCSB_dragger_bar' /></div><div class='mCSB_draggerRail' /></div></div>","<div id='mCSB_"+d.idx+"_scrollbar_horizontal' class='mCSB_scrollTools mCSB_"+d.idx+"_scrollbar mCS-"+o.theme+" mCSB_scrollTools_horizontal"+expandClass+"'><div class='"+classes[12]+"'><div id='mCSB_"+d.idx+"_dragger_horizontal' class='mCSB_dragger' style='position:absolute;'><div class='mCSB_dragger_bar' /></div><div class='mCSB_draggerRail' /></div></div>"],
+				wrapperClass=o.axis==="yx" ? "mCSB_vertical_horizontal" : o.axis==="x" ? "mCSB_horizontal" : "mCSB_vertical",
+				scrollbars=o.axis==="yx" ? scrollbar[0]+scrollbar[1] : o.axis==="x" ? scrollbar[1] : scrollbar[0],
+				contentWrapper=o.axis==="yx" ? "<div id='mCSB_"+d.idx+"_container_wrapper' class='mCSB_container_wrapper' />" : "",
+				autoHideClass=o.autoHideScrollbar ? " "+classes[6] : "",
+				scrollbarDirClass=(o.axis!=="x" && d.langDir==="rtl") ? " "+classes[7] : "";
+			if(o.setWidth){$this.css("width",o.setWidth);} /* set element width */
+			if(o.setHeight){$this.css("height",o.setHeight);} /* set element height */
+			o.setLeft=(o.axis!=="y" && d.langDir==="rtl") ? "989999px" : o.setLeft; /* adjust left position for rtl direction */
+			$this.addClass(pluginNS+" _"+pluginPfx+"_"+d.idx+autoHideClass+scrollbarDirClass).wrapInner("<div id='mCSB_"+d.idx+"' class='mCustomScrollBox mCS-"+o.theme+" "+wrapperClass+"'><div id='mCSB_"+d.idx+"_container' class='mCSB_container' style='position:relative; top:"+o.setTop+"; left:"+o.setLeft+";' dir='"+d.langDir+"' /></div>");
+			var mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_container=$("#mCSB_"+d.idx+"_container");
+			if(o.axis!=="y" && !o.advanced.autoExpandHorizontalScroll){
+				mCSB_container.css("width",_contentWidth(mCSB_container));
+			}
+			if(o.scrollbarPosition==="outside"){
+				if($this.css("position")==="static"){ /* requires elements with non-static position */
+					$this.css("position","relative");
+				}
+				$this.css("overflow","visible");
+				mCustomScrollBox.addClass("mCSB_outside").after(scrollbars);
+			}else{
+				mCustomScrollBox.addClass("mCSB_inside").append(scrollbars);
+				mCSB_container.wrap(contentWrapper);
+			}
+			_scrollButtons.call(this); /* add scrollbar buttons */
+			/* minimum dragger length */
+			var mCSB_dragger=[$("#mCSB_"+d.idx+"_dragger_vertical"),$("#mCSB_"+d.idx+"_dragger_horizontal")];
+			mCSB_dragger[0].css("min-height",mCSB_dragger[0].height());
+			mCSB_dragger[1].css("min-width",mCSB_dragger[1].width());
+		},
+		/* -------------------- */
+		
+		
+		/* calculates content width */
+		_contentWidth=function(el){
+			var val=[el[0].scrollWidth,Math.max.apply(Math,el.children().map(function(){return $(this).outerWidth(true);}).get())],w=el.parent().width();
+			return val[0]>w ? val[0] : val[1]>w ? val[1] : "100%";
+		},
+		/* -------------------- */
+		
+		
+		/* expands content horizontally */
+		_expandContentHorizontally=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				mCSB_container=$("#mCSB_"+d.idx+"_container");
+			if(o.advanced.autoExpandHorizontalScroll && o.axis!=="y"){
+				/* calculate scrollWidth */
+				mCSB_container.css({"width":"auto","min-width":0,"overflow-x":"scroll"});
+				var w=Math.ceil(mCSB_container[0].scrollWidth);
+				if(o.advanced.autoExpandHorizontalScroll===3 || (o.advanced.autoExpandHorizontalScroll!==2 && w>mCSB_container.parent().width())){
+					mCSB_container.css({"width":w,"min-width":"100%","overflow-x":"inherit"});
+				}else{
+					/* 
+					wrap content with an infinite width div and set its position to absolute and width to auto. 
+					Setting width to auto before calculating the actual width is important! 
+					We must let the browser set the width as browser zoom values are impossible to calculate.
+					*/
+					mCSB_container.css({"overflow-x":"inherit","position":"absolute"})
+						.wrap("<div class='mCSB_h_wrapper' style='position:relative; left:0; width:999999px;' />")
+						.css({ /* set actual width, original position and un-wrap */
+							/* 
+							get the exact width (with decimals) and then round-up. 
+							Using jquery outerWidth() will round the width value which will mess up with inner elements that have non-integer width
+							*/
+							"width":(Math.ceil(mCSB_container[0].getBoundingClientRect().right+0.4)-Math.floor(mCSB_container[0].getBoundingClientRect().left)),
+							"min-width":"100%",
+							"position":"relative"
+						}).unwrap();
+				}
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* adds scrollbar buttons */
+		_scrollButtons=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				mCSB_scrollTools=$(".mCSB_"+d.idx+"_scrollbar:first"),
+				tabindex=!_isNumeric(o.scrollButtons.tabindex) ? "" : "tabindex='"+o.scrollButtons.tabindex+"'",
+				btnHTML=[
+					"<a href='#' class='"+classes[13]+"' "+tabindex+" />",
+					"<a href='#' class='"+classes[14]+"' "+tabindex+" />",
+					"<a href='#' class='"+classes[15]+"' "+tabindex+" />",
+					"<a href='#' class='"+classes[16]+"' "+tabindex+" />"
+				],
+				btn=[(o.axis==="x" ? btnHTML[2] : btnHTML[0]),(o.axis==="x" ? btnHTML[3] : btnHTML[1]),btnHTML[2],btnHTML[3]];
+			if(o.scrollButtons.enable){
+				mCSB_scrollTools.prepend(btn[0]).append(btn[1]).next(".mCSB_scrollTools").prepend(btn[2]).append(btn[3]);
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* auto-adjusts scrollbar dragger length */
+		_setDraggerLength=function(){
+			var $this=$(this),d=$this.data(pluginPfx),
+				mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				mCSB_dragger=[$("#mCSB_"+d.idx+"_dragger_vertical"),$("#mCSB_"+d.idx+"_dragger_horizontal")],
+				ratio=[mCustomScrollBox.height()/mCSB_container.outerHeight(false),mCustomScrollBox.width()/mCSB_container.outerWidth(false)],
+				l=[
+					parseInt(mCSB_dragger[0].css("min-height")),Math.round(ratio[0]*mCSB_dragger[0].parent().height()),
+					parseInt(mCSB_dragger[1].css("min-width")),Math.round(ratio[1]*mCSB_dragger[1].parent().width())
+				],
+				h=oldIE && (l[1]<l[0]) ? l[0] : l[1],w=oldIE && (l[3]<l[2]) ? l[2] : l[3];
+			mCSB_dragger[0].css({
+				"height":h,"max-height":(mCSB_dragger[0].parent().height()-10)
+			}).find(".mCSB_dragger_bar").css({"line-height":l[0]+"px"});
+			mCSB_dragger[1].css({
+				"width":w,"max-width":(mCSB_dragger[1].parent().width()-10)
+			});
+		},
+		/* -------------------- */
+		
+		
+		/* calculates scrollbar to content ratio */
+		_scrollRatio=function(){
+			var $this=$(this),d=$this.data(pluginPfx),
+				mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				mCSB_dragger=[$("#mCSB_"+d.idx+"_dragger_vertical"),$("#mCSB_"+d.idx+"_dragger_horizontal")],
+				scrollAmount=[mCSB_container.outerHeight(false)-mCustomScrollBox.height(),mCSB_container.outerWidth(false)-mCustomScrollBox.width()],
+				ratio=[
+					scrollAmount[0]/(mCSB_dragger[0].parent().height()-mCSB_dragger[0].height()),
+					scrollAmount[1]/(mCSB_dragger[1].parent().width()-mCSB_dragger[1].width())
+				];
+			d.scrollRatio={y:ratio[0],x:ratio[1]};
+		},
+		/* -------------------- */
+		
+		
+		/* toggles scrolling classes */
+		_onDragClasses=function(el,action,xpnd){
+			var expandClass=xpnd ? classes[0]+"_expanded" : "",
+				scrollbar=el.closest(".mCSB_scrollTools");
+			if(action==="active"){
+				el.toggleClass(classes[0]+" "+expandClass); scrollbar.toggleClass(classes[1]); 
+				el[0]._draggable=el[0]._draggable ? 0 : 1;
+			}else{
+				if(!el[0]._draggable){
+					if(action==="hide"){
+						el.removeClass(classes[0]); scrollbar.removeClass(classes[1]);
+					}else{
+						el.addClass(classes[0]); scrollbar.addClass(classes[1]);
+					}
+				}
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* checks if content overflows its container to determine if scrolling is required */
+		_overflowed=function(){
+			var $this=$(this),d=$this.data(pluginPfx),
+				mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				contentHeight=d.overflowed==null ? mCSB_container.height() : mCSB_container.outerHeight(false),
+				contentWidth=d.overflowed==null ? mCSB_container.width() : mCSB_container.outerWidth(false),
+				h=mCSB_container[0].scrollHeight,w=mCSB_container[0].scrollWidth;
+			if(h>contentHeight){contentHeight=h;}
+			if(w>contentWidth){contentWidth=w;}
+			return [contentHeight>mCustomScrollBox.height(),contentWidth>mCustomScrollBox.width()];
+		},
+		/* -------------------- */
+		
+		
+		/* resets content position to 0 */
+		_resetContentPosition=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				mCSB_dragger=[$("#mCSB_"+d.idx+"_dragger_vertical"),$("#mCSB_"+d.idx+"_dragger_horizontal")];
+			_stop($this); /* stop any current scrolling before resetting */
+			if((o.axis!=="x" && !d.overflowed[0]) || (o.axis==="y" && d.overflowed[0])){ /* reset y */
+				mCSB_dragger[0].add(mCSB_container).css("top",0);
+				_scrollTo($this,"_resetY");
+			}
+			if((o.axis!=="y" && !d.overflowed[1]) || (o.axis==="x" && d.overflowed[1])){ /* reset x */
+				var cx=dx=0;
+				if(d.langDir==="rtl"){ /* adjust left position for rtl direction */
+					cx=mCustomScrollBox.width()-mCSB_container.outerWidth(false);
+					dx=Math.abs(cx/d.scrollRatio.x);
+				}
+				mCSB_container.css("left",cx);
+				mCSB_dragger[1].css("left",dx);
+				_scrollTo($this,"_resetX");
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* binds scrollbar events */
+		_bindEvents=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt;
+			if(!d.bindEvents){ /* check if events are already bound */
+				_draggable.call(this);
+				if(o.contentTouchScroll){_contentDraggable.call(this);}
+				_selectable.call(this);
+				if(o.mouseWheel.enable){ /* bind mousewheel fn when plugin is available */
+					function _mwt(){
+						mousewheelTimeout=setTimeout(function(){
+							if(!$.event.special.mousewheel){
+								_mwt();
+							}else{
+								clearTimeout(mousewheelTimeout);
+								_mousewheel.call($this[0]);
+							}
+						},100);
+					}
+					var mousewheelTimeout;
+					_mwt();
+				}
+				_draggerRail.call(this);
+				_wrapperScroll.call(this);
+				if(o.advanced.autoScrollOnFocus){_focus.call(this);}
+				if(o.scrollButtons.enable){_buttons.call(this);}
+				if(o.keyboard.enable){_keyboard.call(this);}
+				d.bindEvents=true;
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* unbinds scrollbar events */
+		_unbindEvents=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				namespace=pluginPfx+"_"+d.idx,
+				sb=".mCSB_"+d.idx+"_scrollbar",
+				sel=$("#mCSB_"+d.idx+",#mCSB_"+d.idx+"_container,#mCSB_"+d.idx+"_container_wrapper,"+sb+" ."+classes[12]+",#mCSB_"+d.idx+"_dragger_vertical,#mCSB_"+d.idx+"_dragger_horizontal,"+sb+">a"),
+				mCSB_container=$("#mCSB_"+d.idx+"_container");
+			if(o.advanced.releaseDraggableSelectors){sel.add($(o.advanced.releaseDraggableSelectors));}
+			if(o.advanced.extraDraggableSelectors){sel.add($(o.advanced.extraDraggableSelectors));}
+			if(d.bindEvents){ /* check if events are bound */
+				/* unbind namespaced events from document/selectors */
+				$(document).add($(!_canAccessIFrame() || top.document)).unbind("."+namespace);
+				sel.each(function(){
+					$(this).unbind("."+namespace);
+				});
+				/* clear and delete timeouts/objects */
+				clearTimeout($this[0]._focusTimeout); _delete($this[0],"_focusTimeout");
+				clearTimeout(d.sequential.step); _delete(d.sequential,"step");
+				clearTimeout(mCSB_container[0].onCompleteTimeout); _delete(mCSB_container[0],"onCompleteTimeout");
+				d.bindEvents=false;
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* toggles scrollbar visibility */
+		_scrollbarVisibility=function(disabled){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				contentWrapper=$("#mCSB_"+d.idx+"_container_wrapper"),
+				content=contentWrapper.length ? contentWrapper : $("#mCSB_"+d.idx+"_container"),
+				scrollbar=[$("#mCSB_"+d.idx+"_scrollbar_vertical"),$("#mCSB_"+d.idx+"_scrollbar_horizontal")],
+				mCSB_dragger=[scrollbar[0].find(".mCSB_dragger"),scrollbar[1].find(".mCSB_dragger")];
+			if(o.axis!=="x"){
+				if(d.overflowed[0] && !disabled){
+					scrollbar[0].add(mCSB_dragger[0]).add(scrollbar[0].children("a")).css("display","block");
+					content.removeClass(classes[8]+" "+classes[10]);
+				}else{
+					if(o.alwaysShowScrollbar){
+						if(o.alwaysShowScrollbar!==2){mCSB_dragger[0].css("display","none");}
+						content.removeClass(classes[10]);
+					}else{
+						scrollbar[0].css("display","none");
+						content.addClass(classes[10]);
+					}
+					content.addClass(classes[8]);
+				}
+			}
+			if(o.axis!=="y"){
+				if(d.overflowed[1] && !disabled){
+					scrollbar[1].add(mCSB_dragger[1]).add(scrollbar[1].children("a")).css("display","block");
+					content.removeClass(classes[9]+" "+classes[11]);
+				}else{
+					if(o.alwaysShowScrollbar){
+						if(o.alwaysShowScrollbar!==2){mCSB_dragger[1].css("display","none");}
+						content.removeClass(classes[11]);
+					}else{
+						scrollbar[1].css("display","none");
+						content.addClass(classes[11]);
+					}
+					content.addClass(classes[9]);
+				}
+			}
+			if(!d.overflowed[0] && !d.overflowed[1]){
+				$this.addClass(classes[5]);
+			}else{
+				$this.removeClass(classes[5]);
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* returns input coordinates of pointer, touch and mouse events (relative to document) */
+		_coordinates=function(e){
+			var t=e.type,o=e.target.ownerDocument!==document && frameElement!==null ? [$(frameElement).offset().top,$(frameElement).offset().left] : null,
+				io=_canAccessIFrame() && e.target.ownerDocument!==top.document && frameElement!==null ? [$(e.view.frameElement).offset().top,$(e.view.frameElement).offset().left] : [0,0];
+			switch(t){
+				case "pointerdown": case "MSPointerDown": case "pointermove": case "MSPointerMove": case "pointerup": case "MSPointerUp":
+					return o ? [e.originalEvent.pageY-o[0]+io[0],e.originalEvent.pageX-o[1]+io[1],false] : [e.originalEvent.pageY,e.originalEvent.pageX,false];
+					break;
+				case "touchstart": case "touchmove": case "touchend":
+					var touch=e.originalEvent.touches[0] || e.originalEvent.changedTouches[0],
+						touches=e.originalEvent.touches.length || e.originalEvent.changedTouches.length;
+					return e.target.ownerDocument!==document ? [touch.screenY,touch.screenX,touches>1] : [touch.pageY,touch.pageX,touches>1];
+					break;
+				default:
+					return o ? [e.pageY-o[0]+io[0],e.pageX-o[1]+io[1],false] : [e.pageY,e.pageX,false];
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		SCROLLBAR DRAG EVENTS
+		scrolls content via scrollbar dragging 
+		*/
+		_draggable=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				namespace=pluginPfx+"_"+d.idx,
+				draggerId=["mCSB_"+d.idx+"_dragger_vertical","mCSB_"+d.idx+"_dragger_horizontal"],
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				mCSB_dragger=$("#"+draggerId[0]+",#"+draggerId[1]),
+				draggable,dragY,dragX,
+				rds=o.advanced.releaseDraggableSelectors ? mCSB_dragger.add($(o.advanced.releaseDraggableSelectors)) : mCSB_dragger,
+				eds=o.advanced.extraDraggableSelectors ? $(!_canAccessIFrame() || top.document).add($(o.advanced.extraDraggableSelectors)) : $(!_canAccessIFrame() || top.document);
+			mCSB_dragger.bind("contextmenu."+namespace,function(e){
+				e.preventDefault(); //prevent right click
+			}).bind("mousedown."+namespace+" touchstart."+namespace+" pointerdown."+namespace+" MSPointerDown."+namespace,function(e){
+				e.stopImmediatePropagation();
+				e.preventDefault();
+				if(!_mouseBtnLeft(e)){return;} /* left mouse button only */
+				touchActive=true;
+				if(oldIE){document.onselectstart=function(){return false;}} /* disable text selection for IE < 9 */
+				_iframe.call(mCSB_container,false); /* enable scrollbar dragging over iframes by disabling their events */
+				_stop($this);
+				draggable=$(this);
+				var offset=draggable.offset(),y=_coordinates(e)[0]-offset.top,x=_coordinates(e)[1]-offset.left,
+					h=draggable.height()+offset.top,w=draggable.width()+offset.left;
+				if(y<h && y>0 && x<w && x>0){
+					dragY=y; 
+					dragX=x;
+				}
+				_onDragClasses(draggable,"active",o.autoExpandScrollbar); 
+			}).bind("touchmove."+namespace,function(e){
+				e.stopImmediatePropagation();
+				e.preventDefault();
+				var offset=draggable.offset(),y=_coordinates(e)[0]-offset.top,x=_coordinates(e)[1]-offset.left;
+				_drag(dragY,dragX,y,x);
+			});
+			$(document).add(eds).bind("mousemove."+namespace+" pointermove."+namespace+" MSPointerMove."+namespace,function(e){
+				if(draggable){
+					var offset=draggable.offset(),y=_coordinates(e)[0]-offset.top,x=_coordinates(e)[1]-offset.left;
+					if(dragY===y && dragX===x){return;} /* has it really moved? */
+					_drag(dragY,dragX,y,x);
+				}
+			}).add(rds).bind("mouseup."+namespace+" touchend."+namespace+" pointerup."+namespace+" MSPointerUp."+namespace,function(e){
+				if(draggable){
+					_onDragClasses(draggable,"active",o.autoExpandScrollbar); 
+					draggable=null;
+				}
+				touchActive=false;
+				if(oldIE){document.onselectstart=null;} /* enable text selection for IE < 9 */
+				_iframe.call(mCSB_container,true); /* enable iframes events */
+			});
+			function _drag(dragY,dragX,y,x){
+				mCSB_container[0].idleTimer=o.scrollInertia<233 ? 250 : 0;
+				if(draggable.attr("id")===draggerId[1]){
+					var dir="x",to=((draggable[0].offsetLeft-dragX)+x)*d.scrollRatio.x;
+				}else{
+					var dir="y",to=((draggable[0].offsetTop-dragY)+y)*d.scrollRatio.y;
+				}
+				_scrollTo($this,to.toString(),{dir:dir,drag:true});
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		TOUCH SWIPE EVENTS
+		scrolls content via touch swipe 
+		Emulates the native touch-swipe scrolling with momentum found in iOS, Android and WP devices 
+		*/
+		_contentDraggable=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				namespace=pluginPfx+"_"+d.idx,
+				mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				mCSB_dragger=[$("#mCSB_"+d.idx+"_dragger_vertical"),$("#mCSB_"+d.idx+"_dragger_horizontal")],
+				draggable,dragY,dragX,touchStartY,touchStartX,touchMoveY=[],touchMoveX=[],startTime,runningTime,endTime,distance,speed,amount,
+				durA=0,durB,overwrite=o.axis==="yx" ? "none" : "all",touchIntent=[],touchDrag,docDrag,
+				iframe=mCSB_container.find("iframe"),
+				events=[
+					"touchstart."+namespace+" pointerdown."+namespace+" MSPointerDown."+namespace, //start
+					"touchmove."+namespace+" pointermove."+namespace+" MSPointerMove."+namespace, //move
+					"touchend."+namespace+" pointerup."+namespace+" MSPointerUp."+namespace //end
+				],
+				touchAction=document.body.style.touchAction!==undefined && document.body.style.touchAction!=="";
+			mCSB_container.bind(events[0],function(e){
+				_onTouchstart(e);
+			}).bind(events[1],function(e){
+				_onTouchmove(e);
+			});
+			mCustomScrollBox.bind(events[0],function(e){
+				_onTouchstart2(e);
+			}).bind(events[2],function(e){
+				_onTouchend(e);
+			});
+			if(iframe.length){
+				iframe.each(function(){
+					$(this).bind("load",function(){
+						/* bind events on accessible iframes */
+						if(_canAccessIFrame(this)){
+							$(this.contentDocument || this.contentWindow.document).bind(events[0],function(e){
+								_onTouchstart(e);
+								_onTouchstart2(e);
+							}).bind(events[1],function(e){
+								_onTouchmove(e);
+							}).bind(events[2],function(e){
+								_onTouchend(e);
+							});
+						}
+					});
+				});
+			}
+			function _onTouchstart(e){
+				if(!_pointerTouch(e) || touchActive || _coordinates(e)[2]){touchable=0; return;}
+				touchable=1; touchDrag=0; docDrag=0; draggable=1;
+				$this.removeClass("mCS_touch_action");
+				var offset=mCSB_container.offset();
+				dragY=_coordinates(e)[0]-offset.top;
+				dragX=_coordinates(e)[1]-offset.left;
+				touchIntent=[_coordinates(e)[0],_coordinates(e)[1]];
+			}
+			function _onTouchmove(e){
+				if(!_pointerTouch(e) || touchActive || _coordinates(e)[2]){return;}
+				if(!o.documentTouchScroll){e.preventDefault();} 
+				e.stopImmediatePropagation();
+				if(docDrag && !touchDrag){return;}
+				if(draggable){
+					runningTime=_getTime();
+					var offset=mCustomScrollBox.offset(),y=_coordinates(e)[0]-offset.top,x=_coordinates(e)[1]-offset.left,
+						easing="mcsLinearOut";
+					touchMoveY.push(y);
+					touchMoveX.push(x);
+					touchIntent[2]=Math.abs(_coordinates(e)[0]-touchIntent[0]); touchIntent[3]=Math.abs(_coordinates(e)[1]-touchIntent[1]);
+					if(d.overflowed[0]){
+						var limit=mCSB_dragger[0].parent().height()-mCSB_dragger[0].height(),
+							prevent=((dragY-y)>0 && (y-dragY)>-(limit*d.scrollRatio.y) && (touchIntent[3]*2<touchIntent[2] || o.axis==="yx"));
+					}
+					if(d.overflowed[1]){
+						var limitX=mCSB_dragger[1].parent().width()-mCSB_dragger[1].width(),
+							preventX=((dragX-x)>0 && (x-dragX)>-(limitX*d.scrollRatio.x) && (touchIntent[2]*2<touchIntent[3] || o.axis==="yx"));
+					}
+					if(prevent || preventX){ /* prevent native document scrolling */
+						if(!touchAction){e.preventDefault();} 
+						touchDrag=1;
+					}else{
+						docDrag=1;
+						$this.addClass("mCS_touch_action");
+					}
+					if(touchAction){e.preventDefault();} 
+					amount=o.axis==="yx" ? [(dragY-y),(dragX-x)] : o.axis==="x" ? [null,(dragX-x)] : [(dragY-y),null];
+					mCSB_container[0].idleTimer=250;
+					if(d.overflowed[0]){_drag(amount[0],durA,easing,"y","all",true);}
+					if(d.overflowed[1]){_drag(amount[1],durA,easing,"x",overwrite,true);}
+				}
+			}
+			function _onTouchstart2(e){
+				if(!_pointerTouch(e) || touchActive || _coordinates(e)[2]){touchable=0; return;}
+				touchable=1;
+				e.stopImmediatePropagation();
+				_stop($this);
+				startTime=_getTime();
+				var offset=mCustomScrollBox.offset();
+				touchStartY=_coordinates(e)[0]-offset.top;
+				touchStartX=_coordinates(e)[1]-offset.left;
+				touchMoveY=[]; touchMoveX=[];
+			}
+			function _onTouchend(e){
+				if(!_pointerTouch(e) || touchActive || _coordinates(e)[2]){return;}
+				draggable=0;
+				e.stopImmediatePropagation();
+				touchDrag=0; docDrag=0;
+				endTime=_getTime();
+				var offset=mCustomScrollBox.offset(),y=_coordinates(e)[0]-offset.top,x=_coordinates(e)[1]-offset.left;
+				if((endTime-runningTime)>30){return;}
+				speed=1000/(endTime-startTime);
+				var easing="mcsEaseOut",slow=speed<2.5,
+					diff=slow ? [touchMoveY[touchMoveY.length-2],touchMoveX[touchMoveX.length-2]] : [0,0];
+				distance=slow ? [(y-diff[0]),(x-diff[1])] : [y-touchStartY,x-touchStartX];
+				var absDistance=[Math.abs(distance[0]),Math.abs(distance[1])];
+				speed=slow ? [Math.abs(distance[0]/4),Math.abs(distance[1]/4)] : [speed,speed];
+				var a=[
+					Math.abs(mCSB_container[0].offsetTop)-(distance[0]*_m((absDistance[0]/speed[0]),speed[0])),
+					Math.abs(mCSB_container[0].offsetLeft)-(distance[1]*_m((absDistance[1]/speed[1]),speed[1]))
+				];
+				amount=o.axis==="yx" ? [a[0],a[1]] : o.axis==="x" ? [null,a[1]] : [a[0],null];
+				durB=[(absDistance[0]*4)+o.scrollInertia,(absDistance[1]*4)+o.scrollInertia];
+				var md=parseInt(o.contentTouchScroll) || 0; /* absolute minimum distance required */
+				amount[0]=absDistance[0]>md ? amount[0] : 0;
+				amount[1]=absDistance[1]>md ? amount[1] : 0;
+				if(d.overflowed[0]){_drag(amount[0],durB[0],easing,"y",overwrite,false);}
+				if(d.overflowed[1]){_drag(amount[1],durB[1],easing,"x",overwrite,false);}
+			}
+			function _m(ds,s){
+				var r=[s*1.5,s*2,s/1.5,s/2];
+				if(ds>90){
+					return s>4 ? r[0] : r[3];
+				}else if(ds>60){
+					return s>3 ? r[3] : r[2];
+				}else if(ds>30){
+					return s>8 ? r[1] : s>6 ? r[0] : s>4 ? s : r[2];
+				}else{
+					return s>8 ? s : r[3];
+				}
+			}
+			function _drag(amount,dur,easing,dir,overwrite,drag){
+				if(!amount){return;}
+				_scrollTo($this,amount.toString(),{dur:dur,scrollEasing:easing,dir:dir,overwrite:overwrite,drag:drag});
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		SELECT TEXT EVENTS 
+		scrolls content when text is selected 
+		*/
+		_selectable=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,seq=d.sequential,
+				namespace=pluginPfx+"_"+d.idx,
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				wrapper=mCSB_container.parent(),
+				action;
+			mCSB_container.bind("mousedown."+namespace,function(e){
+				if(touchable){return;}
+				if(!action){action=1; touchActive=true;}
+			}).add(document).bind("mousemove."+namespace,function(e){
+				if(!touchable && action && _sel()){
+					var offset=mCSB_container.offset(),
+						y=_coordinates(e)[0]-offset.top+mCSB_container[0].offsetTop,x=_coordinates(e)[1]-offset.left+mCSB_container[0].offsetLeft;
+					if(y>0 && y<wrapper.height() && x>0 && x<wrapper.width()){
+						if(seq.step){_seq("off",null,"stepped");}
+					}else{
+						if(o.axis!=="x" && d.overflowed[0]){
+							if(y<0){
+								_seq("on",38);
+							}else if(y>wrapper.height()){
+								_seq("on",40);
+							}
+						}
+						if(o.axis!=="y" && d.overflowed[1]){
+							if(x<0){
+								_seq("on",37);
+							}else if(x>wrapper.width()){
+								_seq("on",39);
+							}
+						}
+					}
+				}
+			}).bind("mouseup."+namespace+" dragend."+namespace,function(e){
+				if(touchable){return;}
+				if(action){action=0; _seq("off",null);}
+				touchActive=false;
+			});
+			function _sel(){
+				return 	window.getSelection ? window.getSelection().toString() : 
+						document.selection && document.selection.type!="Control" ? document.selection.createRange().text : 0;
+			}
+			function _seq(a,c,s){
+				seq.type=s && action ? "stepped" : "stepless";
+				seq.scrollAmount=10;
+				_sequentialScroll($this,a,c,"mcsLinearOut",s ? 60 : null);
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		MOUSE WHEEL EVENT
+		scrolls content via mouse-wheel 
+		via mouse-wheel plugin (https://github.com/brandonaaron/jquery-mousewheel)
+		*/
+		_mousewheel=function(){
+			if(!$(this).data(pluginPfx)){return;} /* Check if the scrollbar is ready to use mousewheel events (issue: #185) */
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				namespace=pluginPfx+"_"+d.idx,
+				mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_dragger=[$("#mCSB_"+d.idx+"_dragger_vertical"),$("#mCSB_"+d.idx+"_dragger_horizontal")],
+				iframe=$("#mCSB_"+d.idx+"_container").find("iframe");
+			if(iframe.length){
+				iframe.each(function(){
+					$(this).bind("load",function(){
+						/* bind events on accessible iframes */
+						if(_canAccessIFrame(this)){
+							$(this.contentDocument || this.contentWindow.document).bind("mousewheel."+namespace,function(e,delta){
+								_onMousewheel(e,delta);
+							});
+						}
+					});
+				});
+			}
+			mCustomScrollBox.bind("mousewheel."+namespace,function(e,delta){
+				_onMousewheel(e,delta);
+			});
+			function _onMousewheel(e,delta){
+				_stop($this);
+				if(_disableMousewheel($this,e.target)){return;} /* disables mouse-wheel when hovering specific elements */
+				var deltaFactor=o.mouseWheel.deltaFactor!=="auto" ? parseInt(o.mouseWheel.deltaFactor) : (oldIE && e.deltaFactor<100) ? 100 : e.deltaFactor || 100,
+					dur=o.scrollInertia;
+				if(o.axis==="x" || o.mouseWheel.axis==="x"){
+					var dir="x",
+						px=[Math.round(deltaFactor*d.scrollRatio.x),parseInt(o.mouseWheel.scrollAmount)],
+						amount=o.mouseWheel.scrollAmount!=="auto" ? px[1] : px[0]>=mCustomScrollBox.width() ? mCustomScrollBox.width()*0.9 : px[0],
+						contentPos=Math.abs($("#mCSB_"+d.idx+"_container")[0].offsetLeft),
+						draggerPos=mCSB_dragger[1][0].offsetLeft,
+						limit=mCSB_dragger[1].parent().width()-mCSB_dragger[1].width(),
+						dlt=o.mouseWheel.axis==="y" ? (e.deltaY || delta) : e.deltaX;
+				}else{
+					var dir="y",
+						px=[Math.round(deltaFactor*d.scrollRatio.y),parseInt(o.mouseWheel.scrollAmount)],
+						amount=o.mouseWheel.scrollAmount!=="auto" ? px[1] : px[0]>=mCustomScrollBox.height() ? mCustomScrollBox.height()*0.9 : px[0],
+						contentPos=Math.abs($("#mCSB_"+d.idx+"_container")[0].offsetTop),
+						draggerPos=mCSB_dragger[0][0].offsetTop,
+						limit=mCSB_dragger[0].parent().height()-mCSB_dragger[0].height(),
+						dlt=e.deltaY || delta;
+				}
+				if((dir==="y" && !d.overflowed[0]) || (dir==="x" && !d.overflowed[1])){return;}
+				if(o.mouseWheel.invert || e.webkitDirectionInvertedFromDevice){dlt=-dlt;}
+				if(o.mouseWheel.normalizeDelta){dlt=dlt<0 ? -1 : 1;}
+				if((dlt>0 && draggerPos!==0) || (dlt<0 && draggerPos!==limit) || o.mouseWheel.preventDefault){
+					e.stopImmediatePropagation();
+					e.preventDefault();
+				}
+				if(e.deltaFactor<5 && !o.mouseWheel.normalizeDelta){
+					//very low deltaFactor values mean some kind of delta acceleration (e.g. osx trackpad), so adjusting scrolling accordingly
+					amount=e.deltaFactor; dur=17;
+				}
+				_scrollTo($this,(contentPos-(dlt*amount)).toString(),{dir:dir,dur:dur});
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* checks if iframe can be accessed */
+		_canAccessIFrameCache=new Object(),
+		_canAccessIFrame=function(iframe){
+		    var result=false,cacheKey=false,html=null;
+		    if(iframe===undefined){
+				cacheKey="#empty";
+		    }else if($(iframe).attr("id")!==undefined){
+				cacheKey=$(iframe).attr("id");
+		    }
+			if(cacheKey!==false && _canAccessIFrameCache[cacheKey]!==undefined){
+				return _canAccessIFrameCache[cacheKey];
+			}
+			if(!iframe){
+				try{
+					var doc=top.document;
+					html=doc.body.innerHTML;
+				}catch(err){/* do nothing */}
+				result=(html!==null);
+			}else{
+				try{
+					var doc=iframe.contentDocument || iframe.contentWindow.document;
+					html=doc.body.innerHTML;
+				}catch(err){/* do nothing */}
+				result=(html!==null);
+			}
+			if(cacheKey!==false){_canAccessIFrameCache[cacheKey]=result;}
+			return result;
+		},
+		/* -------------------- */
+		
+		
+		/* switches iframe's pointer-events property (drag, mousewheel etc. over cross-domain iframes) */
+		_iframe=function(evt){
+			var el=this.find("iframe");
+			if(!el.length){return;} /* check if content contains iframes */
+			var val=!evt ? "none" : "auto";
+			el.css("pointer-events",val); /* for IE11, iframe's display property should not be "block" */
+		},
+		/* -------------------- */
+		
+		
+		/* disables mouse-wheel when hovering specific elements like select, datalist etc. */
+		_disableMousewheel=function(el,target){
+			var tag=target.nodeName.toLowerCase(),
+				tags=el.data(pluginPfx).opt.mouseWheel.disableOver,
+				/* elements that require focus */
+				focusTags=["select","textarea"];
+			return $.inArray(tag,tags) > -1 && !($.inArray(tag,focusTags) > -1 && !$(target).is(":focus"));
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		DRAGGER RAIL CLICK EVENT
+		scrolls content via dragger rail 
+		*/
+		_draggerRail=function(){
+			var $this=$(this),d=$this.data(pluginPfx),
+				namespace=pluginPfx+"_"+d.idx,
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				wrapper=mCSB_container.parent(),
+				mCSB_draggerContainer=$(".mCSB_"+d.idx+"_scrollbar ."+classes[12]),
+				clickable;
+			mCSB_draggerContainer.bind("mousedown."+namespace+" touchstart."+namespace+" pointerdown."+namespace+" MSPointerDown."+namespace,function(e){
+				touchActive=true;
+				if(!$(e.target).hasClass("mCSB_dragger")){clickable=1;}
+			}).bind("touchend."+namespace+" pointerup."+namespace+" MSPointerUp."+namespace,function(e){
+				touchActive=false;
+			}).bind("click."+namespace,function(e){
+				if(!clickable){return;}
+				clickable=0;
+				if($(e.target).hasClass(classes[12]) || $(e.target).hasClass("mCSB_draggerRail")){
+					_stop($this);
+					var el=$(this),mCSB_dragger=el.find(".mCSB_dragger");
+					if(el.parent(".mCSB_scrollTools_horizontal").length>0){
+						if(!d.overflowed[1]){return;}
+						var dir="x",
+							clickDir=e.pageX>mCSB_dragger.offset().left ? -1 : 1,
+							to=Math.abs(mCSB_container[0].offsetLeft)-(clickDir*(wrapper.width()*0.9));
+					}else{
+						if(!d.overflowed[0]){return;}
+						var dir="y",
+							clickDir=e.pageY>mCSB_dragger.offset().top ? -1 : 1,
+							to=Math.abs(mCSB_container[0].offsetTop)-(clickDir*(wrapper.height()*0.9));
+					}
+					_scrollTo($this,to.toString(),{dir:dir,scrollEasing:"mcsEaseInOut"});
+				}
+			});
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		FOCUS EVENT
+		scrolls content via element focus (e.g. clicking an input, pressing TAB key etc.)
+		*/
+		_focus=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				namespace=pluginPfx+"_"+d.idx,
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				wrapper=mCSB_container.parent();
+			mCSB_container.bind("focusin."+namespace,function(e){
+				var el=$(document.activeElement),
+					nested=mCSB_container.find(".mCustomScrollBox").length,
+					dur=0;
+				if(!el.is(o.advanced.autoScrollOnFocus)){return;}
+				_stop($this);
+				clearTimeout($this[0]._focusTimeout);
+				$this[0]._focusTimer=nested ? (dur+17)*nested : 0;
+				$this[0]._focusTimeout=setTimeout(function(){
+					var	to=[_childPos(el)[0],_childPos(el)[1]],
+						contentPos=[mCSB_container[0].offsetTop,mCSB_container[0].offsetLeft],
+						isVisible=[
+							(contentPos[0]+to[0]>=0 && contentPos[0]+to[0]<wrapper.height()-el.outerHeight(false)),
+							(contentPos[1]+to[1]>=0 && contentPos[0]+to[1]<wrapper.width()-el.outerWidth(false))
+						],
+						overwrite=(o.axis==="yx" && !isVisible[0] && !isVisible[1]) ? "none" : "all";
+					if(o.axis!=="x" && !isVisible[0]){
+						_scrollTo($this,to[0].toString(),{dir:"y",scrollEasing:"mcsEaseInOut",overwrite:overwrite,dur:dur});
+					}
+					if(o.axis!=="y" && !isVisible[1]){
+						_scrollTo($this,to[1].toString(),{dir:"x",scrollEasing:"mcsEaseInOut",overwrite:overwrite,dur:dur});
+					}
+				},$this[0]._focusTimer);
+			});
+		},
+		/* -------------------- */
+		
+		
+		/* sets content wrapper scrollTop/scrollLeft always to 0 */
+		_wrapperScroll=function(){
+			var $this=$(this),d=$this.data(pluginPfx),
+				namespace=pluginPfx+"_"+d.idx,
+				wrapper=$("#mCSB_"+d.idx+"_container").parent();
+			wrapper.bind("scroll."+namespace,function(e){
+				if(wrapper.scrollTop()!==0 || wrapper.scrollLeft()!==0){
+					$(".mCSB_"+d.idx+"_scrollbar").css("visibility","hidden"); /* hide scrollbar(s) */
+				}
+			});
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		BUTTONS EVENTS
+		scrolls content via up, down, left and right buttons 
+		*/
+		_buttons=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,seq=d.sequential,
+				namespace=pluginPfx+"_"+d.idx,
+				sel=".mCSB_"+d.idx+"_scrollbar",
+				btn=$(sel+">a");
+			btn.bind("contextmenu."+namespace,function(e){
+				e.preventDefault(); //prevent right click
+			}).bind("mousedown."+namespace+" touchstart."+namespace+" pointerdown."+namespace+" MSPointerDown."+namespace+" mouseup."+namespace+" touchend."+namespace+" pointerup."+namespace+" MSPointerUp."+namespace+" mouseout."+namespace+" pointerout."+namespace+" MSPointerOut."+namespace+" click."+namespace,function(e){
+				e.preventDefault();
+				if(!_mouseBtnLeft(e)){return;} /* left mouse button only */
+				var btnClass=$(this).attr("class");
+				seq.type=o.scrollButtons.scrollType;
+				switch(e.type){
+					case "mousedown": case "touchstart": case "pointerdown": case "MSPointerDown":
+						if(seq.type==="stepped"){return;}
+						touchActive=true;
+						d.tweenRunning=false;
+						_seq("on",btnClass);
+						break;
+					case "mouseup": case "touchend": case "pointerup": case "MSPointerUp":
+					case "mouseout": case "pointerout": case "MSPointerOut":
+						if(seq.type==="stepped"){return;}
+						touchActive=false;
+						if(seq.dir){_seq("off",btnClass);}
+						break;
+					case "click":
+						if(seq.type!=="stepped" || d.tweenRunning){return;}
+						_seq("on",btnClass);
+						break;
+				}
+				function _seq(a,c){
+					seq.scrollAmount=o.scrollButtons.scrollAmount;
+					_sequentialScroll($this,a,c);
+				}
+			});
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		KEYBOARD EVENTS
+		scrolls content via keyboard 
+		Keys: up arrow, down arrow, left arrow, right arrow, PgUp, PgDn, Home, End
+		*/
+		_keyboard=function(){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,seq=d.sequential,
+				namespace=pluginPfx+"_"+d.idx,
+				mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				wrapper=mCSB_container.parent(),
+				editables="input,textarea,select,datalist,keygen,[contenteditable='true']",
+				iframe=mCSB_container.find("iframe"),
+				events=["blur."+namespace+" keydown."+namespace+" keyup."+namespace];
+			if(iframe.length){
+				iframe.each(function(){
+					$(this).bind("load",function(){
+						/* bind events on accessible iframes */
+						if(_canAccessIFrame(this)){
+							$(this.contentDocument || this.contentWindow.document).bind(events[0],function(e){
+								_onKeyboard(e);
+							});
+						}
+					});
+				});
+			}
+			mCustomScrollBox.attr("tabindex","0").bind(events[0],function(e){
+				_onKeyboard(e);
+			});
+			function _onKeyboard(e){
+				switch(e.type){
+					case "blur":
+						if(d.tweenRunning && seq.dir){_seq("off",null);}
+						break;
+					case "keydown": case "keyup":
+						var code=e.keyCode ? e.keyCode : e.which,action="on";
+						if((o.axis!=="x" && (code===38 || code===40)) || (o.axis!=="y" && (code===37 || code===39))){
+							/* up (38), down (40), left (37), right (39) arrows */
+							if(((code===38 || code===40) && !d.overflowed[0]) || ((code===37 || code===39) && !d.overflowed[1])){return;}
+							if(e.type==="keyup"){action="off";}
+							if(!$(document.activeElement).is(editables)){
+								e.preventDefault();
+								e.stopImmediatePropagation();
+								_seq(action,code);
+							}
+						}else if(code===33 || code===34){
+							/* PgUp (33), PgDn (34) */
+							if(d.overflowed[0] || d.overflowed[1]){
+								e.preventDefault();
+								e.stopImmediatePropagation();
+							}
+							if(e.type==="keyup"){
+								_stop($this);
+								var keyboardDir=code===34 ? -1 : 1;
+								if(o.axis==="x" || (o.axis==="yx" && d.overflowed[1] && !d.overflowed[0])){
+									var dir="x",to=Math.abs(mCSB_container[0].offsetLeft)-(keyboardDir*(wrapper.width()*0.9));
+								}else{
+									var dir="y",to=Math.abs(mCSB_container[0].offsetTop)-(keyboardDir*(wrapper.height()*0.9));
+								}
+								_scrollTo($this,to.toString(),{dir:dir,scrollEasing:"mcsEaseInOut"});
+							}
+						}else if(code===35 || code===36){
+							/* End (35), Home (36) */
+							if(!$(document.activeElement).is(editables)){
+								if(d.overflowed[0] || d.overflowed[1]){
+									e.preventDefault();
+									e.stopImmediatePropagation();
+								}
+								if(e.type==="keyup"){
+									if(o.axis==="x" || (o.axis==="yx" && d.overflowed[1] && !d.overflowed[0])){
+										var dir="x",to=code===35 ? Math.abs(wrapper.width()-mCSB_container.outerWidth(false)) : 0;
+									}else{
+										var dir="y",to=code===35 ? Math.abs(wrapper.height()-mCSB_container.outerHeight(false)) : 0;
+									}
+									_scrollTo($this,to.toString(),{dir:dir,scrollEasing:"mcsEaseInOut"});
+								}
+							}
+						}
+						break;
+				}
+				function _seq(a,c){
+					seq.type=o.keyboard.scrollType;
+					seq.scrollAmount=o.keyboard.scrollAmount;
+					if(seq.type==="stepped" && d.tweenRunning){return;}
+					_sequentialScroll($this,a,c);
+				}
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* scrolls content sequentially (used when scrolling via buttons, keyboard arrows etc.) */
+		_sequentialScroll=function(el,action,trigger,e,s){
+			var d=el.data(pluginPfx),o=d.opt,seq=d.sequential,
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				once=seq.type==="stepped" ? true : false,
+				steplessSpeed=o.scrollInertia < 26 ? 26 : o.scrollInertia, /* 26/1.5=17 */
+				steppedSpeed=o.scrollInertia < 1 ? 17 : o.scrollInertia;
+			switch(action){
+				case "on":
+					seq.dir=[
+						(trigger===classes[16] || trigger===classes[15] || trigger===39 || trigger===37 ? "x" : "y"),
+						(trigger===classes[13] || trigger===classes[15] || trigger===38 || trigger===37 ? -1 : 1)
+					];
+					_stop(el);
+					if(_isNumeric(trigger) && seq.type==="stepped"){return;}
+					_on(once);
+					break;
+				case "off":
+					_off();
+					if(once || (d.tweenRunning && seq.dir)){
+						_on(true);
+					}
+					break;
+			}
+			
+			/* starts sequence */
+			function _on(once){
+				if(o.snapAmount){seq.scrollAmount=!(o.snapAmount instanceof Array) ? o.snapAmount : seq.dir[0]==="x" ? o.snapAmount[1] : o.snapAmount[0];} /* scrolling snapping */
+				var c=seq.type!=="stepped", /* continuous scrolling */
+					t=s ? s : !once ? 1000/60 : c ? steplessSpeed/1.5 : steppedSpeed, /* timer */
+					m=!once ? 2.5 : c ? 7.5 : 40, /* multiplier */
+					contentPos=[Math.abs(mCSB_container[0].offsetTop),Math.abs(mCSB_container[0].offsetLeft)],
+					ratio=[d.scrollRatio.y>10 ? 10 : d.scrollRatio.y,d.scrollRatio.x>10 ? 10 : d.scrollRatio.x],
+					amount=seq.dir[0]==="x" ? contentPos[1]+(seq.dir[1]*(ratio[1]*m)) : contentPos[0]+(seq.dir[1]*(ratio[0]*m)),
+					px=seq.dir[0]==="x" ? contentPos[1]+(seq.dir[1]*parseInt(seq.scrollAmount)) : contentPos[0]+(seq.dir[1]*parseInt(seq.scrollAmount)),
+					to=seq.scrollAmount!=="auto" ? px : amount,
+					easing=e ? e : !once ? "mcsLinear" : c ? "mcsLinearOut" : "mcsEaseInOut",
+					onComplete=!once ? false : true;
+				if(once && t<17){
+					to=seq.dir[0]==="x" ? contentPos[1] : contentPos[0];
+				}
+				_scrollTo(el,to.toString(),{dir:seq.dir[0],scrollEasing:easing,dur:t,onComplete:onComplete});
+				if(once){
+					seq.dir=false;
+					return;
+				}
+				clearTimeout(seq.step);
+				seq.step=setTimeout(function(){
+					_on();
+				},t);
+			}
+			/* stops sequence */
+			function _off(){
+				clearTimeout(seq.step);
+				_delete(seq,"step");
+				_stop(el);
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* returns a yx array from value */
+		_arr=function(val){
+			var o=$(this).data(pluginPfx).opt,vals=[];
+			if(typeof val==="function"){val=val();} /* check if the value is a single anonymous function */
+			/* check if value is object or array, its length and create an array with yx values */
+			if(!(val instanceof Array)){ /* object value (e.g. {y:"100",x:"100"}, 100 etc.) */
+				vals[0]=val.y ? val.y : val.x || o.axis==="x" ? null : val;
+				vals[1]=val.x ? val.x : val.y || o.axis==="y" ? null : val;
+			}else{ /* array value (e.g. [100,100]) */
+				vals=val.length>1 ? [val[0],val[1]] : o.axis==="x" ? [null,val[0]] : [val[0],null];
+			}
+			/* check if array values are anonymous functions */
+			if(typeof vals[0]==="function"){vals[0]=vals[0]();}
+			if(typeof vals[1]==="function"){vals[1]=vals[1]();}
+			return vals;
+		},
+		/* -------------------- */
+		
+		
+		/* translates values (e.g. "top", 100, "100px", "#id") to actual scroll-to positions */
+		_to=function(val,dir){
+			if(val==null || typeof val=="undefined"){return;}
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				wrapper=mCSB_container.parent(),
+				t=typeof val;
+			if(!dir){dir=o.axis==="x" ? "x" : "y";}
+			var contentLength=dir==="x" ? mCSB_container.outerWidth(false)-wrapper.width() : mCSB_container.outerHeight(false)-wrapper.height(),
+				contentPos=dir==="x" ? mCSB_container[0].offsetLeft : mCSB_container[0].offsetTop,
+				cssProp=dir==="x" ? "left" : "top";
+			switch(t){
+				case "function": /* this currently is not used. Consider removing it */
+					return val();
+					break;
+				case "object": /* js/jquery object */
+					var obj=val.jquery ? val : $(val);
+					if(!obj.length){return;}
+					return dir==="x" ? _childPos(obj)[1] : _childPos(obj)[0];
+					break;
+				case "string": case "number":
+					if(_isNumeric(val)){ /* numeric value */
+						return Math.abs(val);
+					}else if(val.indexOf("%")!==-1){ /* percentage value */
+						return Math.abs(contentLength*parseInt(val)/100);
+					}else if(val.indexOf("-=")!==-1){ /* decrease value */
+						return Math.abs(contentPos-parseInt(val.split("-=")[1]));
+					}else if(val.indexOf("+=")!==-1){ /* inrease value */
+						var p=(contentPos+parseInt(val.split("+=")[1]));
+						return p>=0 ? 0 : Math.abs(p);
+					}else if(val.indexOf("px")!==-1 && _isNumeric(val.split("px")[0])){ /* pixels string value (e.g. "100px") */
+						return Math.abs(val.split("px")[0]);
+					}else{
+						if(val==="top" || val==="left"){ /* special strings */
+							return 0;
+						}else if(val==="bottom"){
+							return Math.abs(wrapper.height()-mCSB_container.outerHeight(false));
+						}else if(val==="right"){
+							return Math.abs(wrapper.width()-mCSB_container.outerWidth(false));
+						}else if(val==="first" || val==="last"){
+							var obj=mCSB_container.find(":"+val);
+							return dir==="x" ? _childPos(obj)[1] : _childPos(obj)[0];
+						}else{
+							if($(val).length){ /* jquery selector */
+								return dir==="x" ? _childPos($(val))[1] : _childPos($(val))[0];
+							}else{ /* other values (e.g. "100em") */
+								mCSB_container.css(cssProp,val);
+								methods.update.call(null,$this[0]);
+								return;
+							}
+						}
+					}
+					break;
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* calls the update method automatically */
+		_autoUpdate=function(rem){
+			var $this=$(this),d=$this.data(pluginPfx),o=d.opt,
+				mCSB_container=$("#mCSB_"+d.idx+"_container");
+			if(rem){
+				/* 
+				removes autoUpdate timer 
+				usage: _autoUpdate.call(this,"remove");
+				*/
+				clearTimeout(mCSB_container[0].autoUpdate);
+				_delete(mCSB_container[0],"autoUpdate");
+				return;
+			}
+			upd();
+			function upd(){
+				clearTimeout(mCSB_container[0].autoUpdate);
+				if($this.parents("html").length===0){
+					/* check element in dom tree */
+					$this=null;
+					return;
+				}
+				mCSB_container[0].autoUpdate=setTimeout(function(){
+					/* update on specific selector(s) length and size change */
+					if(o.advanced.updateOnSelectorChange){
+						d.poll.change.n=sizesSum();
+						if(d.poll.change.n!==d.poll.change.o){
+							d.poll.change.o=d.poll.change.n;
+							doUpd(3);
+							return;
+						}
+					}
+					/* update on main element and scrollbar size changes */
+					if(o.advanced.updateOnContentResize){
+						d.poll.size.n=$this[0].scrollHeight+$this[0].scrollWidth+mCSB_container[0].offsetHeight+$this[0].offsetHeight+$this[0].offsetWidth;
+						if(d.poll.size.n!==d.poll.size.o){
+							d.poll.size.o=d.poll.size.n;
+							doUpd(1);
+							return;
+						}
+					}
+					/* update on image load */
+					if(o.advanced.updateOnImageLoad){
+						if(!(o.advanced.updateOnImageLoad==="auto" && o.axis==="y")){ //by default, it doesn't run on vertical content
+							d.poll.img.n=mCSB_container.find("img").length;
+							if(d.poll.img.n!==d.poll.img.o){
+								d.poll.img.o=d.poll.img.n;
+								mCSB_container.find("img").each(function(){
+									imgLoader(this);
+								});
+								return;
+							}
+						}
+					}
+					if(o.advanced.updateOnSelectorChange || o.advanced.updateOnContentResize || o.advanced.updateOnImageLoad){upd();}
+				},o.advanced.autoUpdateTimeout);
+			}
+			/* a tiny image loader */
+			function imgLoader(el){
+				if($(el).hasClass(classes[2])){doUpd(); return;}
+				var img=new Image();
+				function createDelegate(contextObject,delegateMethod){
+					return function(){return delegateMethod.apply(contextObject,arguments);}
+				}
+				function imgOnLoad(){
+					this.onload=null;
+					$(el).addClass(classes[2]);
+					doUpd(2);
+				}
+				img.onload=createDelegate(img,imgOnLoad);
+				img.src=el.src;
+			}
+			/* returns the total height and width sum of all elements matching the selector */
+			function sizesSum(){
+				if(o.advanced.updateOnSelectorChange===true){o.advanced.updateOnSelectorChange="*";}
+				var total=0,sel=mCSB_container.find(o.advanced.updateOnSelectorChange);
+				if(o.advanced.updateOnSelectorChange && sel.length>0){sel.each(function(){total+=this.offsetHeight+this.offsetWidth;});}
+				return total;
+			}
+			/* calls the update method */
+			function doUpd(cb){
+				clearTimeout(mCSB_container[0].autoUpdate);
+				methods.update.call(null,$this[0],cb);
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* snaps scrolling to a multiple of a pixels number */
+		_snapAmount=function(to,amount,offset){
+			return (Math.round(to/amount)*amount-offset); 
+		},
+		/* -------------------- */
+		
+		
+		/* stops content and scrollbar animations */
+		_stop=function(el){
+			var d=el.data(pluginPfx),
+				sel=$("#mCSB_"+d.idx+"_container,#mCSB_"+d.idx+"_container_wrapper,#mCSB_"+d.idx+"_dragger_vertical,#mCSB_"+d.idx+"_dragger_horizontal");
+			sel.each(function(){
+				_stopTween.call(this);
+			});
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		ANIMATES CONTENT 
+		This is where the actual scrolling happens
+		*/
+		_scrollTo=function(el,to,options){
+			var d=el.data(pluginPfx),o=d.opt,
+				defaults={
+					trigger:"internal",
+					dir:"y",
+					scrollEasing:"mcsEaseOut",
+					drag:false,
+					dur:o.scrollInertia,
+					overwrite:"all",
+					callbacks:true,
+					onStart:true,
+					onUpdate:true,
+					onComplete:true
+				},
+				options=$.extend(defaults,options),
+				dur=[options.dur,(options.drag ? 0 : options.dur)],
+				mCustomScrollBox=$("#mCSB_"+d.idx),
+				mCSB_container=$("#mCSB_"+d.idx+"_container"),
+				wrapper=mCSB_container.parent(),
+				totalScrollOffsets=o.callbacks.onTotalScrollOffset ? _arr.call(el,o.callbacks.onTotalScrollOffset) : [0,0],
+				totalScrollBackOffsets=o.callbacks.onTotalScrollBackOffset ? _arr.call(el,o.callbacks.onTotalScrollBackOffset) : [0,0];
+			d.trigger=options.trigger;
+			if(wrapper.scrollTop()!==0 || wrapper.scrollLeft()!==0){ /* always reset scrollTop/Left */
+				$(".mCSB_"+d.idx+"_scrollbar").css("visibility","visible");
+				wrapper.scrollTop(0).scrollLeft(0);
+			}
+			if(to==="_resetY" && !d.contentReset.y){
+				/* callbacks: onOverflowYNone */
+				if(_cb("onOverflowYNone")){o.callbacks.onOverflowYNone.call(el[0]);}
+				d.contentReset.y=1;
+			}
+			if(to==="_resetX" && !d.contentReset.x){
+				/* callbacks: onOverflowXNone */
+				if(_cb("onOverflowXNone")){o.callbacks.onOverflowXNone.call(el[0]);}
+				d.contentReset.x=1;
+			}
+			if(to==="_resetY" || to==="_resetX"){return;}
+			if((d.contentReset.y || !el[0].mcs) && d.overflowed[0]){
+				/* callbacks: onOverflowY */
+				if(_cb("onOverflowY")){o.callbacks.onOverflowY.call(el[0]);}
+				d.contentReset.x=null;
+			}
+			if((d.contentReset.x || !el[0].mcs) && d.overflowed[1]){
+				/* callbacks: onOverflowX */
+				if(_cb("onOverflowX")){o.callbacks.onOverflowX.call(el[0]);}
+				d.contentReset.x=null;
+			}
+			if(o.snapAmount){ /* scrolling snapping */
+				var snapAmount=!(o.snapAmount instanceof Array) ? o.snapAmount : options.dir==="x" ? o.snapAmount[1] : o.snapAmount[0];
+				to=_snapAmount(to,snapAmount,o.snapOffset);
+			}
+			switch(options.dir){
+				case "x":
+					var mCSB_dragger=$("#mCSB_"+d.idx+"_dragger_horizontal"),
+						property="left",
+						contentPos=mCSB_container[0].offsetLeft,
+						limit=[
+							mCustomScrollBox.width()-mCSB_container.outerWidth(false),
+							mCSB_dragger.parent().width()-mCSB_dragger.width()
+						],
+						scrollTo=[to,to===0 ? 0 : (to/d.scrollRatio.x)],
+						tso=totalScrollOffsets[1],
+						tsbo=totalScrollBackOffsets[1],
+						totalScrollOffset=tso>0 ? tso/d.scrollRatio.x : 0,
+						totalScrollBackOffset=tsbo>0 ? tsbo/d.scrollRatio.x : 0;
+					break;
+				case "y":
+					var mCSB_dragger=$("#mCSB_"+d.idx+"_dragger_vertical"),
+						property="top",
+						contentPos=mCSB_container[0].offsetTop,
+						limit=[
+							mCustomScrollBox.height()-mCSB_container.outerHeight(false),
+							mCSB_dragger.parent().height()-mCSB_dragger.height()
+						],
+						scrollTo=[to,to===0 ? 0 : (to/d.scrollRatio.y)],
+						tso=totalScrollOffsets[0],
+						tsbo=totalScrollBackOffsets[0],
+						totalScrollOffset=tso>0 ? tso/d.scrollRatio.y : 0,
+						totalScrollBackOffset=tsbo>0 ? tsbo/d.scrollRatio.y : 0;
+					break;
+			}
+			if(scrollTo[1]<0 || (scrollTo[0]===0 && scrollTo[1]===0)){
+				scrollTo=[0,0];
+			}else if(scrollTo[1]>=limit[1]){
+				scrollTo=[limit[0],limit[1]];
+			}else{
+				scrollTo[0]=-scrollTo[0];
+			}
+			if(!el[0].mcs){
+				_mcs();  /* init mcs object (once) to make it available before callbacks */
+				if(_cb("onInit")){o.callbacks.onInit.call(el[0]);} /* callbacks: onInit */
+			}
+			clearTimeout(mCSB_container[0].onCompleteTimeout);
+			_tweenTo(mCSB_dragger[0],property,Math.round(scrollTo[1]),dur[1],options.scrollEasing);
+			if(!d.tweenRunning && ((contentPos===0 && scrollTo[0]>=0) || (contentPos===limit[0] && scrollTo[0]<=limit[0]))){return;}
+			_tweenTo(mCSB_container[0],property,Math.round(scrollTo[0]),dur[0],options.scrollEasing,options.overwrite,{
+				onStart:function(){
+					if(options.callbacks && options.onStart && !d.tweenRunning){
+						/* callbacks: onScrollStart */
+						if(_cb("onScrollStart")){_mcs(); o.callbacks.onScrollStart.call(el[0]);}
+						d.tweenRunning=true;
+						_onDragClasses(mCSB_dragger);
+						d.cbOffsets=_cbOffsets();
+					}
+				},onUpdate:function(){
+					if(options.callbacks && options.onUpdate){
+						/* callbacks: whileScrolling */
+						if(_cb("whileScrolling")){_mcs(); o.callbacks.whileScrolling.call(el[0]);}
+					}
+				},onComplete:function(){
+					if(options.callbacks && options.onComplete){
+						if(o.axis==="yx"){clearTimeout(mCSB_container[0].onCompleteTimeout);}
+						var t=mCSB_container[0].idleTimer || 0;
+						mCSB_container[0].onCompleteTimeout=setTimeout(function(){
+							/* callbacks: onScroll, onTotalScroll, onTotalScrollBack */
+							if(_cb("onScroll")){_mcs(); o.callbacks.onScroll.call(el[0]);}
+							if(_cb("onTotalScroll") && scrollTo[1]>=limit[1]-totalScrollOffset && d.cbOffsets[0]){_mcs(); o.callbacks.onTotalScroll.call(el[0]);}
+							if(_cb("onTotalScrollBack") && scrollTo[1]<=totalScrollBackOffset && d.cbOffsets[1]){_mcs(); o.callbacks.onTotalScrollBack.call(el[0]);}
+							d.tweenRunning=false;
+							mCSB_container[0].idleTimer=0;
+							_onDragClasses(mCSB_dragger,"hide");
+						},t);
+					}
+				}
+			});
+			/* checks if callback function exists */
+			function _cb(cb){
+				return d && o.callbacks[cb] && typeof o.callbacks[cb]==="function";
+			}
+			/* checks whether callback offsets always trigger */
+			function _cbOffsets(){
+				return [o.callbacks.alwaysTriggerOffsets || contentPos>=limit[0]+tso,o.callbacks.alwaysTriggerOffsets || contentPos<=-tsbo];
+			}
+			/* 
+			populates object with useful values for the user 
+			values: 
+				content: this.mcs.content
+				content top position: this.mcs.top 
+				content left position: this.mcs.left 
+				dragger top position: this.mcs.draggerTop 
+				dragger left position: this.mcs.draggerLeft 
+				scrolling y percentage: this.mcs.topPct 
+				scrolling x percentage: this.mcs.leftPct 
+				scrolling direction: this.mcs.direction
+			*/
+			function _mcs(){
+				var cp=[mCSB_container[0].offsetTop,mCSB_container[0].offsetLeft], /* content position */
+					dp=[mCSB_dragger[0].offsetTop,mCSB_dragger[0].offsetLeft], /* dragger position */
+					cl=[mCSB_container.outerHeight(false),mCSB_container.outerWidth(false)], /* content length */
+					pl=[mCustomScrollBox.height(),mCustomScrollBox.width()]; /* content parent length */
+				el[0].mcs={
+					content:mCSB_container, /* original content wrapper as jquery object */
+					top:cp[0],left:cp[1],draggerTop:dp[0],draggerLeft:dp[1],
+					topPct:Math.round((100*Math.abs(cp[0]))/(Math.abs(cl[0])-pl[0])),leftPct:Math.round((100*Math.abs(cp[1]))/(Math.abs(cl[1])-pl[1])),
+					direction:options.dir
+				};
+				/* 
+				this refers to the original element containing the scrollbar(s)
+				usage: this.mcs.top, this.mcs.leftPct etc. 
+				*/
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* 
+		CUSTOM JAVASCRIPT ANIMATION TWEEN 
+		Lighter and faster than jquery animate() and css transitions 
+		Animates top/left properties and includes easings 
+		*/
+		_tweenTo=function(el,prop,to,duration,easing,overwrite,callbacks){
+			if(!el._mTween){el._mTween={top:{},left:{}};}
+			var callbacks=callbacks || {},
+				onStart=callbacks.onStart || function(){},onUpdate=callbacks.onUpdate || function(){},onComplete=callbacks.onComplete || function(){},
+				startTime=_getTime(),_delay,progress=0,from=el.offsetTop,elStyle=el.style,_request,tobj=el._mTween[prop];
+			if(prop==="left"){from=el.offsetLeft;}
+			var diff=to-from;
+			tobj.stop=0;
+			if(overwrite!=="none"){_cancelTween();}
+			_startTween();
+			function _step(){
+				if(tobj.stop){return;}
+				if(!progress){onStart.call();}
+				progress=_getTime()-startTime;
+				_tween();
+				if(progress>=tobj.time){
+					tobj.time=(progress>tobj.time) ? progress+_delay-(progress-tobj.time) : progress+_delay-1;
+					if(tobj.time<progress+1){tobj.time=progress+1;}
+				}
+				if(tobj.time<duration){tobj.id=_request(_step);}else{onComplete.call();}
+			}
+			function _tween(){
+				if(duration>0){
+					tobj.currVal=_ease(tobj.time,from,diff,duration,easing);
+					elStyle[prop]=Math.round(tobj.currVal)+"px";
+				}else{
+					elStyle[prop]=to+"px";
+				}
+				onUpdate.call();
+			}
+			function _startTween(){
+				_delay=1000/60;
+				tobj.time=progress+_delay;
+				_request=(!window.requestAnimationFrame) ? function(f){_tween(); return setTimeout(f,0.01);} : window.requestAnimationFrame;
+				tobj.id=_request(_step);
+			}
+			function _cancelTween(){
+				if(tobj.id==null){return;}
+				if(!window.requestAnimationFrame){clearTimeout(tobj.id);
+				}else{window.cancelAnimationFrame(tobj.id);}
+				tobj.id=null;
+			}
+			function _ease(t,b,c,d,type){
+				switch(type){
+					case "linear": case "mcsLinear":
+						return c*t/d + b;
+						break;
+					case "mcsLinearOut":
+						t/=d; t--; return c * Math.sqrt(1 - t*t) + b;
+						break;
+					case "easeInOutSmooth":
+						t/=d/2;
+						if(t<1) return c/2*t*t + b;
+						t--;
+						return -c/2 * (t*(t-2) - 1) + b;
+						break;
+					case "easeInOutStrong":
+						t/=d/2;
+						if(t<1) return c/2 * Math.pow( 2, 10 * (t - 1) ) + b;
+						t--;
+						return c/2 * ( -Math.pow( 2, -10 * t) + 2 ) + b;
+						break;
+					case "easeInOut": case "mcsEaseInOut":
+						t/=d/2;
+						if(t<1) return c/2*t*t*t + b;
+						t-=2;
+						return c/2*(t*t*t + 2) + b;
+						break;
+					case "easeOutSmooth":
+						t/=d; t--;
+						return -c * (t*t*t*t - 1) + b;
+						break;
+					case "easeOutStrong":
+						return c * ( -Math.pow( 2, -10 * t/d ) + 1 ) + b;
+						break;
+					case "easeOut": case "mcsEaseOut": default:
+						var ts=(t/=d)*t,tc=ts*t;
+						return b+c*(0.499999999999997*tc*ts + -2.5*ts*ts + 5.5*tc + -6.5*ts + 4*t);
+				}
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* returns current time */
+		_getTime=function(){
+			if(window.performance && window.performance.now){
+				return window.performance.now();
+			}else{
+				if(window.performance && window.performance.webkitNow){
+					return window.performance.webkitNow();
+				}else{
+					if(Date.now){return Date.now();}else{return new Date().getTime();}
+				}
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* stops a tween */
+		_stopTween=function(){
+			var el=this;
+			if(!el._mTween){el._mTween={top:{},left:{}};}
+			var props=["top","left"];
+			for(var i=0; i<props.length; i++){
+				var prop=props[i];
+				if(el._mTween[prop].id){
+					if(!window.requestAnimationFrame){clearTimeout(el._mTween[prop].id);
+					}else{window.cancelAnimationFrame(el._mTween[prop].id);}
+					el._mTween[prop].id=null;
+					el._mTween[prop].stop=1;
+				}
+			}
+		},
+		/* -------------------- */
+		
+		
+		/* deletes a property (avoiding the exception thrown by IE) */
+		_delete=function(c,m){
+			try{delete c[m];}catch(e){c[m]=null;}
+		},
+		/* -------------------- */
+		
+		
+		/* detects left mouse button */
+		_mouseBtnLeft=function(e){
+			return !(e.which && e.which!==1);
+		},
+		/* -------------------- */
+		
+		
+		/* detects if pointer type event is touch */
+		_pointerTouch=function(e){
+			var t=e.originalEvent.pointerType;
+			return !(t && t!=="touch" && t!==2);
+		},
+		/* -------------------- */
+		
+		
+		/* checks if value is numeric */
+		_isNumeric=function(val){
+			return !isNaN(parseFloat(val)) && isFinite(val);
+		},
+		/* -------------------- */
+		
+		
+		/* returns element position according to content */
+		_childPos=function(el){
+			var p=el.parents(".mCSB_container");
+			return [el.offset().top-p.offset().top,el.offset().left-p.offset().left];
+		},
+		/* -------------------- */
+		
+		
+		/* checks if browser tab is hidden/inactive via Page Visibility API */
+		_isTabHidden=function(){
+			var prop=_getHiddenProp();
+			if(!prop) return false;
+			return document[prop];
+			function _getHiddenProp(){
+				var pfx=["webkit","moz","ms","o"];
+				if("hidden" in document) return "hidden"; //natively supported
+				for(var i=0; i<pfx.length; i++){ //prefixed
+				    if((pfx[i]+"Hidden") in document) 
+				        return pfx[i]+"Hidden";
+				}
+				return null; //not supported
+			}
+		};
+		/* -------------------- */
+		
+	
+	
+	
+	
+	/* 
+	----------------------------------------
+	PLUGIN SETUP 
+	----------------------------------------
+	*/
+	
+	/* plugin constructor functions */
+	$.fn[pluginNS]=function(method){ /* usage: $(selector).mCustomScrollbar(); */
+		if(methods[method]){
+			return methods[method].apply(this,Array.prototype.slice.call(arguments,1));
+		}else if(typeof method==="object" || !method){
+			return methods.init.apply(this,arguments);
+		}else{
+			$.error("Method "+method+" does not exist");
+		}
+	};
+	$[pluginNS]=function(method){ /* usage: $.mCustomScrollbar(); */
+		if(methods[method]){
+			return methods[method].apply(this,Array.prototype.slice.call(arguments,1));
+		}else if(typeof method==="object" || !method){
+			return methods.init.apply(this,arguments);
+		}else{
+			$.error("Method "+method+" does not exist");
+		}
+	};
+	
+	/* 
+	allow setting plugin default options. 
+	usage: $.mCustomScrollbar.defaults.scrollInertia=500; 
+	to apply any changed default options on default selectors (below), use inside document ready fn 
+	e.g.: $(document).ready(function(){ $.mCustomScrollbar.defaults.scrollInertia=500; });
+	*/
+	$[pluginNS].defaults=defaults;
+	
+	/* 
+	add window object (window.mCustomScrollbar) 
+	usage: if(window.mCustomScrollbar){console.log("custom scrollbar plugin loaded");}
+	*/
+	window[pluginNS]=true;
+	
+	$(window).bind("load",function(){
+		
+		$(defaultSelector)[pluginNS](); /* add scrollbars automatically on default selector */
+		
+		/* extend jQuery expressions */
+		$.extend($.expr[":"],{
+			/* checks if element is within scrollable viewport */
+			mcsInView:$.expr[":"].mcsInView || function(el){
+				var $el=$(el),content=$el.parents(".mCSB_container"),wrapper,cPos;
+				if(!content.length){return;}
+				wrapper=content.parent();
+				cPos=[content[0].offsetTop,content[0].offsetLeft];
+				return 	cPos[0]+_childPos($el)[0]>=0 && cPos[0]+_childPos($el)[0]<wrapper.height()-$el.outerHeight(false) && 
+						cPos[1]+_childPos($el)[1]>=0 && cPos[1]+_childPos($el)[1]<wrapper.width()-$el.outerWidth(false);
+			},
+			/* checks if element or part of element is in view of scrollable viewport */
+			mcsInSight:$.expr[":"].mcsInSight || function(el,i,m){
+				var $el=$(el),elD,content=$el.parents(".mCSB_container"),wrapperView,pos,wrapperViewPct,
+					pctVals=m[3]==="exact" ? [[1,0],[1,0]] : [[0.9,0.1],[0.6,0.4]];
+				if(!content.length){return;}
+				elD=[$el.outerHeight(false),$el.outerWidth(false)];
+				pos=[content[0].offsetTop+_childPos($el)[0],content[0].offsetLeft+_childPos($el)[1]];
+				wrapperView=[content.parent()[0].offsetHeight,content.parent()[0].offsetWidth];
+				wrapperViewPct=[elD[0]<wrapperView[0] ? pctVals[0] : pctVals[1],elD[1]<wrapperView[1] ? pctVals[0] : pctVals[1]];
+				return 	pos[0]-(wrapperView[0]*wrapperViewPct[0][0])<0 && pos[0]+elD[0]-(wrapperView[0]*wrapperViewPct[0][1])>=0 && 
+						pos[1]-(wrapperView[1]*wrapperViewPct[1][0])<0 && pos[1]+elD[1]-(wrapperView[1]*wrapperViewPct[1][1])>=0;
+			},
+			/* checks if element is overflowed having visible scrollbar(s) */
+			mcsOverflow:$.expr[":"].mcsOverflow || function(el){
+				var d=$(el).data(pluginPfx);
+				if(!d){return;}
+				return d.overflowed[0] || d.overflowed[1];
+			}
+		});
+	
+	});
+
+}))}));
+/*! jQuery v2.2.4 | (c) jQuery Foundation | jquery.org/license */
+!function(a,b){"object"==typeof module&&"object"==typeof module.exports?module.exports=a.document?b(a,!0):function(a){if(!a.document)throw new Error("jQuery requires a window with a document");return b(a)}:b(a)}("undefined"!=typeof window?window:this,function(a,b){var c=[],d=a.document,e=c.slice,f=c.concat,g=c.push,h=c.indexOf,i={},j=i.toString,k=i.hasOwnProperty,l={},m="2.2.4",n=function(a,b){return new n.fn.init(a,b)},o=/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,p=/^-ms-/,q=/-([\da-z])/gi,r=function(a,b){return b.toUpperCase()};n.fn=n.prototype={jquery:m,constructor:n,selector:"",length:0,toArray:function(){return e.call(this)},get:function(a){return null!=a?0>a?this[a+this.length]:this[a]:e.call(this)},pushStack:function(a){var b=n.merge(this.constructor(),a);return b.prevObject=this,b.context=this.context,b},each:function(a){return n.each(this,a)},map:function(a){return this.pushStack(n.map(this,function(b,c){return a.call(b,c,b)}))},slice:function(){return this.pushStack(e.apply(this,arguments))},first:function(){return this.eq(0)},last:function(){return this.eq(-1)},eq:function(a){var b=this.length,c=+a+(0>a?b:0);return this.pushStack(c>=0&&b>c?[this[c]]:[])},end:function(){return this.prevObject||this.constructor()},push:g,sort:c.sort,splice:c.splice},n.extend=n.fn.extend=function(){var a,b,c,d,e,f,g=arguments[0]||{},h=1,i=arguments.length,j=!1;for("boolean"==typeof g&&(j=g,g=arguments[h]||{},h++),"object"==typeof g||n.isFunction(g)||(g={}),h===i&&(g=this,h--);i>h;h++)if(null!=(a=arguments[h]))for(b in a)c=g[b],d=a[b],g!==d&&(j&&d&&(n.isPlainObject(d)||(e=n.isArray(d)))?(e?(e=!1,f=c&&n.isArray(c)?c:[]):f=c&&n.isPlainObject(c)?c:{},g[b]=n.extend(j,f,d)):void 0!==d&&(g[b]=d));return g},n.extend({expando:"jQuery"+(m+Math.random()).replace(/\D/g,""),isReady:!0,error:function(a){throw new Error(a)},noop:function(){},isFunction:function(a){return"function"===n.type(a)},isArray:Array.isArray,isWindow:function(a){return null!=a&&a===a.window},isNumeric:function(a){var b=a&&a.toString();return!n.isArray(a)&&b-parseFloat(b)+1>=0},isPlainObject:function(a){var b;if("object"!==n.type(a)||a.nodeType||n.isWindow(a))return!1;if(a.constructor&&!k.call(a,"constructor")&&!k.call(a.constructor.prototype||{},"isPrototypeOf"))return!1;for(b in a);return void 0===b||k.call(a,b)},isEmptyObject:function(a){var b;for(b in a)return!1;return!0},type:function(a){return null==a?a+"":"object"==typeof a||"function"==typeof a?i[j.call(a)]||"object":typeof a},globalEval:function(a){var b,c=eval;a=n.trim(a),a&&(1===a.indexOf("use strict")?(b=d.createElement("script"),b.text=a,d.head.appendChild(b).parentNode.removeChild(b)):c(a))},camelCase:function(a){return a.replace(p,"ms-").replace(q,r)},nodeName:function(a,b){return a.nodeName&&a.nodeName.toLowerCase()===b.toLowerCase()},each:function(a,b){var c,d=0;if(s(a)){for(c=a.length;c>d;d++)if(b.call(a[d],d,a[d])===!1)break}else for(d in a)if(b.call(a[d],d,a[d])===!1)break;return a},trim:function(a){return null==a?"":(a+"").replace(o,"")},makeArray:function(a,b){var c=b||[];return null!=a&&(s(Object(a))?n.merge(c,"string"==typeof a?[a]:a):g.call(c,a)),c},inArray:function(a,b,c){return null==b?-1:h.call(b,a,c)},merge:function(a,b){for(var c=+b.length,d=0,e=a.length;c>d;d++)a[e++]=b[d];return a.length=e,a},grep:function(a,b,c){for(var d,e=[],f=0,g=a.length,h=!c;g>f;f++)d=!b(a[f],f),d!==h&&e.push(a[f]);return e},map:function(a,b,c){var d,e,g=0,h=[];if(s(a))for(d=a.length;d>g;g++)e=b(a[g],g,c),null!=e&&h.push(e);else for(g in a)e=b(a[g],g,c),null!=e&&h.push(e);return f.apply([],h)},guid:1,proxy:function(a,b){var c,d,f;return"string"==typeof b&&(c=a[b],b=a,a=c),n.isFunction(a)?(d=e.call(arguments,2),f=function(){return a.apply(b||this,d.concat(e.call(arguments)))},f.guid=a.guid=a.guid||n.guid++,f):void 0},now:Date.now,support:l}),"function"==typeof Symbol&&(n.fn[Symbol.iterator]=c[Symbol.iterator]),n.each("Boolean Number String Function Array Date RegExp Object Error Symbol".split(" "),function(a,b){i["[object "+b+"]"]=b.toLowerCase()});function s(a){var b=!!a&&"length"in a&&a.length,c=n.type(a);return"function"===c||n.isWindow(a)?!1:"array"===c||0===b||"number"==typeof b&&b>0&&b-1 in a}var t=function(a){var b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u="sizzle"+1*new Date,v=a.document,w=0,x=0,y=ga(),z=ga(),A=ga(),B=function(a,b){return a===b&&(l=!0),0},C=1<<31,D={}.hasOwnProperty,E=[],F=E.pop,G=E.push,H=E.push,I=E.slice,J=function(a,b){for(var c=0,d=a.length;d>c;c++)if(a[c]===b)return c;return-1},K="checked|selected|async|autofocus|autoplay|controls|defer|disabled|hidden|ismap|loop|multiple|open|readonly|required|scoped",L="[\\x20\\t\\r\\n\\f]",M="(?:\\\\.|[\\w-]|[^\\x00-\\xa0])+",N="\\["+L+"*("+M+")(?:"+L+"*([*^$|!~]?=)"+L+"*(?:'((?:\\\\.|[^\\\\'])*)'|\"((?:\\\\.|[^\\\\\"])*)\"|("+M+"))|)"+L+"*\\]",O=":("+M+")(?:\\((('((?:\\\\.|[^\\\\'])*)'|\"((?:\\\\.|[^\\\\\"])*)\")|((?:\\\\.|[^\\\\()[\\]]|"+N+")*)|.*)\\)|)",P=new RegExp(L+"+","g"),Q=new RegExp("^"+L+"+|((?:^|[^\\\\])(?:\\\\.)*)"+L+"+$","g"),R=new RegExp("^"+L+"*,"+L+"*"),S=new RegExp("^"+L+"*([>+~]|"+L+")"+L+"*"),T=new RegExp("="+L+"*([^\\]'\"]*?)"+L+"*\\]","g"),U=new RegExp(O),V=new RegExp("^"+M+"$"),W={ID:new RegExp("^#("+M+")"),CLASS:new RegExp("^\\.("+M+")"),TAG:new RegExp("^("+M+"|[*])"),ATTR:new RegExp("^"+N),PSEUDO:new RegExp("^"+O),CHILD:new RegExp("^:(only|first|last|nth|nth-last)-(child|of-type)(?:\\("+L+"*(even|odd|(([+-]|)(\\d*)n|)"+L+"*(?:([+-]|)"+L+"*(\\d+)|))"+L+"*\\)|)","i"),bool:new RegExp("^(?:"+K+")$","i"),needsContext:new RegExp("^"+L+"*[>+~]|:(even|odd|eq|gt|lt|nth|first|last)(?:\\("+L+"*((?:-\\d)?\\d*)"+L+"*\\)|)(?=[^-]|$)","i")},X=/^(?:input|select|textarea|button)$/i,Y=/^h\d$/i,Z=/^[^{]+\{\s*\[native \w/,$=/^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/,_=/[+~]/,aa=/'|\\/g,ba=new RegExp("\\\\([\\da-f]{1,6}"+L+"?|("+L+")|.)","ig"),ca=function(a,b,c){var d="0x"+b-65536;return d!==d||c?b:0>d?String.fromCharCode(d+65536):String.fromCharCode(d>>10|55296,1023&d|56320)},da=function(){m()};try{H.apply(E=I.call(v.childNodes),v.childNodes),E[v.childNodes.length].nodeType}catch(ea){H={apply:E.length?function(a,b){G.apply(a,I.call(b))}:function(a,b){var c=a.length,d=0;while(a[c++]=b[d++]);a.length=c-1}}}function fa(a,b,d,e){var f,h,j,k,l,o,r,s,w=b&&b.ownerDocument,x=b?b.nodeType:9;if(d=d||[],"string"!=typeof a||!a||1!==x&&9!==x&&11!==x)return d;if(!e&&((b?b.ownerDocument||b:v)!==n&&m(b),b=b||n,p)){if(11!==x&&(o=$.exec(a)))if(f=o[1]){if(9===x){if(!(j=b.getElementById(f)))return d;if(j.id===f)return d.push(j),d}else if(w&&(j=w.getElementById(f))&&t(b,j)&&j.id===f)return d.push(j),d}else{if(o[2])return H.apply(d,b.getElementsByTagName(a)),d;if((f=o[3])&&c.getElementsByClassName&&b.getElementsByClassName)return H.apply(d,b.getElementsByClassName(f)),d}if(c.qsa&&!A[a+" "]&&(!q||!q.test(a))){if(1!==x)w=b,s=a;else if("object"!==b.nodeName.toLowerCase()){(k=b.getAttribute("id"))?k=k.replace(aa,"\\$&"):b.setAttribute("id",k=u),r=g(a),h=r.length,l=V.test(k)?"#"+k:"[id='"+k+"']";while(h--)r[h]=l+" "+qa(r[h]);s=r.join(","),w=_.test(a)&&oa(b.parentNode)||b}if(s)try{return H.apply(d,w.querySelectorAll(s)),d}catch(y){}finally{k===u&&b.removeAttribute("id")}}}return i(a.replace(Q,"$1"),b,d,e)}function ga(){var a=[];function b(c,e){return a.push(c+" ")>d.cacheLength&&delete b[a.shift()],b[c+" "]=e}return b}function ha(a){return a[u]=!0,a}function ia(a){var b=n.createElement("div");try{return!!a(b)}catch(c){return!1}finally{b.parentNode&&b.parentNode.removeChild(b),b=null}}function ja(a,b){var c=a.split("|"),e=c.length;while(e--)d.attrHandle[c[e]]=b}function ka(a,b){var c=b&&a,d=c&&1===a.nodeType&&1===b.nodeType&&(~b.sourceIndex||C)-(~a.sourceIndex||C);if(d)return d;if(c)while(c=c.nextSibling)if(c===b)return-1;return a?1:-1}function la(a){return function(b){var c=b.nodeName.toLowerCase();return"input"===c&&b.type===a}}function ma(a){return function(b){var c=b.nodeName.toLowerCase();return("input"===c||"button"===c)&&b.type===a}}function na(a){return ha(function(b){return b=+b,ha(function(c,d){var e,f=a([],c.length,b),g=f.length;while(g--)c[e=f[g]]&&(c[e]=!(d[e]=c[e]))})})}function oa(a){return a&&"undefined"!=typeof a.getElementsByTagName&&a}c=fa.support={},f=fa.isXML=function(a){var b=a&&(a.ownerDocument||a).documentElement;return b?"HTML"!==b.nodeName:!1},m=fa.setDocument=function(a){var b,e,g=a?a.ownerDocument||a:v;return g!==n&&9===g.nodeType&&g.documentElement?(n=g,o=n.documentElement,p=!f(n),(e=n.defaultView)&&e.top!==e&&(e.addEventListener?e.addEventListener("unload",da,!1):e.attachEvent&&e.attachEvent("onunload",da)),c.attributes=ia(function(a){return a.className="i",!a.getAttribute("className")}),c.getElementsByTagName=ia(function(a){return a.appendChild(n.createComment("")),!a.getElementsByTagName("*").length}),c.getElementsByClassName=Z.test(n.getElementsByClassName),c.getById=ia(function(a){return o.appendChild(a).id=u,!n.getElementsByName||!n.getElementsByName(u).length}),c.getById?(d.find.ID=function(a,b){if("undefined"!=typeof b.getElementById&&p){var c=b.getElementById(a);return c?[c]:[]}},d.filter.ID=function(a){var b=a.replace(ba,ca);return function(a){return a.getAttribute("id")===b}}):(delete d.find.ID,d.filter.ID=function(a){var b=a.replace(ba,ca);return function(a){var c="undefined"!=typeof a.getAttributeNode&&a.getAttributeNode("id");return c&&c.value===b}}),d.find.TAG=c.getElementsByTagName?function(a,b){return"undefined"!=typeof b.getElementsByTagName?b.getElementsByTagName(a):c.qsa?b.querySelectorAll(a):void 0}:function(a,b){var c,d=[],e=0,f=b.getElementsByTagName(a);if("*"===a){while(c=f[e++])1===c.nodeType&&d.push(c);return d}return f},d.find.CLASS=c.getElementsByClassName&&function(a,b){return"undefined"!=typeof b.getElementsByClassName&&p?b.getElementsByClassName(a):void 0},r=[],q=[],(c.qsa=Z.test(n.querySelectorAll))&&(ia(function(a){o.appendChild(a).innerHTML="<a id='"+u+"'></a><select id='"+u+"-\r\\' msallowcapture=''><option selected=''></option></select>",a.querySelectorAll("[msallowcapture^='']").length&&q.push("[*^$]="+L+"*(?:''|\"\")"),a.querySelectorAll("[selected]").length||q.push("\\["+L+"*(?:value|"+K+")"),a.querySelectorAll("[id~="+u+"-]").length||q.push("~="),a.querySelectorAll(":checked").length||q.push(":checked"),a.querySelectorAll("a#"+u+"+*").length||q.push(".#.+[+~]")}),ia(function(a){var b=n.createElement("input");b.setAttribute("type","hidden"),a.appendChild(b).setAttribute("name","D"),a.querySelectorAll("[name=d]").length&&q.push("name"+L+"*[*^$|!~]?="),a.querySelectorAll(":enabled").length||q.push(":enabled",":disabled"),a.querySelectorAll("*,:x"),q.push(",.*:")})),(c.matchesSelector=Z.test(s=o.matches||o.webkitMatchesSelector||o.mozMatchesSelector||o.oMatchesSelector||o.msMatchesSelector))&&ia(function(a){c.disconnectedMatch=s.call(a,"div"),s.call(a,"[s!='']:x"),r.push("!=",O)}),q=q.length&&new RegExp(q.join("|")),r=r.length&&new RegExp(r.join("|")),b=Z.test(o.compareDocumentPosition),t=b||Z.test(o.contains)?function(a,b){var c=9===a.nodeType?a.documentElement:a,d=b&&b.parentNode;return a===d||!(!d||1!==d.nodeType||!(c.contains?c.contains(d):a.compareDocumentPosition&&16&a.compareDocumentPosition(d)))}:function(a,b){if(b)while(b=b.parentNode)if(b===a)return!0;return!1},B=b?function(a,b){if(a===b)return l=!0,0;var d=!a.compareDocumentPosition-!b.compareDocumentPosition;return d?d:(d=(a.ownerDocument||a)===(b.ownerDocument||b)?a.compareDocumentPosition(b):1,1&d||!c.sortDetached&&b.compareDocumentPosition(a)===d?a===n||a.ownerDocument===v&&t(v,a)?-1:b===n||b.ownerDocument===v&&t(v,b)?1:k?J(k,a)-J(k,b):0:4&d?-1:1)}:function(a,b){if(a===b)return l=!0,0;var c,d=0,e=a.parentNode,f=b.parentNode,g=[a],h=[b];if(!e||!f)return a===n?-1:b===n?1:e?-1:f?1:k?J(k,a)-J(k,b):0;if(e===f)return ka(a,b);c=a;while(c=c.parentNode)g.unshift(c);c=b;while(c=c.parentNode)h.unshift(c);while(g[d]===h[d])d++;return d?ka(g[d],h[d]):g[d]===v?-1:h[d]===v?1:0},n):n},fa.matches=function(a,b){return fa(a,null,null,b)},fa.matchesSelector=function(a,b){if((a.ownerDocument||a)!==n&&m(a),b=b.replace(T,"='$1']"),c.matchesSelector&&p&&!A[b+" "]&&(!r||!r.test(b))&&(!q||!q.test(b)))try{var d=s.call(a,b);if(d||c.disconnectedMatch||a.document&&11!==a.document.nodeType)return d}catch(e){}return fa(b,n,null,[a]).length>0},fa.contains=function(a,b){return(a.ownerDocument||a)!==n&&m(a),t(a,b)},fa.attr=function(a,b){(a.ownerDocument||a)!==n&&m(a);var e=d.attrHandle[b.toLowerCase()],f=e&&D.call(d.attrHandle,b.toLowerCase())?e(a,b,!p):void 0;return void 0!==f?f:c.attributes||!p?a.getAttribute(b):(f=a.getAttributeNode(b))&&f.specified?f.value:null},fa.error=function(a){throw new Error("Syntax error, unrecognized expression: "+a)},fa.uniqueSort=function(a){var b,d=[],e=0,f=0;if(l=!c.detectDuplicates,k=!c.sortStable&&a.slice(0),a.sort(B),l){while(b=a[f++])b===a[f]&&(e=d.push(f));while(e--)a.splice(d[e],1)}return k=null,a},e=fa.getText=function(a){var b,c="",d=0,f=a.nodeType;if(f){if(1===f||9===f||11===f){if("string"==typeof a.textContent)return a.textContent;for(a=a.firstChild;a;a=a.nextSibling)c+=e(a)}else if(3===f||4===f)return a.nodeValue}else while(b=a[d++])c+=e(b);return c},d=fa.selectors={cacheLength:50,createPseudo:ha,match:W,attrHandle:{},find:{},relative:{">":{dir:"parentNode",first:!0}," ":{dir:"parentNode"},"+":{dir:"previousSibling",first:!0},"~":{dir:"previousSibling"}},preFilter:{ATTR:function(a){return a[1]=a[1].replace(ba,ca),a[3]=(a[3]||a[4]||a[5]||"").replace(ba,ca),"~="===a[2]&&(a[3]=" "+a[3]+" "),a.slice(0,4)},CHILD:function(a){return a[1]=a[1].toLowerCase(),"nth"===a[1].slice(0,3)?(a[3]||fa.error(a[0]),a[4]=+(a[4]?a[5]+(a[6]||1):2*("even"===a[3]||"odd"===a[3])),a[5]=+(a[7]+a[8]||"odd"===a[3])):a[3]&&fa.error(a[0]),a},PSEUDO:function(a){var b,c=!a[6]&&a[2];return W.CHILD.test(a[0])?null:(a[3]?a[2]=a[4]||a[5]||"":c&&U.test(c)&&(b=g(c,!0))&&(b=c.indexOf(")",c.length-b)-c.length)&&(a[0]=a[0].slice(0,b),a[2]=c.slice(0,b)),a.slice(0,3))}},filter:{TAG:function(a){var b=a.replace(ba,ca).toLowerCase();return"*"===a?function(){return!0}:function(a){return a.nodeName&&a.nodeName.toLowerCase()===b}},CLASS:function(a){var b=y[a+" "];return b||(b=new RegExp("(^|"+L+")"+a+"("+L+"|$)"))&&y(a,function(a){return b.test("string"==typeof a.className&&a.className||"undefined"!=typeof a.getAttribute&&a.getAttribute("class")||"")})},ATTR:function(a,b,c){return function(d){var e=fa.attr(d,a);return null==e?"!="===b:b?(e+="","="===b?e===c:"!="===b?e!==c:"^="===b?c&&0===e.indexOf(c):"*="===b?c&&e.indexOf(c)>-1:"$="===b?c&&e.slice(-c.length)===c:"~="===b?(" "+e.replace(P," ")+" ").indexOf(c)>-1:"|="===b?e===c||e.slice(0,c.length+1)===c+"-":!1):!0}},CHILD:function(a,b,c,d,e){var f="nth"!==a.slice(0,3),g="last"!==a.slice(-4),h="of-type"===b;return 1===d&&0===e?function(a){return!!a.parentNode}:function(b,c,i){var j,k,l,m,n,o,p=f!==g?"nextSibling":"previousSibling",q=b.parentNode,r=h&&b.nodeName.toLowerCase(),s=!i&&!h,t=!1;if(q){if(f){while(p){m=b;while(m=m[p])if(h?m.nodeName.toLowerCase()===r:1===m.nodeType)return!1;o=p="only"===a&&!o&&"nextSibling"}return!0}if(o=[g?q.firstChild:q.lastChild],g&&s){m=q,l=m[u]||(m[u]={}),k=l[m.uniqueID]||(l[m.uniqueID]={}),j=k[a]||[],n=j[0]===w&&j[1],t=n&&j[2],m=n&&q.childNodes[n];while(m=++n&&m&&m[p]||(t=n=0)||o.pop())if(1===m.nodeType&&++t&&m===b){k[a]=[w,n,t];break}}else if(s&&(m=b,l=m[u]||(m[u]={}),k=l[m.uniqueID]||(l[m.uniqueID]={}),j=k[a]||[],n=j[0]===w&&j[1],t=n),t===!1)while(m=++n&&m&&m[p]||(t=n=0)||o.pop())if((h?m.nodeName.toLowerCase()===r:1===m.nodeType)&&++t&&(s&&(l=m[u]||(m[u]={}),k=l[m.uniqueID]||(l[m.uniqueID]={}),k[a]=[w,t]),m===b))break;return t-=e,t===d||t%d===0&&t/d>=0}}},PSEUDO:function(a,b){var c,e=d.pseudos[a]||d.setFilters[a.toLowerCase()]||fa.error("unsupported pseudo: "+a);return e[u]?e(b):e.length>1?(c=[a,a,"",b],d.setFilters.hasOwnProperty(a.toLowerCase())?ha(function(a,c){var d,f=e(a,b),g=f.length;while(g--)d=J(a,f[g]),a[d]=!(c[d]=f[g])}):function(a){return e(a,0,c)}):e}},pseudos:{not:ha(function(a){var b=[],c=[],d=h(a.replace(Q,"$1"));return d[u]?ha(function(a,b,c,e){var f,g=d(a,null,e,[]),h=a.length;while(h--)(f=g[h])&&(a[h]=!(b[h]=f))}):function(a,e,f){return b[0]=a,d(b,null,f,c),b[0]=null,!c.pop()}}),has:ha(function(a){return function(b){return fa(a,b).length>0}}),contains:ha(function(a){return a=a.replace(ba,ca),function(b){return(b.textContent||b.innerText||e(b)).indexOf(a)>-1}}),lang:ha(function(a){return V.test(a||"")||fa.error("unsupported lang: "+a),a=a.replace(ba,ca).toLowerCase(),function(b){var c;do if(c=p?b.lang:b.getAttribute("xml:lang")||b.getAttribute("lang"))return c=c.toLowerCase(),c===a||0===c.indexOf(a+"-");while((b=b.parentNode)&&1===b.nodeType);return!1}}),target:function(b){var c=a.location&&a.location.hash;return c&&c.slice(1)===b.id},root:function(a){return a===o},focus:function(a){return a===n.activeElement&&(!n.hasFocus||n.hasFocus())&&!!(a.type||a.href||~a.tabIndex)},enabled:function(a){return a.disabled===!1},disabled:function(a){return a.disabled===!0},checked:function(a){var b=a.nodeName.toLowerCase();return"input"===b&&!!a.checked||"option"===b&&!!a.selected},selected:function(a){return a.parentNode&&a.parentNode.selectedIndex,a.selected===!0},empty:function(a){for(a=a.firstChild;a;a=a.nextSibling)if(a.nodeType<6)return!1;return!0},parent:function(a){return!d.pseudos.empty(a)},header:function(a){return Y.test(a.nodeName)},input:function(a){return X.test(a.nodeName)},button:function(a){var b=a.nodeName.toLowerCase();return"input"===b&&"button"===a.type||"button"===b},text:function(a){var b;return"input"===a.nodeName.toLowerCase()&&"text"===a.type&&(null==(b=a.getAttribute("type"))||"text"===b.toLowerCase())},first:na(function(){return[0]}),last:na(function(a,b){return[b-1]}),eq:na(function(a,b,c){return[0>c?c+b:c]}),even:na(function(a,b){for(var c=0;b>c;c+=2)a.push(c);return a}),odd:na(function(a,b){for(var c=1;b>c;c+=2)a.push(c);return a}),lt:na(function(a,b,c){for(var d=0>c?c+b:c;--d>=0;)a.push(d);return a}),gt:na(function(a,b,c){for(var d=0>c?c+b:c;++d<b;)a.push(d);return a})}},d.pseudos.nth=d.pseudos.eq;for(b in{radio:!0,checkbox:!0,file:!0,password:!0,image:!0})d.pseudos[b]=la(b);for(b in{submit:!0,reset:!0})d.pseudos[b]=ma(b);function pa(){}pa.prototype=d.filters=d.pseudos,d.setFilters=new pa,g=fa.tokenize=function(a,b){var c,e,f,g,h,i,j,k=z[a+" "];if(k)return b?0:k.slice(0);h=a,i=[],j=d.preFilter;while(h){c&&!(e=R.exec(h))||(e&&(h=h.slice(e[0].length)||h),i.push(f=[])),c=!1,(e=S.exec(h))&&(c=e.shift(),f.push({value:c,type:e[0].replace(Q," ")}),h=h.slice(c.length));for(g in d.filter)!(e=W[g].exec(h))||j[g]&&!(e=j[g](e))||(c=e.shift(),f.push({value:c,type:g,matches:e}),h=h.slice(c.length));if(!c)break}return b?h.length:h?fa.error(a):z(a,i).slice(0)};function qa(a){for(var b=0,c=a.length,d="";c>b;b++)d+=a[b].value;return d}function ra(a,b,c){var d=b.dir,e=c&&"parentNode"===d,f=x++;return b.first?function(b,c,f){while(b=b[d])if(1===b.nodeType||e)return a(b,c,f)}:function(b,c,g){var h,i,j,k=[w,f];if(g){while(b=b[d])if((1===b.nodeType||e)&&a(b,c,g))return!0}else while(b=b[d])if(1===b.nodeType||e){if(j=b[u]||(b[u]={}),i=j[b.uniqueID]||(j[b.uniqueID]={}),(h=i[d])&&h[0]===w&&h[1]===f)return k[2]=h[2];if(i[d]=k,k[2]=a(b,c,g))return!0}}}function sa(a){return a.length>1?function(b,c,d){var e=a.length;while(e--)if(!a[e](b,c,d))return!1;return!0}:a[0]}function ta(a,b,c){for(var d=0,e=b.length;e>d;d++)fa(a,b[d],c);return c}function ua(a,b,c,d,e){for(var f,g=[],h=0,i=a.length,j=null!=b;i>h;h++)(f=a[h])&&(c&&!c(f,d,e)||(g.push(f),j&&b.push(h)));return g}function va(a,b,c,d,e,f){return d&&!d[u]&&(d=va(d)),e&&!e[u]&&(e=va(e,f)),ha(function(f,g,h,i){var j,k,l,m=[],n=[],o=g.length,p=f||ta(b||"*",h.nodeType?[h]:h,[]),q=!a||!f&&b?p:ua(p,m,a,h,i),r=c?e||(f?a:o||d)?[]:g:q;if(c&&c(q,r,h,i),d){j=ua(r,n),d(j,[],h,i),k=j.length;while(k--)(l=j[k])&&(r[n[k]]=!(q[n[k]]=l))}if(f){if(e||a){if(e){j=[],k=r.length;while(k--)(l=r[k])&&j.push(q[k]=l);e(null,r=[],j,i)}k=r.length;while(k--)(l=r[k])&&(j=e?J(f,l):m[k])>-1&&(f[j]=!(g[j]=l))}}else r=ua(r===g?r.splice(o,r.length):r),e?e(null,g,r,i):H.apply(g,r)})}function wa(a){for(var b,c,e,f=a.length,g=d.relative[a[0].type],h=g||d.relative[" "],i=g?1:0,k=ra(function(a){return a===b},h,!0),l=ra(function(a){return J(b,a)>-1},h,!0),m=[function(a,c,d){var e=!g&&(d||c!==j)||((b=c).nodeType?k(a,c,d):l(a,c,d));return b=null,e}];f>i;i++)if(c=d.relative[a[i].type])m=[ra(sa(m),c)];else{if(c=d.filter[a[i].type].apply(null,a[i].matches),c[u]){for(e=++i;f>e;e++)if(d.relative[a[e].type])break;return va(i>1&&sa(m),i>1&&qa(a.slice(0,i-1).concat({value:" "===a[i-2].type?"*":""})).replace(Q,"$1"),c,e>i&&wa(a.slice(i,e)),f>e&&wa(a=a.slice(e)),f>e&&qa(a))}m.push(c)}return sa(m)}function xa(a,b){var c=b.length>0,e=a.length>0,f=function(f,g,h,i,k){var l,o,q,r=0,s="0",t=f&&[],u=[],v=j,x=f||e&&d.find.TAG("*",k),y=w+=null==v?1:Math.random()||.1,z=x.length;for(k&&(j=g===n||g||k);s!==z&&null!=(l=x[s]);s++){if(e&&l){o=0,g||l.ownerDocument===n||(m(l),h=!p);while(q=a[o++])if(q(l,g||n,h)){i.push(l);break}k&&(w=y)}c&&((l=!q&&l)&&r--,f&&t.push(l))}if(r+=s,c&&s!==r){o=0;while(q=b[o++])q(t,u,g,h);if(f){if(r>0)while(s--)t[s]||u[s]||(u[s]=F.call(i));u=ua(u)}H.apply(i,u),k&&!f&&u.length>0&&r+b.length>1&&fa.uniqueSort(i)}return k&&(w=y,j=v),t};return c?ha(f):f}return h=fa.compile=function(a,b){var c,d=[],e=[],f=A[a+" "];if(!f){b||(b=g(a)),c=b.length;while(c--)f=wa(b[c]),f[u]?d.push(f):e.push(f);f=A(a,xa(e,d)),f.selector=a}return f},i=fa.select=function(a,b,e,f){var i,j,k,l,m,n="function"==typeof a&&a,o=!f&&g(a=n.selector||a);if(e=e||[],1===o.length){if(j=o[0]=o[0].slice(0),j.length>2&&"ID"===(k=j[0]).type&&c.getById&&9===b.nodeType&&p&&d.relative[j[1].type]){if(b=(d.find.ID(k.matches[0].replace(ba,ca),b)||[])[0],!b)return e;n&&(b=b.parentNode),a=a.slice(j.shift().value.length)}i=W.needsContext.test(a)?0:j.length;while(i--){if(k=j[i],d.relative[l=k.type])break;if((m=d.find[l])&&(f=m(k.matches[0].replace(ba,ca),_.test(j[0].type)&&oa(b.parentNode)||b))){if(j.splice(i,1),a=f.length&&qa(j),!a)return H.apply(e,f),e;break}}}return(n||h(a,o))(f,b,!p,e,!b||_.test(a)&&oa(b.parentNode)||b),e},c.sortStable=u.split("").sort(B).join("")===u,c.detectDuplicates=!!l,m(),c.sortDetached=ia(function(a){return 1&a.compareDocumentPosition(n.createElement("div"))}),ia(function(a){return a.innerHTML="<a href='#'></a>","#"===a.firstChild.getAttribute("href")})||ja("type|href|height|width",function(a,b,c){return c?void 0:a.getAttribute(b,"type"===b.toLowerCase()?1:2)}),c.attributes&&ia(function(a){return a.innerHTML="<input/>",a.firstChild.setAttribute("value",""),""===a.firstChild.getAttribute("value")})||ja("value",function(a,b,c){return c||"input"!==a.nodeName.toLowerCase()?void 0:a.defaultValue}),ia(function(a){return null==a.getAttribute("disabled")})||ja(K,function(a,b,c){var d;return c?void 0:a[b]===!0?b.toLowerCase():(d=a.getAttributeNode(b))&&d.specified?d.value:null}),fa}(a);n.find=t,n.expr=t.selectors,n.expr[":"]=n.expr.pseudos,n.uniqueSort=n.unique=t.uniqueSort,n.text=t.getText,n.isXMLDoc=t.isXML,n.contains=t.contains;var u=function(a,b,c){var d=[],e=void 0!==c;while((a=a[b])&&9!==a.nodeType)if(1===a.nodeType){if(e&&n(a).is(c))break;d.push(a)}return d},v=function(a,b){for(var c=[];a;a=a.nextSibling)1===a.nodeType&&a!==b&&c.push(a);return c},w=n.expr.match.needsContext,x=/^<([\w-]+)\s*\/?>(?:<\/\1>|)$/,y=/^.[^:#\[\.,]*$/;function z(a,b,c){if(n.isFunction(b))return n.grep(a,function(a,d){return!!b.call(a,d,a)!==c});if(b.nodeType)return n.grep(a,function(a){return a===b!==c});if("string"==typeof b){if(y.test(b))return n.filter(b,a,c);b=n.filter(b,a)}return n.grep(a,function(a){return h.call(b,a)>-1!==c})}n.filter=function(a,b,c){var d=b[0];return c&&(a=":not("+a+")"),1===b.length&&1===d.nodeType?n.find.matchesSelector(d,a)?[d]:[]:n.find.matches(a,n.grep(b,function(a){return 1===a.nodeType}))},n.fn.extend({find:function(a){var b,c=this.length,d=[],e=this;if("string"!=typeof a)return this.pushStack(n(a).filter(function(){for(b=0;c>b;b++)if(n.contains(e[b],this))return!0}));for(b=0;c>b;b++)n.find(a,e[b],d);return d=this.pushStack(c>1?n.unique(d):d),d.selector=this.selector?this.selector+" "+a:a,d},filter:function(a){return this.pushStack(z(this,a||[],!1))},not:function(a){return this.pushStack(z(this,a||[],!0))},is:function(a){return!!z(this,"string"==typeof a&&w.test(a)?n(a):a||[],!1).length}});var A,B=/^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,C=n.fn.init=function(a,b,c){var e,f;if(!a)return this;if(c=c||A,"string"==typeof a){if(e="<"===a[0]&&">"===a[a.length-1]&&a.length>=3?[null,a,null]:B.exec(a),!e||!e[1]&&b)return!b||b.jquery?(b||c).find(a):this.constructor(b).find(a);if(e[1]){if(b=b instanceof n?b[0]:b,n.merge(this,n.parseHTML(e[1],b&&b.nodeType?b.ownerDocument||b:d,!0)),x.test(e[1])&&n.isPlainObject(b))for(e in b)n.isFunction(this[e])?this[e](b[e]):this.attr(e,b[e]);return this}return f=d.getElementById(e[2]),f&&f.parentNode&&(this.length=1,this[0]=f),this.context=d,this.selector=a,this}return a.nodeType?(this.context=this[0]=a,this.length=1,this):n.isFunction(a)?void 0!==c.ready?c.ready(a):a(n):(void 0!==a.selector&&(this.selector=a.selector,this.context=a.context),n.makeArray(a,this))};C.prototype=n.fn,A=n(d);var D=/^(?:parents|prev(?:Until|All))/,E={children:!0,contents:!0,next:!0,prev:!0};n.fn.extend({has:function(a){var b=n(a,this),c=b.length;return this.filter(function(){for(var a=0;c>a;a++)if(n.contains(this,b[a]))return!0})},closest:function(a,b){for(var c,d=0,e=this.length,f=[],g=w.test(a)||"string"!=typeof a?n(a,b||this.context):0;e>d;d++)for(c=this[d];c&&c!==b;c=c.parentNode)if(c.nodeType<11&&(g?g.index(c)>-1:1===c.nodeType&&n.find.matchesSelector(c,a))){f.push(c);break}return this.pushStack(f.length>1?n.uniqueSort(f):f)},index:function(a){return a?"string"==typeof a?h.call(n(a),this[0]):h.call(this,a.jquery?a[0]:a):this[0]&&this[0].parentNode?this.first().prevAll().length:-1},add:function(a,b){return this.pushStack(n.uniqueSort(n.merge(this.get(),n(a,b))))},addBack:function(a){return this.add(null==a?this.prevObject:this.prevObject.filter(a))}});function F(a,b){while((a=a[b])&&1!==a.nodeType);return a}n.each({parent:function(a){var b=a.parentNode;return b&&11!==b.nodeType?b:null},parents:function(a){return u(a,"parentNode")},parentsUntil:function(a,b,c){return u(a,"parentNode",c)},next:function(a){return F(a,"nextSibling")},prev:function(a){return F(a,"previousSibling")},nextAll:function(a){return u(a,"nextSibling")},prevAll:function(a){return u(a,"previousSibling")},nextUntil:function(a,b,c){return u(a,"nextSibling",c)},prevUntil:function(a,b,c){return u(a,"previousSibling",c)},siblings:function(a){return v((a.parentNode||{}).firstChild,a)},children:function(a){return v(a.firstChild)},contents:function(a){return a.contentDocument||n.merge([],a.childNodes)}},function(a,b){n.fn[a]=function(c,d){var e=n.map(this,b,c);return"Until"!==a.slice(-5)&&(d=c),d&&"string"==typeof d&&(e=n.filter(d,e)),this.length>1&&(E[a]||n.uniqueSort(e),D.test(a)&&e.reverse()),this.pushStack(e)}});var G=/\S+/g;function H(a){var b={};return n.each(a.match(G)||[],function(a,c){b[c]=!0}),b}n.Callbacks=function(a){a="string"==typeof a?H(a):n.extend({},a);var b,c,d,e,f=[],g=[],h=-1,i=function(){for(e=a.once,d=b=!0;g.length;h=-1){c=g.shift();while(++h<f.length)f[h].apply(c[0],c[1])===!1&&a.stopOnFalse&&(h=f.length,c=!1)}a.memory||(c=!1),b=!1,e&&(f=c?[]:"")},j={add:function(){return f&&(c&&!b&&(h=f.length-1,g.push(c)),function d(b){n.each(b,function(b,c){n.isFunction(c)?a.unique&&j.has(c)||f.push(c):c&&c.length&&"string"!==n.type(c)&&d(c)})}(arguments),c&&!b&&i()),this},remove:function(){return n.each(arguments,function(a,b){var c;while((c=n.inArray(b,f,c))>-1)f.splice(c,1),h>=c&&h--}),this},has:function(a){return a?n.inArray(a,f)>-1:f.length>0},empty:function(){return f&&(f=[]),this},disable:function(){return e=g=[],f=c="",this},disabled:function(){return!f},lock:function(){return e=g=[],c||(f=c=""),this},locked:function(){return!!e},fireWith:function(a,c){return e||(c=c||[],c=[a,c.slice?c.slice():c],g.push(c),b||i()),this},fire:function(){return j.fireWith(this,arguments),this},fired:function(){return!!d}};return j},n.extend({Deferred:function(a){var b=[["resolve","done",n.Callbacks("once memory"),"resolved"],["reject","fail",n.Callbacks("once memory"),"rejected"],["notify","progress",n.Callbacks("memory")]],c="pending",d={state:function(){return c},always:function(){return e.done(arguments).fail(arguments),this},then:function(){var a=arguments;return n.Deferred(function(c){n.each(b,function(b,f){var g=n.isFunction(a[b])&&a[b];e[f[1]](function(){var a=g&&g.apply(this,arguments);a&&n.isFunction(a.promise)?a.promise().progress(c.notify).done(c.resolve).fail(c.reject):c[f[0]+"With"](this===d?c.promise():this,g?[a]:arguments)})}),a=null}).promise()},promise:function(a){return null!=a?n.extend(a,d):d}},e={};return d.pipe=d.then,n.each(b,function(a,f){var g=f[2],h=f[3];d[f[1]]=g.add,h&&g.add(function(){c=h},b[1^a][2].disable,b[2][2].lock),e[f[0]]=function(){return e[f[0]+"With"](this===e?d:this,arguments),this},e[f[0]+"With"]=g.fireWith}),d.promise(e),a&&a.call(e,e),e},when:function(a){var b=0,c=e.call(arguments),d=c.length,f=1!==d||a&&n.isFunction(a.promise)?d:0,g=1===f?a:n.Deferred(),h=function(a,b,c){return function(d){b[a]=this,c[a]=arguments.length>1?e.call(arguments):d,c===i?g.notifyWith(b,c):--f||g.resolveWith(b,c)}},i,j,k;if(d>1)for(i=new Array(d),j=new Array(d),k=new Array(d);d>b;b++)c[b]&&n.isFunction(c[b].promise)?c[b].promise().progress(h(b,j,i)).done(h(b,k,c)).fail(g.reject):--f;return f||g.resolveWith(k,c),g.promise()}});var I;n.fn.ready=function(a){return n.ready.promise().done(a),this},n.extend({isReady:!1,readyWait:1,holdReady:function(a){a?n.readyWait++:n.ready(!0)},ready:function(a){(a===!0?--n.readyWait:n.isReady)||(n.isReady=!0,a!==!0&&--n.readyWait>0||(I.resolveWith(d,[n]),n.fn.triggerHandler&&(n(d).triggerHandler("ready"),n(d).off("ready"))))}});function J(){d.removeEventListener("DOMContentLoaded",J),a.removeEventListener("load",J),n.ready()}n.ready.promise=function(b){return I||(I=n.Deferred(),"complete"===d.readyState||"loading"!==d.readyState&&!d.documentElement.doScroll?a.setTimeout(n.ready):(d.addEventListener("DOMContentLoaded",J),a.addEventListener("load",J))),I.promise(b)},n.ready.promise();var K=function(a,b,c,d,e,f,g){var h=0,i=a.length,j=null==c;if("object"===n.type(c)){e=!0;for(h in c)K(a,b,h,c[h],!0,f,g)}else if(void 0!==d&&(e=!0,n.isFunction(d)||(g=!0),j&&(g?(b.call(a,d),b=null):(j=b,b=function(a,b,c){return j.call(n(a),c)})),b))for(;i>h;h++)b(a[h],c,g?d:d.call(a[h],h,b(a[h],c)));return e?a:j?b.call(a):i?b(a[0],c):f},L=function(a){return 1===a.nodeType||9===a.nodeType||!+a.nodeType};function M(){this.expando=n.expando+M.uid++}M.uid=1,M.prototype={register:function(a,b){var c=b||{};return a.nodeType?a[this.expando]=c:Object.defineProperty(a,this.expando,{value:c,writable:!0,configurable:!0}),a[this.expando]},cache:function(a){if(!L(a))return{};var b=a[this.expando];return b||(b={},L(a)&&(a.nodeType?a[this.expando]=b:Object.defineProperty(a,this.expando,{value:b,configurable:!0}))),b},set:function(a,b,c){var d,e=this.cache(a);if("string"==typeof b)e[b]=c;else for(d in b)e[d]=b[d];return e},get:function(a,b){return void 0===b?this.cache(a):a[this.expando]&&a[this.expando][b]},access:function(a,b,c){var d;return void 0===b||b&&"string"==typeof b&&void 0===c?(d=this.get(a,b),void 0!==d?d:this.get(a,n.camelCase(b))):(this.set(a,b,c),void 0!==c?c:b)},remove:function(a,b){var c,d,e,f=a[this.expando];if(void 0!==f){if(void 0===b)this.register(a);else{n.isArray(b)?d=b.concat(b.map(n.camelCase)):(e=n.camelCase(b),b in f?d=[b,e]:(d=e,d=d in f?[d]:d.match(G)||[])),c=d.length;while(c--)delete f[d[c]]}(void 0===b||n.isEmptyObject(f))&&(a.nodeType?a[this.expando]=void 0:delete a[this.expando])}},hasData:function(a){var b=a[this.expando];return void 0!==b&&!n.isEmptyObject(b)}};var N=new M,O=new M,P=/^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,Q=/[A-Z]/g;function R(a,b,c){var d;if(void 0===c&&1===a.nodeType)if(d="data-"+b.replace(Q,"-$&").toLowerCase(),c=a.getAttribute(d),"string"==typeof c){try{c="true"===c?!0:"false"===c?!1:"null"===c?null:+c+""===c?+c:P.test(c)?n.parseJSON(c):c;
+}catch(e){}O.set(a,b,c)}else c=void 0;return c}n.extend({hasData:function(a){return O.hasData(a)||N.hasData(a)},data:function(a,b,c){return O.access(a,b,c)},removeData:function(a,b){O.remove(a,b)},_data:function(a,b,c){return N.access(a,b,c)},_removeData:function(a,b){N.remove(a,b)}}),n.fn.extend({data:function(a,b){var c,d,e,f=this[0],g=f&&f.attributes;if(void 0===a){if(this.length&&(e=O.get(f),1===f.nodeType&&!N.get(f,"hasDataAttrs"))){c=g.length;while(c--)g[c]&&(d=g[c].name,0===d.indexOf("data-")&&(d=n.camelCase(d.slice(5)),R(f,d,e[d])));N.set(f,"hasDataAttrs",!0)}return e}return"object"==typeof a?this.each(function(){O.set(this,a)}):K(this,function(b){var c,d;if(f&&void 0===b){if(c=O.get(f,a)||O.get(f,a.replace(Q,"-$&").toLowerCase()),void 0!==c)return c;if(d=n.camelCase(a),c=O.get(f,d),void 0!==c)return c;if(c=R(f,d,void 0),void 0!==c)return c}else d=n.camelCase(a),this.each(function(){var c=O.get(this,d);O.set(this,d,b),a.indexOf("-")>-1&&void 0!==c&&O.set(this,a,b)})},null,b,arguments.length>1,null,!0)},removeData:function(a){return this.each(function(){O.remove(this,a)})}}),n.extend({queue:function(a,b,c){var d;return a?(b=(b||"fx")+"queue",d=N.get(a,b),c&&(!d||n.isArray(c)?d=N.access(a,b,n.makeArray(c)):d.push(c)),d||[]):void 0},dequeue:function(a,b){b=b||"fx";var c=n.queue(a,b),d=c.length,e=c.shift(),f=n._queueHooks(a,b),g=function(){n.dequeue(a,b)};"inprogress"===e&&(e=c.shift(),d--),e&&("fx"===b&&c.unshift("inprogress"),delete f.stop,e.call(a,g,f)),!d&&f&&f.empty.fire()},_queueHooks:function(a,b){var c=b+"queueHooks";return N.get(a,c)||N.access(a,c,{empty:n.Callbacks("once memory").add(function(){N.remove(a,[b+"queue",c])})})}}),n.fn.extend({queue:function(a,b){var c=2;return"string"!=typeof a&&(b=a,a="fx",c--),arguments.length<c?n.queue(this[0],a):void 0===b?this:this.each(function(){var c=n.queue(this,a,b);n._queueHooks(this,a),"fx"===a&&"inprogress"!==c[0]&&n.dequeue(this,a)})},dequeue:function(a){return this.each(function(){n.dequeue(this,a)})},clearQueue:function(a){return this.queue(a||"fx",[])},promise:function(a,b){var c,d=1,e=n.Deferred(),f=this,g=this.length,h=function(){--d||e.resolveWith(f,[f])};"string"!=typeof a&&(b=a,a=void 0),a=a||"fx";while(g--)c=N.get(f[g],a+"queueHooks"),c&&c.empty&&(d++,c.empty.add(h));return h(),e.promise(b)}});var S=/[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source,T=new RegExp("^(?:([+-])=|)("+S+")([a-z%]*)$","i"),U=["Top","Right","Bottom","Left"],V=function(a,b){return a=b||a,"none"===n.css(a,"display")||!n.contains(a.ownerDocument,a)};function W(a,b,c,d){var e,f=1,g=20,h=d?function(){return d.cur()}:function(){return n.css(a,b,"")},i=h(),j=c&&c[3]||(n.cssNumber[b]?"":"px"),k=(n.cssNumber[b]||"px"!==j&&+i)&&T.exec(n.css(a,b));if(k&&k[3]!==j){j=j||k[3],c=c||[],k=+i||1;do f=f||".5",k/=f,n.style(a,b,k+j);while(f!==(f=h()/i)&&1!==f&&--g)}return c&&(k=+k||+i||0,e=c[1]?k+(c[1]+1)*c[2]:+c[2],d&&(d.unit=j,d.start=k,d.end=e)),e}var X=/^(?:checkbox|radio)$/i,Y=/<([\w:-]+)/,Z=/^$|\/(?:java|ecma)script/i,$={option:[1,"<select multiple='multiple'>","</select>"],thead:[1,"<table>","</table>"],col:[2,"<table><colgroup>","</colgroup></table>"],tr:[2,"<table><tbody>","</tbody></table>"],td:[3,"<table><tbody><tr>","</tr></tbody></table>"],_default:[0,"",""]};$.optgroup=$.option,$.tbody=$.tfoot=$.colgroup=$.caption=$.thead,$.th=$.td;function _(a,b){var c="undefined"!=typeof a.getElementsByTagName?a.getElementsByTagName(b||"*"):"undefined"!=typeof a.querySelectorAll?a.querySelectorAll(b||"*"):[];return void 0===b||b&&n.nodeName(a,b)?n.merge([a],c):c}function aa(a,b){for(var c=0,d=a.length;d>c;c++)N.set(a[c],"globalEval",!b||N.get(b[c],"globalEval"))}var ba=/<|&#?\w+;/;function ca(a,b,c,d,e){for(var f,g,h,i,j,k,l=b.createDocumentFragment(),m=[],o=0,p=a.length;p>o;o++)if(f=a[o],f||0===f)if("object"===n.type(f))n.merge(m,f.nodeType?[f]:f);else if(ba.test(f)){g=g||l.appendChild(b.createElement("div")),h=(Y.exec(f)||["",""])[1].toLowerCase(),i=$[h]||$._default,g.innerHTML=i[1]+n.htmlPrefilter(f)+i[2],k=i[0];while(k--)g=g.lastChild;n.merge(m,g.childNodes),g=l.firstChild,g.textContent=""}else m.push(b.createTextNode(f));l.textContent="",o=0;while(f=m[o++])if(d&&n.inArray(f,d)>-1)e&&e.push(f);else if(j=n.contains(f.ownerDocument,f),g=_(l.appendChild(f),"script"),j&&aa(g),c){k=0;while(f=g[k++])Z.test(f.type||"")&&c.push(f)}return l}!function(){var a=d.createDocumentFragment(),b=a.appendChild(d.createElement("div")),c=d.createElement("input");c.setAttribute("type","radio"),c.setAttribute("checked","checked"),c.setAttribute("name","t"),b.appendChild(c),l.checkClone=b.cloneNode(!0).cloneNode(!0).lastChild.checked,b.innerHTML="<textarea>x</textarea>",l.noCloneChecked=!!b.cloneNode(!0).lastChild.defaultValue}();var da=/^key/,ea=/^(?:mouse|pointer|contextmenu|drag|drop)|click/,fa=/^([^.]*)(?:\.(.+)|)/;function ga(){return!0}function ha(){return!1}function ia(){try{return d.activeElement}catch(a){}}function ja(a,b,c,d,e,f){var g,h;if("object"==typeof b){"string"!=typeof c&&(d=d||c,c=void 0);for(h in b)ja(a,h,c,d,b[h],f);return a}if(null==d&&null==e?(e=c,d=c=void 0):null==e&&("string"==typeof c?(e=d,d=void 0):(e=d,d=c,c=void 0)),e===!1)e=ha;else if(!e)return a;return 1===f&&(g=e,e=function(a){return n().off(a),g.apply(this,arguments)},e.guid=g.guid||(g.guid=n.guid++)),a.each(function(){n.event.add(this,b,e,d,c)})}n.event={global:{},add:function(a,b,c,d,e){var f,g,h,i,j,k,l,m,o,p,q,r=N.get(a);if(r){c.handler&&(f=c,c=f.handler,e=f.selector),c.guid||(c.guid=n.guid++),(i=r.events)||(i=r.events={}),(g=r.handle)||(g=r.handle=function(b){return"undefined"!=typeof n&&n.event.triggered!==b.type?n.event.dispatch.apply(a,arguments):void 0}),b=(b||"").match(G)||[""],j=b.length;while(j--)h=fa.exec(b[j])||[],o=q=h[1],p=(h[2]||"").split(".").sort(),o&&(l=n.event.special[o]||{},o=(e?l.delegateType:l.bindType)||o,l=n.event.special[o]||{},k=n.extend({type:o,origType:q,data:d,handler:c,guid:c.guid,selector:e,needsContext:e&&n.expr.match.needsContext.test(e),namespace:p.join(".")},f),(m=i[o])||(m=i[o]=[],m.delegateCount=0,l.setup&&l.setup.call(a,d,p,g)!==!1||a.addEventListener&&a.addEventListener(o,g)),l.add&&(l.add.call(a,k),k.handler.guid||(k.handler.guid=c.guid)),e?m.splice(m.delegateCount++,0,k):m.push(k),n.event.global[o]=!0)}},remove:function(a,b,c,d,e){var f,g,h,i,j,k,l,m,o,p,q,r=N.hasData(a)&&N.get(a);if(r&&(i=r.events)){b=(b||"").match(G)||[""],j=b.length;while(j--)if(h=fa.exec(b[j])||[],o=q=h[1],p=(h[2]||"").split(".").sort(),o){l=n.event.special[o]||{},o=(d?l.delegateType:l.bindType)||o,m=i[o]||[],h=h[2]&&new RegExp("(^|\\.)"+p.join("\\.(?:.*\\.|)")+"(\\.|$)"),g=f=m.length;while(f--)k=m[f],!e&&q!==k.origType||c&&c.guid!==k.guid||h&&!h.test(k.namespace)||d&&d!==k.selector&&("**"!==d||!k.selector)||(m.splice(f,1),k.selector&&m.delegateCount--,l.remove&&l.remove.call(a,k));g&&!m.length&&(l.teardown&&l.teardown.call(a,p,r.handle)!==!1||n.removeEvent(a,o,r.handle),delete i[o])}else for(o in i)n.event.remove(a,o+b[j],c,d,!0);n.isEmptyObject(i)&&N.remove(a,"handle events")}},dispatch:function(a){a=n.event.fix(a);var b,c,d,f,g,h=[],i=e.call(arguments),j=(N.get(this,"events")||{})[a.type]||[],k=n.event.special[a.type]||{};if(i[0]=a,a.delegateTarget=this,!k.preDispatch||k.preDispatch.call(this,a)!==!1){h=n.event.handlers.call(this,a,j),b=0;while((f=h[b++])&&!a.isPropagationStopped()){a.currentTarget=f.elem,c=0;while((g=f.handlers[c++])&&!a.isImmediatePropagationStopped())a.rnamespace&&!a.rnamespace.test(g.namespace)||(a.handleObj=g,a.data=g.data,d=((n.event.special[g.origType]||{}).handle||g.handler).apply(f.elem,i),void 0!==d&&(a.result=d)===!1&&(a.preventDefault(),a.stopPropagation()))}return k.postDispatch&&k.postDispatch.call(this,a),a.result}},handlers:function(a,b){var c,d,e,f,g=[],h=b.delegateCount,i=a.target;if(h&&i.nodeType&&("click"!==a.type||isNaN(a.button)||a.button<1))for(;i!==this;i=i.parentNode||this)if(1===i.nodeType&&(i.disabled!==!0||"click"!==a.type)){for(d=[],c=0;h>c;c++)f=b[c],e=f.selector+" ",void 0===d[e]&&(d[e]=f.needsContext?n(e,this).index(i)>-1:n.find(e,this,null,[i]).length),d[e]&&d.push(f);d.length&&g.push({elem:i,handlers:d})}return h<b.length&&g.push({elem:this,handlers:b.slice(h)}),g},props:"altKey bubbles cancelable ctrlKey currentTarget detail eventPhase metaKey relatedTarget shiftKey target timeStamp view which".split(" "),fixHooks:{},keyHooks:{props:"char charCode key keyCode".split(" "),filter:function(a,b){return null==a.which&&(a.which=null!=b.charCode?b.charCode:b.keyCode),a}},mouseHooks:{props:"button buttons clientX clientY offsetX offsetY pageX pageY screenX screenY toElement".split(" "),filter:function(a,b){var c,e,f,g=b.button;return null==a.pageX&&null!=b.clientX&&(c=a.target.ownerDocument||d,e=c.documentElement,f=c.body,a.pageX=b.clientX+(e&&e.scrollLeft||f&&f.scrollLeft||0)-(e&&e.clientLeft||f&&f.clientLeft||0),a.pageY=b.clientY+(e&&e.scrollTop||f&&f.scrollTop||0)-(e&&e.clientTop||f&&f.clientTop||0)),a.which||void 0===g||(a.which=1&g?1:2&g?3:4&g?2:0),a}},fix:function(a){if(a[n.expando])return a;var b,c,e,f=a.type,g=a,h=this.fixHooks[f];h||(this.fixHooks[f]=h=ea.test(f)?this.mouseHooks:da.test(f)?this.keyHooks:{}),e=h.props?this.props.concat(h.props):this.props,a=new n.Event(g),b=e.length;while(b--)c=e[b],a[c]=g[c];return a.target||(a.target=d),3===a.target.nodeType&&(a.target=a.target.parentNode),h.filter?h.filter(a,g):a},special:{load:{noBubble:!0},focus:{trigger:function(){return this!==ia()&&this.focus?(this.focus(),!1):void 0},delegateType:"focusin"},blur:{trigger:function(){return this===ia()&&this.blur?(this.blur(),!1):void 0},delegateType:"focusout"},click:{trigger:function(){return"checkbox"===this.type&&this.click&&n.nodeName(this,"input")?(this.click(),!1):void 0},_default:function(a){return n.nodeName(a.target,"a")}},beforeunload:{postDispatch:function(a){void 0!==a.result&&a.originalEvent&&(a.originalEvent.returnValue=a.result)}}}},n.removeEvent=function(a,b,c){a.removeEventListener&&a.removeEventListener(b,c)},n.Event=function(a,b){return this instanceof n.Event?(a&&a.type?(this.originalEvent=a,this.type=a.type,this.isDefaultPrevented=a.defaultPrevented||void 0===a.defaultPrevented&&a.returnValue===!1?ga:ha):this.type=a,b&&n.extend(this,b),this.timeStamp=a&&a.timeStamp||n.now(),void(this[n.expando]=!0)):new n.Event(a,b)},n.Event.prototype={constructor:n.Event,isDefaultPrevented:ha,isPropagationStopped:ha,isImmediatePropagationStopped:ha,isSimulated:!1,preventDefault:function(){var a=this.originalEvent;this.isDefaultPrevented=ga,a&&!this.isSimulated&&a.preventDefault()},stopPropagation:function(){var a=this.originalEvent;this.isPropagationStopped=ga,a&&!this.isSimulated&&a.stopPropagation()},stopImmediatePropagation:function(){var a=this.originalEvent;this.isImmediatePropagationStopped=ga,a&&!this.isSimulated&&a.stopImmediatePropagation(),this.stopPropagation()}},n.each({mouseenter:"mouseover",mouseleave:"mouseout",pointerenter:"pointerover",pointerleave:"pointerout"},function(a,b){n.event.special[a]={delegateType:b,bindType:b,handle:function(a){var c,d=this,e=a.relatedTarget,f=a.handleObj;return e&&(e===d||n.contains(d,e))||(a.type=f.origType,c=f.handler.apply(this,arguments),a.type=b),c}}}),n.fn.extend({on:function(a,b,c,d){return ja(this,a,b,c,d)},one:function(a,b,c,d){return ja(this,a,b,c,d,1)},off:function(a,b,c){var d,e;if(a&&a.preventDefault&&a.handleObj)return d=a.handleObj,n(a.delegateTarget).off(d.namespace?d.origType+"."+d.namespace:d.origType,d.selector,d.handler),this;if("object"==typeof a){for(e in a)this.off(e,b,a[e]);return this}return b!==!1&&"function"!=typeof b||(c=b,b=void 0),c===!1&&(c=ha),this.each(function(){n.event.remove(this,a,c,b)})}});var ka=/<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:-]+)[^>]*)\/>/gi,la=/<script|<style|<link/i,ma=/checked\s*(?:[^=]|=\s*.checked.)/i,na=/^true\/(.*)/,oa=/^\s*<!(?:\[CDATA\[|--)|(?:\]\]|--)>\s*$/g;function pa(a,b){return n.nodeName(a,"table")&&n.nodeName(11!==b.nodeType?b:b.firstChild,"tr")?a.getElementsByTagName("tbody")[0]||a.appendChild(a.ownerDocument.createElement("tbody")):a}function qa(a){return a.type=(null!==a.getAttribute("type"))+"/"+a.type,a}function ra(a){var b=na.exec(a.type);return b?a.type=b[1]:a.removeAttribute("type"),a}function sa(a,b){var c,d,e,f,g,h,i,j;if(1===b.nodeType){if(N.hasData(a)&&(f=N.access(a),g=N.set(b,f),j=f.events)){delete g.handle,g.events={};for(e in j)for(c=0,d=j[e].length;d>c;c++)n.event.add(b,e,j[e][c])}O.hasData(a)&&(h=O.access(a),i=n.extend({},h),O.set(b,i))}}function ta(a,b){var c=b.nodeName.toLowerCase();"input"===c&&X.test(a.type)?b.checked=a.checked:"input"!==c&&"textarea"!==c||(b.defaultValue=a.defaultValue)}function ua(a,b,c,d){b=f.apply([],b);var e,g,h,i,j,k,m=0,o=a.length,p=o-1,q=b[0],r=n.isFunction(q);if(r||o>1&&"string"==typeof q&&!l.checkClone&&ma.test(q))return a.each(function(e){var f=a.eq(e);r&&(b[0]=q.call(this,e,f.html())),ua(f,b,c,d)});if(o&&(e=ca(b,a[0].ownerDocument,!1,a,d),g=e.firstChild,1===e.childNodes.length&&(e=g),g||d)){for(h=n.map(_(e,"script"),qa),i=h.length;o>m;m++)j=e,m!==p&&(j=n.clone(j,!0,!0),i&&n.merge(h,_(j,"script"))),c.call(a[m],j,m);if(i)for(k=h[h.length-1].ownerDocument,n.map(h,ra),m=0;i>m;m++)j=h[m],Z.test(j.type||"")&&!N.access(j,"globalEval")&&n.contains(k,j)&&(j.src?n._evalUrl&&n._evalUrl(j.src):n.globalEval(j.textContent.replace(oa,"")))}return a}function va(a,b,c){for(var d,e=b?n.filter(b,a):a,f=0;null!=(d=e[f]);f++)c||1!==d.nodeType||n.cleanData(_(d)),d.parentNode&&(c&&n.contains(d.ownerDocument,d)&&aa(_(d,"script")),d.parentNode.removeChild(d));return a}n.extend({htmlPrefilter:function(a){return a.replace(ka,"<$1></$2>")},clone:function(a,b,c){var d,e,f,g,h=a.cloneNode(!0),i=n.contains(a.ownerDocument,a);if(!(l.noCloneChecked||1!==a.nodeType&&11!==a.nodeType||n.isXMLDoc(a)))for(g=_(h),f=_(a),d=0,e=f.length;e>d;d++)ta(f[d],g[d]);if(b)if(c)for(f=f||_(a),g=g||_(h),d=0,e=f.length;e>d;d++)sa(f[d],g[d]);else sa(a,h);return g=_(h,"script"),g.length>0&&aa(g,!i&&_(a,"script")),h},cleanData:function(a){for(var b,c,d,e=n.event.special,f=0;void 0!==(c=a[f]);f++)if(L(c)){if(b=c[N.expando]){if(b.events)for(d in b.events)e[d]?n.event.remove(c,d):n.removeEvent(c,d,b.handle);c[N.expando]=void 0}c[O.expando]&&(c[O.expando]=void 0)}}}),n.fn.extend({domManip:ua,detach:function(a){return va(this,a,!0)},remove:function(a){return va(this,a)},text:function(a){return K(this,function(a){return void 0===a?n.text(this):this.empty().each(function(){1!==this.nodeType&&11!==this.nodeType&&9!==this.nodeType||(this.textContent=a)})},null,a,arguments.length)},append:function(){return ua(this,arguments,function(a){if(1===this.nodeType||11===this.nodeType||9===this.nodeType){var b=pa(this,a);b.appendChild(a)}})},prepend:function(){return ua(this,arguments,function(a){if(1===this.nodeType||11===this.nodeType||9===this.nodeType){var b=pa(this,a);b.insertBefore(a,b.firstChild)}})},before:function(){return ua(this,arguments,function(a){this.parentNode&&this.parentNode.insertBefore(a,this)})},after:function(){return ua(this,arguments,function(a){this.parentNode&&this.parentNode.insertBefore(a,this.nextSibling)})},empty:function(){for(var a,b=0;null!=(a=this[b]);b++)1===a.nodeType&&(n.cleanData(_(a,!1)),a.textContent="");return this},clone:function(a,b){return a=null==a?!1:a,b=null==b?a:b,this.map(function(){return n.clone(this,a,b)})},html:function(a){return K(this,function(a){var b=this[0]||{},c=0,d=this.length;if(void 0===a&&1===b.nodeType)return b.innerHTML;if("string"==typeof a&&!la.test(a)&&!$[(Y.exec(a)||["",""])[1].toLowerCase()]){a=n.htmlPrefilter(a);try{for(;d>c;c++)b=this[c]||{},1===b.nodeType&&(n.cleanData(_(b,!1)),b.innerHTML=a);b=0}catch(e){}}b&&this.empty().append(a)},null,a,arguments.length)},replaceWith:function(){var a=[];return ua(this,arguments,function(b){var c=this.parentNode;n.inArray(this,a)<0&&(n.cleanData(_(this)),c&&c.replaceChild(b,this))},a)}}),n.each({appendTo:"append",prependTo:"prepend",insertBefore:"before",insertAfter:"after",replaceAll:"replaceWith"},function(a,b){n.fn[a]=function(a){for(var c,d=[],e=n(a),f=e.length-1,h=0;f>=h;h++)c=h===f?this:this.clone(!0),n(e[h])[b](c),g.apply(d,c.get());return this.pushStack(d)}});var wa,xa={HTML:"block",BODY:"block"};function ya(a,b){var c=n(b.createElement(a)).appendTo(b.body),d=n.css(c[0],"display");return c.detach(),d}function za(a){var b=d,c=xa[a];return c||(c=ya(a,b),"none"!==c&&c||(wa=(wa||n("<iframe frameborder='0' width='0' height='0'/>")).appendTo(b.documentElement),b=wa[0].contentDocument,b.write(),b.close(),c=ya(a,b),wa.detach()),xa[a]=c),c}var Aa=/^margin/,Ba=new RegExp("^("+S+")(?!px)[a-z%]+$","i"),Ca=function(b){var c=b.ownerDocument.defaultView;return c&&c.opener||(c=a),c.getComputedStyle(b)},Da=function(a,b,c,d){var e,f,g={};for(f in b)g[f]=a.style[f],a.style[f]=b[f];e=c.apply(a,d||[]);for(f in b)a.style[f]=g[f];return e},Ea=d.documentElement;!function(){var b,c,e,f,g=d.createElement("div"),h=d.createElement("div");if(h.style){h.style.backgroundClip="content-box",h.cloneNode(!0).style.backgroundClip="",l.clearCloneStyle="content-box"===h.style.backgroundClip,g.style.cssText="border:0;width:8px;height:0;top:0;left:-9999px;padding:0;margin-top:1px;position:absolute",g.appendChild(h);function i(){h.style.cssText="-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:relative;display:block;margin:auto;border:1px;padding:1px;top:1%;width:50%",h.innerHTML="",Ea.appendChild(g);var d=a.getComputedStyle(h);b="1%"!==d.top,f="2px"===d.marginLeft,c="4px"===d.width,h.style.marginRight="50%",e="4px"===d.marginRight,Ea.removeChild(g)}n.extend(l,{pixelPosition:function(){return i(),b},boxSizingReliable:function(){return null==c&&i(),c},pixelMarginRight:function(){return null==c&&i(),e},reliableMarginLeft:function(){return null==c&&i(),f},reliableMarginRight:function(){var b,c=h.appendChild(d.createElement("div"));return c.style.cssText=h.style.cssText="-webkit-box-sizing:content-box;box-sizing:content-box;display:block;margin:0;border:0;padding:0",c.style.marginRight=c.style.width="0",h.style.width="1px",Ea.appendChild(g),b=!parseFloat(a.getComputedStyle(c).marginRight),Ea.removeChild(g),h.removeChild(c),b}})}}();function Fa(a,b,c){var d,e,f,g,h=a.style;return c=c||Ca(a),g=c?c.getPropertyValue(b)||c[b]:void 0,""!==g&&void 0!==g||n.contains(a.ownerDocument,a)||(g=n.style(a,b)),c&&!l.pixelMarginRight()&&Ba.test(g)&&Aa.test(b)&&(d=h.width,e=h.minWidth,f=h.maxWidth,h.minWidth=h.maxWidth=h.width=g,g=c.width,h.width=d,h.minWidth=e,h.maxWidth=f),void 0!==g?g+"":g}function Ga(a,b){return{get:function(){return a()?void delete this.get:(this.get=b).apply(this,arguments)}}}var Ha=/^(none|table(?!-c[ea]).+)/,Ia={position:"absolute",visibility:"hidden",display:"block"},Ja={letterSpacing:"0",fontWeight:"400"},Ka=["Webkit","O","Moz","ms"],La=d.createElement("div").style;function Ma(a){if(a in La)return a;var b=a[0].toUpperCase()+a.slice(1),c=Ka.length;while(c--)if(a=Ka[c]+b,a in La)return a}function Na(a,b,c){var d=T.exec(b);return d?Math.max(0,d[2]-(c||0))+(d[3]||"px"):b}function Oa(a,b,c,d,e){for(var f=c===(d?"border":"content")?4:"width"===b?1:0,g=0;4>f;f+=2)"margin"===c&&(g+=n.css(a,c+U[f],!0,e)),d?("content"===c&&(g-=n.css(a,"padding"+U[f],!0,e)),"margin"!==c&&(g-=n.css(a,"border"+U[f]+"Width",!0,e))):(g+=n.css(a,"padding"+U[f],!0,e),"padding"!==c&&(g+=n.css(a,"border"+U[f]+"Width",!0,e)));return g}function Pa(a,b,c){var d=!0,e="width"===b?a.offsetWidth:a.offsetHeight,f=Ca(a),g="border-box"===n.css(a,"boxSizing",!1,f);if(0>=e||null==e){if(e=Fa(a,b,f),(0>e||null==e)&&(e=a.style[b]),Ba.test(e))return e;d=g&&(l.boxSizingReliable()||e===a.style[b]),e=parseFloat(e)||0}return e+Oa(a,b,c||(g?"border":"content"),d,f)+"px"}function Qa(a,b){for(var c,d,e,f=[],g=0,h=a.length;h>g;g++)d=a[g],d.style&&(f[g]=N.get(d,"olddisplay"),c=d.style.display,b?(f[g]||"none"!==c||(d.style.display=""),""===d.style.display&&V(d)&&(f[g]=N.access(d,"olddisplay",za(d.nodeName)))):(e=V(d),"none"===c&&e||N.set(d,"olddisplay",e?c:n.css(d,"display"))));for(g=0;h>g;g++)d=a[g],d.style&&(b&&"none"!==d.style.display&&""!==d.style.display||(d.style.display=b?f[g]||"":"none"));return a}n.extend({cssHooks:{opacity:{get:function(a,b){if(b){var c=Fa(a,"opacity");return""===c?"1":c}}}},cssNumber:{animationIterationCount:!0,columnCount:!0,fillOpacity:!0,flexGrow:!0,flexShrink:!0,fontWeight:!0,lineHeight:!0,opacity:!0,order:!0,orphans:!0,widows:!0,zIndex:!0,zoom:!0},cssProps:{"float":"cssFloat"},style:function(a,b,c,d){if(a&&3!==a.nodeType&&8!==a.nodeType&&a.style){var e,f,g,h=n.camelCase(b),i=a.style;return b=n.cssProps[h]||(n.cssProps[h]=Ma(h)||h),g=n.cssHooks[b]||n.cssHooks[h],void 0===c?g&&"get"in g&&void 0!==(e=g.get(a,!1,d))?e:i[b]:(f=typeof c,"string"===f&&(e=T.exec(c))&&e[1]&&(c=W(a,b,e),f="number"),null!=c&&c===c&&("number"===f&&(c+=e&&e[3]||(n.cssNumber[h]?"":"px")),l.clearCloneStyle||""!==c||0!==b.indexOf("background")||(i[b]="inherit"),g&&"set"in g&&void 0===(c=g.set(a,c,d))||(i[b]=c)),void 0)}},css:function(a,b,c,d){var e,f,g,h=n.camelCase(b);return b=n.cssProps[h]||(n.cssProps[h]=Ma(h)||h),g=n.cssHooks[b]||n.cssHooks[h],g&&"get"in g&&(e=g.get(a,!0,c)),void 0===e&&(e=Fa(a,b,d)),"normal"===e&&b in Ja&&(e=Ja[b]),""===c||c?(f=parseFloat(e),c===!0||isFinite(f)?f||0:e):e}}),n.each(["height","width"],function(a,b){n.cssHooks[b]={get:function(a,c,d){return c?Ha.test(n.css(a,"display"))&&0===a.offsetWidth?Da(a,Ia,function(){return Pa(a,b,d)}):Pa(a,b,d):void 0},set:function(a,c,d){var e,f=d&&Ca(a),g=d&&Oa(a,b,d,"border-box"===n.css(a,"boxSizing",!1,f),f);return g&&(e=T.exec(c))&&"px"!==(e[3]||"px")&&(a.style[b]=c,c=n.css(a,b)),Na(a,c,g)}}}),n.cssHooks.marginLeft=Ga(l.reliableMarginLeft,function(a,b){return b?(parseFloat(Fa(a,"marginLeft"))||a.getBoundingClientRect().left-Da(a,{marginLeft:0},function(){return a.getBoundingClientRect().left}))+"px":void 0}),n.cssHooks.marginRight=Ga(l.reliableMarginRight,function(a,b){return b?Da(a,{display:"inline-block"},Fa,[a,"marginRight"]):void 0}),n.each({margin:"",padding:"",border:"Width"},function(a,b){n.cssHooks[a+b]={expand:function(c){for(var d=0,e={},f="string"==typeof c?c.split(" "):[c];4>d;d++)e[a+U[d]+b]=f[d]||f[d-2]||f[0];return e}},Aa.test(a)||(n.cssHooks[a+b].set=Na)}),n.fn.extend({css:function(a,b){return K(this,function(a,b,c){var d,e,f={},g=0;if(n.isArray(b)){for(d=Ca(a),e=b.length;e>g;g++)f[b[g]]=n.css(a,b[g],!1,d);return f}return void 0!==c?n.style(a,b,c):n.css(a,b)},a,b,arguments.length>1)},show:function(){return Qa(this,!0)},hide:function(){return Qa(this)},toggle:function(a){return"boolean"==typeof a?a?this.show():this.hide():this.each(function(){V(this)?n(this).show():n(this).hide()})}});function Ra(a,b,c,d,e){return new Ra.prototype.init(a,b,c,d,e)}n.Tween=Ra,Ra.prototype={constructor:Ra,init:function(a,b,c,d,e,f){this.elem=a,this.prop=c,this.easing=e||n.easing._default,this.options=b,this.start=this.now=this.cur(),this.end=d,this.unit=f||(n.cssNumber[c]?"":"px")},cur:function(){var a=Ra.propHooks[this.prop];return a&&a.get?a.get(this):Ra.propHooks._default.get(this)},run:function(a){var b,c=Ra.propHooks[this.prop];return this.options.duration?this.pos=b=n.easing[this.easing](a,this.options.duration*a,0,1,this.options.duration):this.pos=b=a,this.now=(this.end-this.start)*b+this.start,this.options.step&&this.options.step.call(this.elem,this.now,this),c&&c.set?c.set(this):Ra.propHooks._default.set(this),this}},Ra.prototype.init.prototype=Ra.prototype,Ra.propHooks={_default:{get:function(a){var b;return 1!==a.elem.nodeType||null!=a.elem[a.prop]&&null==a.elem.style[a.prop]?a.elem[a.prop]:(b=n.css(a.elem,a.prop,""),b&&"auto"!==b?b:0)},set:function(a){n.fx.step[a.prop]?n.fx.step[a.prop](a):1!==a.elem.nodeType||null==a.elem.style[n.cssProps[a.prop]]&&!n.cssHooks[a.prop]?a.elem[a.prop]=a.now:n.style(a.elem,a.prop,a.now+a.unit)}}},Ra.propHooks.scrollTop=Ra.propHooks.scrollLeft={set:function(a){a.elem.nodeType&&a.elem.parentNode&&(a.elem[a.prop]=a.now)}},n.easing={linear:function(a){return a},swing:function(a){return.5-Math.cos(a*Math.PI)/2},_default:"swing"},n.fx=Ra.prototype.init,n.fx.step={};var Sa,Ta,Ua=/^(?:toggle|show|hide)$/,Va=/queueHooks$/;function Wa(){return a.setTimeout(function(){Sa=void 0}),Sa=n.now()}function Xa(a,b){var c,d=0,e={height:a};for(b=b?1:0;4>d;d+=2-b)c=U[d],e["margin"+c]=e["padding"+c]=a;return b&&(e.opacity=e.width=a),e}function Ya(a,b,c){for(var d,e=(_a.tweeners[b]||[]).concat(_a.tweeners["*"]),f=0,g=e.length;g>f;f++)if(d=e[f].call(c,b,a))return d}function Za(a,b,c){var d,e,f,g,h,i,j,k,l=this,m={},o=a.style,p=a.nodeType&&V(a),q=N.get(a,"fxshow");c.queue||(h=n._queueHooks(a,"fx"),null==h.unqueued&&(h.unqueued=0,i=h.empty.fire,h.empty.fire=function(){h.unqueued||i()}),h.unqueued++,l.always(function(){l.always(function(){h.unqueued--,n.queue(a,"fx").length||h.empty.fire()})})),1===a.nodeType&&("height"in b||"width"in b)&&(c.overflow=[o.overflow,o.overflowX,o.overflowY],j=n.css(a,"display"),k="none"===j?N.get(a,"olddisplay")||za(a.nodeName):j,"inline"===k&&"none"===n.css(a,"float")&&(o.display="inline-block")),c.overflow&&(o.overflow="hidden",l.always(function(){o.overflow=c.overflow[0],o.overflowX=c.overflow[1],o.overflowY=c.overflow[2]}));for(d in b)if(e=b[d],Ua.exec(e)){if(delete b[d],f=f||"toggle"===e,e===(p?"hide":"show")){if("show"!==e||!q||void 0===q[d])continue;p=!0}m[d]=q&&q[d]||n.style(a,d)}else j=void 0;if(n.isEmptyObject(m))"inline"===("none"===j?za(a.nodeName):j)&&(o.display=j);else{q?"hidden"in q&&(p=q.hidden):q=N.access(a,"fxshow",{}),f&&(q.hidden=!p),p?n(a).show():l.done(function(){n(a).hide()}),l.done(function(){var b;N.remove(a,"fxshow");for(b in m)n.style(a,b,m[b])});for(d in m)g=Ya(p?q[d]:0,d,l),d in q||(q[d]=g.start,p&&(g.end=g.start,g.start="width"===d||"height"===d?1:0))}}function $a(a,b){var c,d,e,f,g;for(c in a)if(d=n.camelCase(c),e=b[d],f=a[c],n.isArray(f)&&(e=f[1],f=a[c]=f[0]),c!==d&&(a[d]=f,delete a[c]),g=n.cssHooks[d],g&&"expand"in g){f=g.expand(f),delete a[d];for(c in f)c in a||(a[c]=f[c],b[c]=e)}else b[d]=e}function _a(a,b,c){var d,e,f=0,g=_a.prefilters.length,h=n.Deferred().always(function(){delete i.elem}),i=function(){if(e)return!1;for(var b=Sa||Wa(),c=Math.max(0,j.startTime+j.duration-b),d=c/j.duration||0,f=1-d,g=0,i=j.tweens.length;i>g;g++)j.tweens[g].run(f);return h.notifyWith(a,[j,f,c]),1>f&&i?c:(h.resolveWith(a,[j]),!1)},j=h.promise({elem:a,props:n.extend({},b),opts:n.extend(!0,{specialEasing:{},easing:n.easing._default},c),originalProperties:b,originalOptions:c,startTime:Sa||Wa(),duration:c.duration,tweens:[],createTween:function(b,c){var d=n.Tween(a,j.opts,b,c,j.opts.specialEasing[b]||j.opts.easing);return j.tweens.push(d),d},stop:function(b){var c=0,d=b?j.tweens.length:0;if(e)return this;for(e=!0;d>c;c++)j.tweens[c].run(1);return b?(h.notifyWith(a,[j,1,0]),h.resolveWith(a,[j,b])):h.rejectWith(a,[j,b]),this}}),k=j.props;for($a(k,j.opts.specialEasing);g>f;f++)if(d=_a.prefilters[f].call(j,a,k,j.opts))return n.isFunction(d.stop)&&(n._queueHooks(j.elem,j.opts.queue).stop=n.proxy(d.stop,d)),d;return n.map(k,Ya,j),n.isFunction(j.opts.start)&&j.opts.start.call(a,j),n.fx.timer(n.extend(i,{elem:a,anim:j,queue:j.opts.queue})),j.progress(j.opts.progress).done(j.opts.done,j.opts.complete).fail(j.opts.fail).always(j.opts.always)}n.Animation=n.extend(_a,{tweeners:{"*":[function(a,b){var c=this.createTween(a,b);return W(c.elem,a,T.exec(b),c),c}]},tweener:function(a,b){n.isFunction(a)?(b=a,a=["*"]):a=a.match(G);for(var c,d=0,e=a.length;e>d;d++)c=a[d],_a.tweeners[c]=_a.tweeners[c]||[],_a.tweeners[c].unshift(b)},prefilters:[Za],prefilter:function(a,b){b?_a.prefilters.unshift(a):_a.prefilters.push(a)}}),n.speed=function(a,b,c){var d=a&&"object"==typeof a?n.extend({},a):{complete:c||!c&&b||n.isFunction(a)&&a,duration:a,easing:c&&b||b&&!n.isFunction(b)&&b};return d.duration=n.fx.off?0:"number"==typeof d.duration?d.duration:d.duration in n.fx.speeds?n.fx.speeds[d.duration]:n.fx.speeds._default,null!=d.queue&&d.queue!==!0||(d.queue="fx"),d.old=d.complete,d.complete=function(){n.isFunction(d.old)&&d.old.call(this),d.queue&&n.dequeue(this,d.queue)},d},n.fn.extend({fadeTo:function(a,b,c,d){return this.filter(V).css("opacity",0).show().end().animate({opacity:b},a,c,d)},animate:function(a,b,c,d){var e=n.isEmptyObject(a),f=n.speed(b,c,d),g=function(){var b=_a(this,n.extend({},a),f);(e||N.get(this,"finish"))&&b.stop(!0)};return g.finish=g,e||f.queue===!1?this.each(g):this.queue(f.queue,g)},stop:function(a,b,c){var d=function(a){var b=a.stop;delete a.stop,b(c)};return"string"!=typeof a&&(c=b,b=a,a=void 0),b&&a!==!1&&this.queue(a||"fx",[]),this.each(function(){var b=!0,e=null!=a&&a+"queueHooks",f=n.timers,g=N.get(this);if(e)g[e]&&g[e].stop&&d(g[e]);else for(e in g)g[e]&&g[e].stop&&Va.test(e)&&d(g[e]);for(e=f.length;e--;)f[e].elem!==this||null!=a&&f[e].queue!==a||(f[e].anim.stop(c),b=!1,f.splice(e,1));!b&&c||n.dequeue(this,a)})},finish:function(a){return a!==!1&&(a=a||"fx"),this.each(function(){var b,c=N.get(this),d=c[a+"queue"],e=c[a+"queueHooks"],f=n.timers,g=d?d.length:0;for(c.finish=!0,n.queue(this,a,[]),e&&e.stop&&e.stop.call(this,!0),b=f.length;b--;)f[b].elem===this&&f[b].queue===a&&(f[b].anim.stop(!0),f.splice(b,1));for(b=0;g>b;b++)d[b]&&d[b].finish&&d[b].finish.call(this);delete c.finish})}}),n.each(["toggle","show","hide"],function(a,b){var c=n.fn[b];n.fn[b]=function(a,d,e){return null==a||"boolean"==typeof a?c.apply(this,arguments):this.animate(Xa(b,!0),a,d,e)}}),n.each({slideDown:Xa("show"),slideUp:Xa("hide"),slideToggle:Xa("toggle"),fadeIn:{opacity:"show"},fadeOut:{opacity:"hide"},fadeToggle:{opacity:"toggle"}},function(a,b){n.fn[a]=function(a,c,d){return this.animate(b,a,c,d)}}),n.timers=[],n.fx.tick=function(){var a,b=0,c=n.timers;for(Sa=n.now();b<c.length;b++)a=c[b],a()||c[b]!==a||c.splice(b--,1);c.length||n.fx.stop(),Sa=void 0},n.fx.timer=function(a){n.timers.push(a),a()?n.fx.start():n.timers.pop()},n.fx.interval=13,n.fx.start=function(){Ta||(Ta=a.setInterval(n.fx.tick,n.fx.interval))},n.fx.stop=function(){a.clearInterval(Ta),Ta=null},n.fx.speeds={slow:600,fast:200,_default:400},n.fn.delay=function(b,c){return b=n.fx?n.fx.speeds[b]||b:b,c=c||"fx",this.queue(c,function(c,d){var e=a.setTimeout(c,b);d.stop=function(){a.clearTimeout(e)}})},function(){var a=d.createElement("input"),b=d.createElement("select"),c=b.appendChild(d.createElement("option"));a.type="checkbox",l.checkOn=""!==a.value,l.optSelected=c.selected,b.disabled=!0,l.optDisabled=!c.disabled,a=d.createElement("input"),a.value="t",a.type="radio",l.radioValue="t"===a.value}();var ab,bb=n.expr.attrHandle;n.fn.extend({attr:function(a,b){return K(this,n.attr,a,b,arguments.length>1)},removeAttr:function(a){return this.each(function(){n.removeAttr(this,a)})}}),n.extend({attr:function(a,b,c){var d,e,f=a.nodeType;if(3!==f&&8!==f&&2!==f)return"undefined"==typeof a.getAttribute?n.prop(a,b,c):(1===f&&n.isXMLDoc(a)||(b=b.toLowerCase(),e=n.attrHooks[b]||(n.expr.match.bool.test(b)?ab:void 0)),void 0!==c?null===c?void n.removeAttr(a,b):e&&"set"in e&&void 0!==(d=e.set(a,c,b))?d:(a.setAttribute(b,c+""),c):e&&"get"in e&&null!==(d=e.get(a,b))?d:(d=n.find.attr(a,b),null==d?void 0:d))},attrHooks:{type:{set:function(a,b){if(!l.radioValue&&"radio"===b&&n.nodeName(a,"input")){var c=a.value;return a.setAttribute("type",b),c&&(a.value=c),b}}}},removeAttr:function(a,b){var c,d,e=0,f=b&&b.match(G);if(f&&1===a.nodeType)while(c=f[e++])d=n.propFix[c]||c,n.expr.match.bool.test(c)&&(a[d]=!1),a.removeAttribute(c)}}),ab={set:function(a,b,c){return b===!1?n.removeAttr(a,c):a.setAttribute(c,c),c}},n.each(n.expr.match.bool.source.match(/\w+/g),function(a,b){var c=bb[b]||n.find.attr;bb[b]=function(a,b,d){var e,f;return d||(f=bb[b],bb[b]=e,e=null!=c(a,b,d)?b.toLowerCase():null,bb[b]=f),e}});var cb=/^(?:input|select|textarea|button)$/i,db=/^(?:a|area)$/i;n.fn.extend({prop:function(a,b){return K(this,n.prop,a,b,arguments.length>1)},removeProp:function(a){return this.each(function(){delete this[n.propFix[a]||a]})}}),n.extend({prop:function(a,b,c){var d,e,f=a.nodeType;if(3!==f&&8!==f&&2!==f)return 1===f&&n.isXMLDoc(a)||(b=n.propFix[b]||b,e=n.propHooks[b]),
+    void 0!==c?e&&"set"in e&&void 0!==(d=e.set(a,c,b))?d:a[b]=c:e&&"get"in e&&null!==(d=e.get(a,b))?d:a[b]},propHooks:{tabIndex:{get:function(a){var b=n.find.attr(a,"tabindex");return b?parseInt(b,10):cb.test(a.nodeName)||db.test(a.nodeName)&&a.href?0:-1}}},propFix:{"for":"htmlFor","class":"className"}}),l.optSelected||(n.propHooks.selected={get:function(a){var b=a.parentNode;return b&&b.parentNode&&b.parentNode.selectedIndex,null},set:function(a){var b=a.parentNode;b&&(b.selectedIndex,b.parentNode&&b.parentNode.selectedIndex)}}),n.each(["tabIndex","readOnly","maxLength","cellSpacing","cellPadding","rowSpan","colSpan","useMap","frameBorder","contentEditable"],function(){n.propFix[this.toLowerCase()]=this});var eb=/[\t\r\n\f]/g;function fb(a){return a.getAttribute&&a.getAttribute("class")||""}n.fn.extend({addClass:function(a){var b,c,d,e,f,g,h,i=0;if(n.isFunction(a))return this.each(function(b){n(this).addClass(a.call(this,b,fb(this)))});if("string"==typeof a&&a){b=a.match(G)||[];while(c=this[i++])if(e=fb(c),d=1===c.nodeType&&(" "+e+" ").replace(eb," ")){g=0;while(f=b[g++])d.indexOf(" "+f+" ")<0&&(d+=f+" ");h=n.trim(d),e!==h&&c.setAttribute("class",h)}}return this},removeClass:function(a){var b,c,d,e,f,g,h,i=0;if(n.isFunction(a))return this.each(function(b){n(this).removeClass(a.call(this,b,fb(this)))});if(!arguments.length)return this.attr("class","");if("string"==typeof a&&a){b=a.match(G)||[];while(c=this[i++])if(e=fb(c),d=1===c.nodeType&&(" "+e+" ").replace(eb," ")){g=0;while(f=b[g++])while(d.indexOf(" "+f+" ")>-1)d=d.replace(" "+f+" "," ");h=n.trim(d),e!==h&&c.setAttribute("class",h)}}return this},toggleClass:function(a,b){var c=typeof a;return"boolean"==typeof b&&"string"===c?b?this.addClass(a):this.removeClass(a):n.isFunction(a)?this.each(function(c){n(this).toggleClass(a.call(this,c,fb(this),b),b)}):this.each(function(){var b,d,e,f;if("string"===c){d=0,e=n(this),f=a.match(G)||[];while(b=f[d++])e.hasClass(b)?e.removeClass(b):e.addClass(b)}else void 0!==a&&"boolean"!==c||(b=fb(this),b&&N.set(this,"__className__",b),this.setAttribute&&this.setAttribute("class",b||a===!1?"":N.get(this,"__className__")||""))})},hasClass:function(a){var b,c,d=0;b=" "+a+" ";while(c=this[d++])if(1===c.nodeType&&(" "+fb(c)+" ").replace(eb," ").indexOf(b)>-1)return!0;return!1}});var gb=/\r/g,hb=/[\x20\t\r\n\f]+/g;n.fn.extend({val:function(a){var b,c,d,e=this[0];{if(arguments.length)return d=n.isFunction(a),this.each(function(c){var e;1===this.nodeType&&(e=d?a.call(this,c,n(this).val()):a,null==e?e="":"number"==typeof e?e+="":n.isArray(e)&&(e=n.map(e,function(a){return null==a?"":a+""})),b=n.valHooks[this.type]||n.valHooks[this.nodeName.toLowerCase()],b&&"set"in b&&void 0!==b.set(this,e,"value")||(this.value=e))});if(e)return b=n.valHooks[e.type]||n.valHooks[e.nodeName.toLowerCase()],b&&"get"in b&&void 0!==(c=b.get(e,"value"))?c:(c=e.value,"string"==typeof c?c.replace(gb,""):null==c?"":c)}}}),n.extend({valHooks:{option:{get:function(a){var b=n.find.attr(a,"value");return null!=b?b:n.trim(n.text(a)).replace(hb," ")}},select:{get:function(a){for(var b,c,d=a.options,e=a.selectedIndex,f="select-one"===a.type||0>e,g=f?null:[],h=f?e+1:d.length,i=0>e?h:f?e:0;h>i;i++)if(c=d[i],(c.selected||i===e)&&(l.optDisabled?!c.disabled:null===c.getAttribute("disabled"))&&(!c.parentNode.disabled||!n.nodeName(c.parentNode,"optgroup"))){if(b=n(c).val(),f)return b;g.push(b)}return g},set:function(a,b){var c,d,e=a.options,f=n.makeArray(b),g=e.length;while(g--)d=e[g],(d.selected=n.inArray(n.valHooks.option.get(d),f)>-1)&&(c=!0);return c||(a.selectedIndex=-1),f}}}}),n.each(["radio","checkbox"],function(){n.valHooks[this]={set:function(a,b){return n.isArray(b)?a.checked=n.inArray(n(a).val(),b)>-1:void 0}},l.checkOn||(n.valHooks[this].get=function(a){return null===a.getAttribute("value")?"on":a.value})});var ib=/^(?:focusinfocus|focusoutblur)$/;n.extend(n.event,{trigger:function(b,c,e,f){var g,h,i,j,l,m,o,p=[e||d],q=k.call(b,"type")?b.type:b,r=k.call(b,"namespace")?b.namespace.split("."):[];if(h=i=e=e||d,3!==e.nodeType&&8!==e.nodeType&&!ib.test(q+n.event.triggered)&&(q.indexOf(".")>-1&&(r=q.split("."),q=r.shift(),r.sort()),l=q.indexOf(":")<0&&"on"+q,b=b[n.expando]?b:new n.Event(q,"object"==typeof b&&b),b.isTrigger=f?2:3,b.namespace=r.join("."),b.rnamespace=b.namespace?new RegExp("(^|\\.)"+r.join("\\.(?:.*\\.|)")+"(\\.|$)"):null,b.result=void 0,b.target||(b.target=e),c=null==c?[b]:n.makeArray(c,[b]),o=n.event.special[q]||{},f||!o.trigger||o.trigger.apply(e,c)!==!1)){if(!f&&!o.noBubble&&!n.isWindow(e)){for(j=o.delegateType||q,ib.test(j+q)||(h=h.parentNode);h;h=h.parentNode)p.push(h),i=h;i===(e.ownerDocument||d)&&p.push(i.defaultView||i.parentWindow||a)}g=0;while((h=p[g++])&&!b.isPropagationStopped())b.type=g>1?j:o.bindType||q,m=(N.get(h,"events")||{})[b.type]&&N.get(h,"handle"),m&&m.apply(h,c),m=l&&h[l],m&&m.apply&&L(h)&&(b.result=m.apply(h,c),b.result===!1&&b.preventDefault());return b.type=q,f||b.isDefaultPrevented()||o._default&&o._default.apply(p.pop(),c)!==!1||!L(e)||l&&n.isFunction(e[q])&&!n.isWindow(e)&&(i=e[l],i&&(e[l]=null),n.event.triggered=q,e[q](),n.event.triggered=void 0,i&&(e[l]=i)),b.result}},simulate:function(a,b,c){var d=n.extend(new n.Event,c,{type:a,isSimulated:!0});n.event.trigger(d,null,b)}}),n.fn.extend({trigger:function(a,b){return this.each(function(){n.event.trigger(a,b,this)})},triggerHandler:function(a,b){var c=this[0];return c?n.event.trigger(a,b,c,!0):void 0}}),n.each("blur focus focusin focusout load resize scroll unload click dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error contextmenu".split(" "),function(a,b){n.fn[b]=function(a,c){return arguments.length>0?this.on(b,null,a,c):this.trigger(b)}}),n.fn.extend({hover:function(a,b){return this.mouseenter(a).mouseleave(b||a)}}),l.focusin="onfocusin"in a,l.focusin||n.each({focus:"focusin",blur:"focusout"},function(a,b){var c=function(a){n.event.simulate(b,a.target,n.event.fix(a))};n.event.special[b]={setup:function(){var d=this.ownerDocument||this,e=N.access(d,b);e||d.addEventListener(a,c,!0),N.access(d,b,(e||0)+1)},teardown:function(){var d=this.ownerDocument||this,e=N.access(d,b)-1;e?N.access(d,b,e):(d.removeEventListener(a,c,!0),N.remove(d,b))}}});var jb=a.location,kb=n.now(),lb=/\?/;n.parseJSON=function(a){return JSON.parse(a+"")},n.parseXML=function(b){var c;if(!b||"string"!=typeof b)return null;try{c=(new a.DOMParser).parseFromString(b,"text/xml")}catch(d){c=void 0}return c&&!c.getElementsByTagName("parsererror").length||n.error("Invalid XML: "+b),c};var mb=/#.*$/,nb=/([?&])_=[^&]*/,ob=/^(.*?):[ \t]*([^\r\n]*)$/gm,pb=/^(?:about|app|app-storage|.+-extension|file|res|widget):$/,qb=/^(?:GET|HEAD)$/,rb=/^\/\//,sb={},tb={},ub="*/".concat("*"),vb=d.createElement("a");vb.href=jb.href;function wb(a){return function(b,c){"string"!=typeof b&&(c=b,b="*");var d,e=0,f=b.toLowerCase().match(G)||[];if(n.isFunction(c))while(d=f[e++])"+"===d[0]?(d=d.slice(1)||"*",(a[d]=a[d]||[]).unshift(c)):(a[d]=a[d]||[]).push(c)}}function xb(a,b,c,d){var e={},f=a===tb;function g(h){var i;return e[h]=!0,n.each(a[h]||[],function(a,h){var j=h(b,c,d);return"string"!=typeof j||f||e[j]?f?!(i=j):void 0:(b.dataTypes.unshift(j),g(j),!1)}),i}return g(b.dataTypes[0])||!e["*"]&&g("*")}function yb(a,b){var c,d,e=n.ajaxSettings.flatOptions||{};for(c in b)void 0!==b[c]&&((e[c]?a:d||(d={}))[c]=b[c]);return d&&n.extend(!0,a,d),a}function zb(a,b,c){var d,e,f,g,h=a.contents,i=a.dataTypes;while("*"===i[0])i.shift(),void 0===d&&(d=a.mimeType||b.getResponseHeader("Content-Type"));if(d)for(e in h)if(h[e]&&h[e].test(d)){i.unshift(e);break}if(i[0]in c)f=i[0];else{for(e in c){if(!i[0]||a.converters[e+" "+i[0]]){f=e;break}g||(g=e)}f=f||g}return f?(f!==i[0]&&i.unshift(f),c[f]):void 0}function Ab(a,b,c,d){var e,f,g,h,i,j={},k=a.dataTypes.slice();if(k[1])for(g in a.converters)j[g.toLowerCase()]=a.converters[g];f=k.shift();while(f)if(a.responseFields[f]&&(c[a.responseFields[f]]=b),!i&&d&&a.dataFilter&&(b=a.dataFilter(b,a.dataType)),i=f,f=k.shift())if("*"===f)f=i;else if("*"!==i&&i!==f){if(g=j[i+" "+f]||j["* "+f],!g)for(e in j)if(h=e.split(" "),h[1]===f&&(g=j[i+" "+h[0]]||j["* "+h[0]])){g===!0?g=j[e]:j[e]!==!0&&(f=h[0],k.unshift(h[1]));break}if(g!==!0)if(g&&a["throws"])b=g(b);else try{b=g(b)}catch(l){return{state:"parsererror",error:g?l:"No conversion from "+i+" to "+f}}}return{state:"success",data:b}}n.extend({active:0,lastModified:{},etag:{},ajaxSettings:{url:jb.href,type:"GET",isLocal:pb.test(jb.protocol),global:!0,processData:!0,async:!0,contentType:"application/x-www-form-urlencoded; charset=UTF-8",accepts:{"*":ub,text:"text/plain",html:"text/html",xml:"application/xml, text/xml",json:"application/json, text/javascript"},contents:{xml:/\bxml\b/,html:/\bhtml/,json:/\bjson\b/},responseFields:{xml:"responseXML",text:"responseText",json:"responseJSON"},converters:{"* text":String,"text html":!0,"text json":n.parseJSON,"text xml":n.parseXML},flatOptions:{url:!0,context:!0}},ajaxSetup:function(a,b){return b?yb(yb(a,n.ajaxSettings),b):yb(n.ajaxSettings,a)},ajaxPrefilter:wb(sb),ajaxTransport:wb(tb),ajax:function(b,c){"object"==typeof b&&(c=b,b=void 0),c=c||{};var e,f,g,h,i,j,k,l,m=n.ajaxSetup({},c),o=m.context||m,p=m.context&&(o.nodeType||o.jquery)?n(o):n.event,q=n.Deferred(),r=n.Callbacks("once memory"),s=m.statusCode||{},t={},u={},v=0,w="canceled",x={readyState:0,getResponseHeader:function(a){var b;if(2===v){if(!h){h={};while(b=ob.exec(g))h[b[1].toLowerCase()]=b[2]}b=h[a.toLowerCase()]}return null==b?null:b},getAllResponseHeaders:function(){return 2===v?g:null},setRequestHeader:function(a,b){var c=a.toLowerCase();return v||(a=u[c]=u[c]||a,t[a]=b),this},overrideMimeType:function(a){return v||(m.mimeType=a),this},statusCode:function(a){var b;if(a)if(2>v)for(b in a)s[b]=[s[b],a[b]];else x.always(a[x.status]);return this},abort:function(a){var b=a||w;return e&&e.abort(b),z(0,b),this}};if(q.promise(x).complete=r.add,x.success=x.done,x.error=x.fail,m.url=((b||m.url||jb.href)+"").replace(mb,"").replace(rb,jb.protocol+"//"),m.type=c.method||c.type||m.method||m.type,m.dataTypes=n.trim(m.dataType||"*").toLowerCase().match(G)||[""],null==m.crossDomain){j=d.createElement("a");try{j.href=m.url,j.href=j.href,m.crossDomain=vb.protocol+"//"+vb.host!=j.protocol+"//"+j.host}catch(y){m.crossDomain=!0}}if(m.data&&m.processData&&"string"!=typeof m.data&&(m.data=n.param(m.data,m.traditional)),xb(sb,m,c,x),2===v)return x;k=n.event&&m.global,k&&0===n.active++&&n.event.trigger("ajaxStart"),m.type=m.type.toUpperCase(),m.hasContent=!qb.test(m.type),f=m.url,m.hasContent||(m.data&&(f=m.url+=(lb.test(f)?"&":"?")+m.data,delete m.data),m.cache===!1&&(m.url=nb.test(f)?f.replace(nb,"$1_="+kb++):f+(lb.test(f)?"&":"?")+"_="+kb++)),m.ifModified&&(n.lastModified[f]&&x.setRequestHeader("If-Modified-Since",n.lastModified[f]),n.etag[f]&&x.setRequestHeader("If-None-Match",n.etag[f])),(m.data&&m.hasContent&&m.contentType!==!1||c.contentType)&&x.setRequestHeader("Content-Type",m.contentType),x.setRequestHeader("Accept",m.dataTypes[0]&&m.accepts[m.dataTypes[0]]?m.accepts[m.dataTypes[0]]+("*"!==m.dataTypes[0]?", "+ub+"; q=0.01":""):m.accepts["*"]);for(l in m.headers)x.setRequestHeader(l,m.headers[l]);if(m.beforeSend&&(m.beforeSend.call(o,x,m)===!1||2===v))return x.abort();w="abort";for(l in{success:1,error:1,complete:1})x[l](m[l]);if(e=xb(tb,m,c,x)){if(x.readyState=1,k&&p.trigger("ajaxSend",[x,m]),2===v)return x;m.async&&m.timeout>0&&(i=a.setTimeout(function(){x.abort("timeout")},m.timeout));try{v=1,e.send(t,z)}catch(y){if(!(2>v))throw y;z(-1,y)}}else z(-1,"No Transport");function z(b,c,d,h){var j,l,t,u,w,y=c;2!==v&&(v=2,i&&a.clearTimeout(i),e=void 0,g=h||"",x.readyState=b>0?4:0,j=b>=200&&300>b||304===b,d&&(u=zb(m,x,d)),u=Ab(m,u,x,j),j?(m.ifModified&&(w=x.getResponseHeader("Last-Modified"),w&&(n.lastModified[f]=w),w=x.getResponseHeader("etag"),w&&(n.etag[f]=w)),204===b||"HEAD"===m.type?y="nocontent":304===b?y="notmodified":(y=u.state,l=u.data,t=u.error,j=!t)):(t=y,!b&&y||(y="error",0>b&&(b=0))),x.status=b,x.statusText=(c||y)+"",j?q.resolveWith(o,[l,y,x]):q.rejectWith(o,[x,y,t]),x.statusCode(s),s=void 0,k&&p.trigger(j?"ajaxSuccess":"ajaxError",[x,m,j?l:t]),r.fireWith(o,[x,y]),k&&(p.trigger("ajaxComplete",[x,m]),--n.active||n.event.trigger("ajaxStop")))}return x},getJSON:function(a,b,c){return n.get(a,b,c,"json")},getScript:function(a,b){return n.get(a,void 0,b,"script")}}),n.each(["get","post"],function(a,b){n[b]=function(a,c,d,e){return n.isFunction(c)&&(e=e||d,d=c,c=void 0),n.ajax(n.extend({url:a,type:b,dataType:e,data:c,success:d},n.isPlainObject(a)&&a))}}),n._evalUrl=function(a){return n.ajax({url:a,type:"GET",dataType:"script",async:!1,global:!1,"throws":!0})},n.fn.extend({wrapAll:function(a){var b;return n.isFunction(a)?this.each(function(b){n(this).wrapAll(a.call(this,b))}):(this[0]&&(b=n(a,this[0].ownerDocument).eq(0).clone(!0),this[0].parentNode&&b.insertBefore(this[0]),b.map(function(){var a=this;while(a.firstElementChild)a=a.firstElementChild;return a}).append(this)),this)},wrapInner:function(a){return n.isFunction(a)?this.each(function(b){n(this).wrapInner(a.call(this,b))}):this.each(function(){var b=n(this),c=b.contents();c.length?c.wrapAll(a):b.append(a)})},wrap:function(a){var b=n.isFunction(a);return this.each(function(c){n(this).wrapAll(b?a.call(this,c):a)})},unwrap:function(){return this.parent().each(function(){n.nodeName(this,"body")||n(this).replaceWith(this.childNodes)}).end()}}),n.expr.filters.hidden=function(a){return!n.expr.filters.visible(a)},n.expr.filters.visible=function(a){return a.offsetWidth>0||a.offsetHeight>0||a.getClientRects().length>0};var Bb=/%20/g,Cb=/\[\]$/,Db=/\r?\n/g,Eb=/^(?:submit|button|image|reset|file)$/i,Fb=/^(?:input|select|textarea|keygen)/i;function Gb(a,b,c,d){var e;if(n.isArray(b))n.each(b,function(b,e){c||Cb.test(a)?d(a,e):Gb(a+"["+("object"==typeof e&&null!=e?b:"")+"]",e,c,d)});else if(c||"object"!==n.type(b))d(a,b);else for(e in b)Gb(a+"["+e+"]",b[e],c,d)}n.param=function(a,b){var c,d=[],e=function(a,b){b=n.isFunction(b)?b():null==b?"":b,d[d.length]=encodeURIComponent(a)+"="+encodeURIComponent(b)};if(void 0===b&&(b=n.ajaxSettings&&n.ajaxSettings.traditional),n.isArray(a)||a.jquery&&!n.isPlainObject(a))n.each(a,function(){e(this.name,this.value)});else for(c in a)Gb(c,a[c],b,e);return d.join("&").replace(Bb,"+")},n.fn.extend({serialize:function(){return n.param(this.serializeArray())},serializeArray:function(){return this.map(function(){var a=n.prop(this,"elements");return a?n.makeArray(a):this}).filter(function(){var a=this.type;return this.name&&!n(this).is(":disabled")&&Fb.test(this.nodeName)&&!Eb.test(a)&&(this.checked||!X.test(a))}).map(function(a,b){var c=n(this).val();return null==c?null:n.isArray(c)?n.map(c,function(a){return{name:b.name,value:a.replace(Db,"\r\n")}}):{name:b.name,value:c.replace(Db,"\r\n")}}).get()}}),n.ajaxSettings.xhr=function(){try{return new a.XMLHttpRequest}catch(b){}};var Hb={0:200,1223:204},Ib=n.ajaxSettings.xhr();l.cors=!!Ib&&"withCredentials"in Ib,l.ajax=Ib=!!Ib,n.ajaxTransport(function(b){var c,d;return l.cors||Ib&&!b.crossDomain?{send:function(e,f){var g,h=b.xhr();if(h.open(b.type,b.url,b.async,b.username,b.password),b.xhrFields)for(g in b.xhrFields)h[g]=b.xhrFields[g];b.mimeType&&h.overrideMimeType&&h.overrideMimeType(b.mimeType),b.crossDomain||e["X-Requested-With"]||(e["X-Requested-With"]="XMLHttpRequest");for(g in e)h.setRequestHeader(g,e[g]);c=function(a){return function(){c&&(c=d=h.onload=h.onerror=h.onabort=h.onreadystatechange=null,"abort"===a?h.abort():"error"===a?"number"!=typeof h.status?f(0,"error"):f(h.status,h.statusText):f(Hb[h.status]||h.status,h.statusText,"text"!==(h.responseType||"text")||"string"!=typeof h.responseText?{binary:h.response}:{text:h.responseText},h.getAllResponseHeaders()))}},h.onload=c(),d=h.onerror=c("error"),void 0!==h.onabort?h.onabort=d:h.onreadystatechange=function(){4===h.readyState&&a.setTimeout(function(){c&&d()})},c=c("abort");try{h.send(b.hasContent&&b.data||null)}catch(i){if(c)throw i}},abort:function(){c&&c()}}:void 0}),n.ajaxSetup({accepts:{script:"text/javascript, application/javascript, application/ecmascript, application/x-ecmascript"},contents:{script:/\b(?:java|ecma)script\b/},converters:{"text script":function(a){return n.globalEval(a),a}}}),n.ajaxPrefilter("script",function(a){void 0===a.cache&&(a.cache=!1),a.crossDomain&&(a.type="GET")}),n.ajaxTransport("script",function(a){if(a.crossDomain){var b,c;return{send:function(e,f){b=n("<script>").prop({charset:a.scriptCharset,src:a.url}).on("load error",c=function(a){b.remove(),c=null,a&&f("error"===a.type?404:200,a.type)}),d.head.appendChild(b[0])},abort:function(){c&&c()}}}});var Jb=[],Kb=/(=)\?(?=&|$)|\?\?/;n.ajaxSetup({jsonp:"callback",jsonpCallback:function(){var a=Jb.pop()||n.expando+"_"+kb++;return this[a]=!0,a}}),n.ajaxPrefilter("json jsonp",function(b,c,d){var e,f,g,h=b.jsonp!==!1&&(Kb.test(b.url)?"url":"string"==typeof b.data&&0===(b.contentType||"").indexOf("application/x-www-form-urlencoded")&&Kb.test(b.data)&&"data");return h||"jsonp"===b.dataTypes[0]?(e=b.jsonpCallback=n.isFunction(b.jsonpCallback)?b.jsonpCallback():b.jsonpCallback,h?b[h]=b[h].replace(Kb,"$1"+e):b.jsonp!==!1&&(b.url+=(lb.test(b.url)?"&":"?")+b.jsonp+"="+e),b.converters["script json"]=function(){return g||n.error(e+" was not called"),g[0]},b.dataTypes[0]="json",f=a[e],a[e]=function(){g=arguments},d.always(function(){void 0===f?n(a).removeProp(e):a[e]=f,b[e]&&(b.jsonpCallback=c.jsonpCallback,Jb.push(e)),g&&n.isFunction(f)&&f(g[0]),g=f=void 0}),"script"):void 0}),n.parseHTML=function(a,b,c){if(!a||"string"!=typeof a)return null;"boolean"==typeof b&&(c=b,b=!1),b=b||d;var e=x.exec(a),f=!c&&[];return e?[b.createElement(e[1])]:(e=ca([a],b,f),f&&f.length&&n(f).remove(),n.merge([],e.childNodes))};var Lb=n.fn.load;n.fn.load=function(a,b,c){if("string"!=typeof a&&Lb)return Lb.apply(this,arguments);var d,e,f,g=this,h=a.indexOf(" ");return h>-1&&(d=n.trim(a.slice(h)),a=a.slice(0,h)),n.isFunction(b)?(c=b,b=void 0):b&&"object"==typeof b&&(e="POST"),g.length>0&&n.ajax({url:a,type:e||"GET",dataType:"html",data:b}).done(function(a){f=arguments,g.html(d?n("<div>").append(n.parseHTML(a)).find(d):a)}).always(c&&function(a,b){g.each(function(){c.apply(this,f||[a.responseText,b,a])})}),this},n.each(["ajaxStart","ajaxStop","ajaxComplete","ajaxError","ajaxSuccess","ajaxSend"],function(a,b){n.fn[b]=function(a){return this.on(b,a)}}),n.expr.filters.animated=function(a){return n.grep(n.timers,function(b){return a===b.elem}).length};function Mb(a){return n.isWindow(a)?a:9===a.nodeType&&a.defaultView}n.offset={setOffset:function(a,b,c){var d,e,f,g,h,i,j,k=n.css(a,"position"),l=n(a),m={};"static"===k&&(a.style.position="relative"),h=l.offset(),f=n.css(a,"top"),i=n.css(a,"left"),j=("absolute"===k||"fixed"===k)&&(f+i).indexOf("auto")>-1,j?(d=l.position(),g=d.top,e=d.left):(g=parseFloat(f)||0,e=parseFloat(i)||0),n.isFunction(b)&&(b=b.call(a,c,n.extend({},h))),null!=b.top&&(m.top=b.top-h.top+g),null!=b.left&&(m.left=b.left-h.left+e),"using"in b?b.using.call(a,m):l.css(m)}},n.fn.extend({offset:function(a){if(arguments.length)return void 0===a?this:this.each(function(b){n.offset.setOffset(this,a,b)});var b,c,d=this[0],e={top:0,left:0},f=d&&d.ownerDocument;if(f)return b=f.documentElement,n.contains(b,d)?(e=d.getBoundingClientRect(),c=Mb(f),{top:e.top+c.pageYOffset-b.clientTop,left:e.left+c.pageXOffset-b.clientLeft}):e},position:function(){if(this[0]){var a,b,c=this[0],d={top:0,left:0};return"fixed"===n.css(c,"position")?b=c.getBoundingClientRect():(a=this.offsetParent(),b=this.offset(),n.nodeName(a[0],"html")||(d=a.offset()),d.top+=n.css(a[0],"borderTopWidth",!0),d.left+=n.css(a[0],"borderLeftWidth",!0)),{top:b.top-d.top-n.css(c,"marginTop",!0),left:b.left-d.left-n.css(c,"marginLeft",!0)}}},offsetParent:function(){return this.map(function(){var a=this.offsetParent;while(a&&"static"===n.css(a,"position"))a=a.offsetParent;return a||Ea})}}),n.each({scrollLeft:"pageXOffset",scrollTop:"pageYOffset"},function(a,b){var c="pageYOffset"===b;n.fn[a]=function(d){return K(this,function(a,d,e){var f=Mb(a);return void 0===e?f?f[b]:a[d]:void(f?f.scrollTo(c?f.pageXOffset:e,c?e:f.pageYOffset):a[d]=e)},a,d,arguments.length)}}),n.each(["top","left"],function(a,b){n.cssHooks[b]=Ga(l.pixelPosition,function(a,c){return c?(c=Fa(a,b),Ba.test(c)?n(a).position()[b]+"px":c):void 0})}),n.each({Height:"height",Width:"width"},function(a,b){n.each({padding:"inner"+a,content:b,"":"outer"+a},function(c,d){n.fn[d]=function(d,e){var f=arguments.length&&(c||"boolean"!=typeof d),g=c||(d===!0||e===!0?"margin":"border");return K(this,function(b,c,d){var e;return n.isWindow(b)?b.document.documentElement["client"+a]:9===b.nodeType?(e=b.documentElement,Math.max(b.body["scroll"+a],e["scroll"+a],b.body["offset"+a],e["offset"+a],e["client"+a])):void 0===d?n.css(b,c,g):n.style(b,c,d,g)},b,f?d:void 0,f,null)}})}),n.fn.extend({bind:function(a,b,c){return this.on(a,null,b,c)},unbind:function(a,b){return this.off(a,null,b)},delegate:function(a,b,c,d){return this.on(b,a,c,d)},undelegate:function(a,b,c){return 1===arguments.length?this.off(a,"**"):this.off(b,a||"**",c)},size:function(){return this.length}}),n.fn.andSelf=n.fn.addBack,"function"==typeof define&&define.amd&&define("jquery",[],function(){return n});var Nb=a.jQuery,Ob=a.$;return n.noConflict=function(b){return a.$===n&&(a.$=Ob),b&&a.jQuery===n&&(a.jQuery=Nb),n},b||(a.jQuery=a.$=n),n});
+loadjs=function(){function e(e,n){e=e.push?e:[e];var t,r,i,c,o=[],f=e.length,a=f;for(t=function(e,t){t.length&&o.push(e),--a||n(o)};f--;)r=e[f],i=s[r],i?t(r,i):(c=u[r]=u[r]||[],c.push(t))}function n(e,n){if(e){var t=u[e];if(s[e]=n,t)for(;t.length;)t[0](e,n),t.splice(0,1)}}function t(e,n,r,i){var o,s,u=document,f=r.async,a=(r.numRetries||0)+1,h=r.before||c;i=i||0,/(^css!|\.css$)/.test(e)?(o=!0,s=u.createElement("link"),s.rel="stylesheet",s.href=e.replace(/^css!/,"")):(s=u.createElement("script"),s.src=e,s.async=void 0===f||f),s.onload=s.onerror=s.onbeforeload=function(c){var u=c.type[0];if(o&&"hideFocus"in s)try{s.sheet.cssText.length||(u="e")}catch(e){u="e"}if("e"==u&&(i+=1)<a)return t(e,n,r,i);n(e,u,c.defaultPrevented)},h(e,s)!==!1&&u.head.appendChild(s)}function r(e,n,r){e=e.push?e:[e];var i,c,o=e.length,s=o,u=[];for(i=function(e,t,r){if("e"==t&&u.push(e),"b"==t){if(!r)return;u.push(e)}--o||n(u)},c=0;c<s;c++)t(e[c],i,r)}function i(e,t,i){var s,u;if(t&&t.trim&&(s=t),u=(s?i:t)||{},s){if(s in o)throw"LoadJS";o[s]=!0}r(e,function(e){e.length?(u.error||c)(e):(u.success||c)(),n(s,e)},u)}var c=function(){},o={},s={},u={};return i.ready=function(n,t){return e(n,function(e){e.length?(t.error||c)(e):(t.success||c)()}),i},i.done=function(e){n(e,[])},i.reset=function(){o={},s={},u={}},i.isDefined=function(e){return e in o},i}();
+(function(){var b=document,c=b.getElementsByTagName("script"),d;BFLsid=null;for(var a=0;a<c.length;a++)-1<c[a].src.indexOf("app.breakfastleads.com/t.js")&&(d=c[a].id.split("B2B")[1]);d&&(BFLsid=d,a=1,c=escape(b.URL),"undefined"!==typeof BFLConfig&&(1===BFLConfig.NotTrackNormal&&(a=0),BFLConfig.TrackURL&&(c=escape(BFLConfig.TrackURL))),1===a&&(b="sid=B2B-"+d+"&url="+c+"&d="+screen.width+"x"+screen.height+"&l="+escape(b.referrer)+"&pt="+escape(b.title)+"",a=new Image,a.src="//app.breakfastleads.com/rt?"+b+""));if("undefined"!==typeof BFLConfig){if(1===BFLConfig.TrackPDF)for(b=document.getElementsByTagName("a"),a=0;a<b.length;a++)b[a].href.match(/\.pdf$/i)&&b[a].addEventListener&&b[a].addEventListener("click",function(){var a="sid=B2B-"+BFLsid+"&url="+escape(this.href)+"&d="+screen.width+"x"+screen.height+"";(new Image).src="//app.breakfastleads.com/rt?"+a+""},!1)}else for(b=document.getElementsByTagName("a"),a=0;a<b.length;a++)b[a].pathname.match(/\.pdf$|\.zip$|\.doc$/i)&&b[a].addEventListener&&b[a].addEventListener("click",function(){var a="sid=B2B-"+BFLsid+"&url="+escape(this.href)+"&d="+screen.width+"x"+screen.height+"";(new Image).src="//app.breakfastleads.com/rt?"+a+""},!1)})();window.BFLTrack=function(b){BFLsid&&(b="sid=B2B-"+BFLsid+"&url="+escape(document.URL)+"&event="+escape(b)+"&d="+screen.width+"x"+screen.height+"&r="+(new Date).getTime()+"",(new Image).src="//app.breakfastleads.com/rt?"+b+"")};

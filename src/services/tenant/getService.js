@@ -11,7 +11,7 @@ angular.module('angularApp')
             var deferred = $q.defer();
             //user.tenantId = tenantId;
             /*tenantId = "";*/
-                $http.get(app.baseUrl + "api/tenant/tenantId/"+tenantId)
+                $http.get(app.apiUrl + "/tenant/tenantId/"+tenantId)
                 .then(function(response) {
                      debugger;
                     str = JSON.stringify(response);

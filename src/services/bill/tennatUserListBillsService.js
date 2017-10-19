@@ -16,7 +16,7 @@ angular.module('angularApp')
 
         this.getUserBills = function(userid){
             var deferred = $q.defer();
-            $http.get(app.baseUrl + "api/bill/getUserBillList/ByUserId/" + userid)
+            $http.get(app.apiUrl + "/bill/getUserBillList/ByUserId/" + userid)
                 .then(function(response) {
                     str = JSON.stringify(response);
                     console.log(str);

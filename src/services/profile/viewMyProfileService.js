@@ -14,7 +14,7 @@ angular.module('angularApp')
         this.updateUserProfile = function(updatedUser){
 
             var deferred = $q.defer();
-            $http.post(app.baseUrl + "api/user/updateUser" , updatedUser )
+            $http.post(app.apiUrl + "/user/updateUser" , updatedUser )
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);

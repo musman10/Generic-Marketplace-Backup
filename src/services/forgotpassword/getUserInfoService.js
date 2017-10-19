@@ -14,7 +14,7 @@ angular.module('angularApp')
                 tenantId : tenantId,
                 emailId : emailId
             };
-            $http.post(app.baseUrl + "api/user/getUser" , user_data )
+            $http.post(app.apiUrl + "/user/getUser" , user_data )
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);

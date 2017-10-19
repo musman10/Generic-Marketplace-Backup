@@ -18,7 +18,7 @@ angular.module('angularApp')
 
             };
 
-            $http.post(app.baseUrl + "api/email/forgotPasswordInsertEmail" , user_data )
+            $http.post(app.apiUrl + "/email/forgotPasswordInsertEmail" , user_data )
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);

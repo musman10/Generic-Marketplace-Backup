@@ -21,7 +21,7 @@ angular.module('angularApp')
             username : username,
             password : password
         };
-        $http.post(app.baseUrl + "api/user/loginUser" , login_data )
+        $http.post(app.apiUrl + "/user/loginUser" , login_data )
             .then(function(response) {
                 debugger;
                 str = JSON.stringify(response);

@@ -13,7 +13,7 @@ angular.module('angularApp')
     this.register = function(tenant,baseUrl){
         
         var deferred = $q.defer();
-        $http.post(app.baseUrl + "api/tenant/register",tenant)
+        $http.post(app.apiUrl + "/tenant/register",tenant)
         .then(function(response) {
             str = JSON.stringify(response);
             console.log(str);

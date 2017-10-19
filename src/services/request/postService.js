@@ -13,7 +13,7 @@ angular.module('angularApp')
         this.postRequest = function(request){
             var deferred = $q.defer();
             request.tenantId = app.tenant._id;
-            $http.post(app.baseUrl + "api/request/post",request)
+            $http.post(app.apiUrl + "/request/post",request)
                 .then(function(response) {
                     str = JSON.stringify(response);
                     console.log(str);

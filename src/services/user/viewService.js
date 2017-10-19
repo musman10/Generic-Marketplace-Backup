@@ -13,7 +13,7 @@ angular.module('angularApp')
             var userData = {
                 userId: userId
             };
-            $http.post(app.baseUrl + "api/user/view" , userData)
+            $http.post(app.apiUrl + "/user/view" , userData)
                 .then(function(response) {
                     debugger;
                     str = JSON.stringify(response);

@@ -16,7 +16,7 @@ angular.module('angularApp')
                 requestTypes: requestTypes,
                 userid:userid
             };
-            $http.post(app.baseUrl + "api/request/user/list/requestTypes/",listRequestPayload)
+            $http.post(app.apiUrl + "/request/user/list/requestTypes/",listRequestPayload)
                 .then(function(response) {
                     str = JSON.stringify(response);
                     console.log(str);
